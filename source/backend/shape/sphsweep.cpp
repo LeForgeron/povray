@@ -97,7 +97,7 @@ namespace pov
 ******************************************************************************/
 
 const DBL DEPTH_TOLERANCE       = 1.0e-6;
-const DBL ZERO_TOLERANCE        = 1.0e-4;
+const DBL ZERO_TOLERANCE        = 1.0e-1;// less noise when near 1 than near 0 [JG]
 
 /* Just to be sure use twice as much plus old maximum.  However,
    from looking at the code this may still not always be enough!
@@ -677,6 +677,10 @@ int SphereSweep::Intersect_Segment(const Ray &ray, const SPHSWEEP_SEG *Segment, 
 
 					// Calculate radius of single sphere
 					Temp_Sphere.Radius = Segment->Radius_Coef[1] * Root[m] + Segment->Radius_Coef[0];
+          Temp_Sphere.Uvalue = Root[m]*Segment->Uvalue[1]+Segment->Uvalue[0];
+					Assign_Vector( Temp_Sphere.Vbase[0],  Segment->Vbase[0]);
+					Assign_Vector( Temp_Sphere.Vbase[1],  Segment->Vbase[1]);
+
 
 					// Calculate intersections
 					if(Intersect_Sphere(ray, &Temp_Sphere, Temp_Isect))
@@ -704,7 +708,6 @@ int SphereSweep::Intersect_Segment(const Ray &ray, const SPHSWEEP_SEG *Segment, 
 				    + 2.0 * c * Root[m]
 				    + d;
 
-#if 0 // [CLi] preliminary workaround for FS#81
 				if(fabs(fp1) > ZERO_TOLERANCE)
 				{
 					t = -fp0 / fp1;
@@ -732,7 +735,6 @@ int SphereSweep::Intersect_Segment(const Ray &ray, const SPHSWEEP_SEG *Segment, 
 					}
 				}
 				else
-#endif
 				{
 					// Calculate center of single sphere
 					VAddScaled(Temp_Sphere.Center, Segment->Center_Coef[0], Root[m], Segment->Center_Coef[1]);
@@ -1696,23 +1698,83 @@ void SphereSweep::Compute()
 
 		Segment[i].Uvalue[0]=length;
 		VLength(Segment[i].Uvalue[1], tmpSeg);
-    Segment[i].Uvalue[1]+= fabs(Segment[i].Radius_Deriv[1]);
+    //Segment[i].Uvalue[1]+= fabs(Segment[i].Radius_Deriv[1]);
 		length+= Segment[i].Uvalue[1];
 
     if (i)
     {
-       // try to keep the Vbase[0] in the plane of changing direction
-       VECTOR old, foo;
+			// Inspired from Reorient_Trans in transform.inc
+       VECTOR oldSeg;
+       VCross(oldSeg, Segment[i-1].Vbase[0], Segment[i-1].Vbase[1]);
+       VNormalizeEq(oldSeg);
+       VNormalizeEq(tmpSeg);
+       VECTOR foo;
+       VCross(foo, oldSeg, tmpSeg);
        DBL lenfoo;
-       VCross(foo, Segment[i-1].Vbase[1], tmpSeg);
        VLength(lenfoo, foo);
-       if (lenfoo > EPSILON)
-       { // fine, there is a plane for [0] to evolve in new segment
-         Assign_Vector(Segment[i].Vbase[0], foo);
-       }
+       if (lenfoo > 0)
+       { // fine, there is a plane to evolve from oldSeg into tmpSeg
+         VECTOR z1,z2,x1,x2;
+         VInverseScaleEq(foo,lenfoo); // normalize, but we have already the length
+         VCross(x1, oldSeg, foo);
+         VCross(x2, tmpSeg, foo);
+         VNormalize(z1,x1);
+         VNormalize(z2,x2);
+         MATRIX m1,m2;
+         m1[0][0] = x1[0];
+         m1[1][0] = x1[1];
+         m1[2][0] = x1[2];
+         m1[3][0] = 0;
+         m1[0][1] = foo[0];
+         m1[1][1] = foo[1];
+         m1[2][1] = foo[2];
+         m1[3][1] = 0;
+         m1[0][2] = z1[0];
+         m1[1][2] = z1[1];
+         m1[2][2] = z1[2];
+         m1[3][2] = 0;
+         m1[0][3] = 0;
+         m1[1][3] = 0;
+         m1[2][3] = 0;
+         m1[3][3] = 1;
+         // not the same order as m1
+         m2[0][0] = x2[0];
+         m2[0][1] = x2[1];
+         m2[0][2] = x2[2];
+         m2[0][3] = 0;
+         m2[1][0] = foo[0];
+         m2[1][1] = foo[1];
+         m2[1][2] = foo[2];
+         m2[1][3] = 0;
+         m2[2][0] = z2[0];
+         m2[2][1] = z2[1];
+         m2[2][2] = z2[2];
+         m2[2][3] = 0;
+         m2[3][0] = 0;
+         m2[3][1] = 0;
+         m2[3][2] = 0;
+         m2[3][3] = 1;
+         MTimesA(m1,m2);// we do not need the inverse, and use a simpler version of MTransDirection 
+         for(int idx =0;idx < 3;++idx)
+         {
+         Segment[i].Vbase[0][idx] = 
+					 Segment[i-1].Vbase[0][0]*m1[0][idx] +
+					 Segment[i-1].Vbase[0][1]*m1[1][idx] +
+					 Segment[i-1].Vbase[0][2]*m1[2][idx] ;
+         }
+       }// end of playing with matrixes
        else
-       { // hard time, new direction is parallel to [1], so propagate [0] to compute the new [0]
-         Assign_Vector(Segment[i].Vbase[0], Segment[i-1].Vbase[0]);
+       { // either same direction or opposite
+         VSub(foo, tmpSeg, oldSeg);
+         if (VSumSqr(foo) < 2.0) // either 0 or 4... with numerical imprecision of computer : test against 2
+         {
+           Assign_Vector(Segment[i].Vbase[0] , Segment[i-1].Vbase[0]);
+         }
+         else
+         { // flip, total U-turn 
+           VScale(Segment[i].Vbase[0] , Segment[i-1].Vbase[0], -1.0);
+         }
+         
        }
     }
     else
