@@ -263,6 +263,8 @@ bool SphereSweep::All_Intersections(const Ray& ray, IStack& Depth_Stack, TraceTh
 				// Test for clipping volume
 				if (Clip.empty() || Point_In_Clip(Isect[i].Point, Clip, Thread))
 				{
+          VNormalizeEq(Isect[i].Vbase[0]);
+          VNormalizeEq(Isect[i].Vbase[1]);
           VDot(a, Isect[i].Normal, Isect[i].Vbase[0]);
           VDot(b, Isect[i].Normal, Isect[i].Vbase[1]);
           c = atan2(b,a);
@@ -502,8 +504,8 @@ int SphereSweep::Intersect_Segment(const Ray &ray, const SPHSWEEP_SEG *Segment, 
 				VNormalizeEq(Isect[Isect_Count].Normal);
 
         Isect[Isect_Count].uv[U] = Segment->Uvalue[1]+Segment->Uvalue[0];
-				Assign_Vector( Isect[Isect_Count].Vbase[0],  Segment->Vbase[0]);
-				Assign_Vector( Isect[Isect_Count].Vbase[1],  Segment->Vbase[1]);
+				Assign_Vector( Isect[Isect_Count].Vbase[0],  Segment->Vbase[2]);
+				Assign_Vector( Isect[Isect_Count].Vbase[1],  Segment->Vbase[3]);
 
 				Isect_Count++;
 			}
@@ -664,8 +666,8 @@ int SphereSweep::Intersect_Segment(const Ray &ray, const SPHSWEEP_SEG *Segment, 
 						VNormalizeEq(Isect[Isect_Count].Normal);
 
             Isect[Isect_Count].uv[U] = Root[m]*Segment->Uvalue[1]+Segment->Uvalue[0];
-						Assign_Vector( Isect[Isect_Count].Vbase[0],  Segment->Vbase[0]);
-						Assign_Vector( Isect[Isect_Count].Vbase[1],  Segment->Vbase[1]);
+						NormalVectorInterpolation( Isect[Isect_Count].Vbase[0],  Segment->Vbase[0], Root[m], Segment->Vbase[2]);
+						NormalVectorInterpolation( Isect[Isect_Count].Vbase[1],  Segment->Vbase[1], Root[m], Segment->Vbase[3]);
 
 						Isect_Count++;
 					}
@@ -678,8 +680,8 @@ int SphereSweep::Intersect_Segment(const Ray &ray, const SPHSWEEP_SEG *Segment, 
 					// Calculate radius of single sphere
 					Temp_Sphere.Radius = Segment->Radius_Coef[1] * Root[m] + Segment->Radius_Coef[0];
           Temp_Sphere.Uvalue = Root[m]*Segment->Uvalue[1]+Segment->Uvalue[0];
-					Assign_Vector( Temp_Sphere.Vbase[0],  Segment->Vbase[0]);
-					Assign_Vector( Temp_Sphere.Vbase[1],  Segment->Vbase[1]);
+					NormalVectorInterpolation( Temp_Sphere.Vbase[0],  Segment->Vbase[0], Root[m], Segment->Vbase[2]);
+					NormalVectorInterpolation( Temp_Sphere.Vbase[1],  Segment->Vbase[1], Root[m], Segment->Vbase[3]);
 
 
 					// Calculate intersections
@@ -728,8 +730,8 @@ int SphereSweep::Intersect_Segment(const Ray &ray, const SPHSWEEP_SEG *Segment, 
 						VNormalizeEq(Isect[Isect_Count].Normal);
 
             Isect[Isect_Count].uv[U] = Root[m]*Segment->Uvalue[1]+Segment->Uvalue[0];
-						Assign_Vector( Isect[Isect_Count].Vbase[0],  Segment->Vbase[0]);
-						Assign_Vector( Isect[Isect_Count].Vbase[1],  Segment->Vbase[1]);
+						NormalVectorInterpolation( Isect[Isect_Count].Vbase[0], Segment->Vbase[0], Root[m], Segment->Vbase[2]);
+						NormalVectorInterpolation( Isect[Isect_Count].Vbase[1], Segment->Vbase[1], Root[m], Segment->Vbase[3]);
 
 						Isect_Count++;
 					}
@@ -747,8 +749,8 @@ int SphereSweep::Intersect_Segment(const Ray &ray, const SPHSWEEP_SEG *Segment, 
 					                   + Segment->Radius_Coef[1] * Root[m]
 					                   + Segment->Radius_Coef[0];
           Temp_Sphere.Uvalue = Root[m]*Segment->Uvalue[1]+Segment->Uvalue[0];
-					Assign_Vector( Temp_Sphere.Vbase[0],  Segment->Vbase[0]);
-					Assign_Vector( Temp_Sphere.Vbase[1],  Segment->Vbase[1]);
+					NormalVectorInterpolation( Temp_Sphere.Vbase[0],  Segment->Vbase[0], Root[m], Segment->Vbase[2]);
+					NormalVectorInterpolation( Temp_Sphere.Vbase[1],  Segment->Vbase[1], Root[m], Segment->Vbase[3]);
 
 					// Calculate intersections
 					if(Intersect_Sphere(ray, &Temp_Sphere, Temp_Isect))
@@ -1698,7 +1700,7 @@ void SphereSweep::Compute()
 
 		Segment[i].Uvalue[0]=length;
 		VLength(Segment[i].Uvalue[1], tmpSeg);
-    //Segment[i].Uvalue[1]+= fabs(Segment[i].Radius_Deriv[1]);
+    Segment[i].Uvalue[1]+= fabs(Segment[i].Radius_Deriv[1]);
 		length+= Segment[i].Uvalue[1];
 
     if (i)
@@ -1822,15 +1824,22 @@ void SphereSweep::Compute()
     Segment[i].Uvalue[0] /= length;
     Segment[i].Uvalue[1] /= length;
 		Sphere[i].Uvalue= Segment[i].Uvalue[0]; 
-    // copy Vbase from next segment
-    Assign_Vector(Sphere[i].Vbase[0], Segment[i].Vbase[0]);
-    Assign_Vector(Sphere[i].Vbase[1], Segment[i].Vbase[1]);
 	}
-
+  // for Vbase, each sphere is mid-way from the two segments
+  for(i = 1; i< Num_Segments; i++)
+  {
+    NormalVectorInterpolation(Sphere[i].Vbase[0], Segment[i-1].Vbase[0], 0.5, Segment[i].Vbase[0]);
+    NormalVectorInterpolation(Sphere[i].Vbase[1], Segment[i-1].Vbase[1], 0.5, Segment[i].Vbase[1]);
+  }
 	// Calculate last sphere of last segment
 
 	last_sph = Num_Spheres - 1;
 	last_seg = Num_Segments - 1;
+  // first sphere & last sphere are special for Vbase
+  Assign_Vector(Sphere[0].Vbase[0], Segment[0].Vbase[0]);
+  Assign_Vector(Sphere[0].Vbase[1], Segment[0].Vbase[1]);
+	Assign_Vector(Sphere[last_sph].Vbase[0], Segment[last_seg].Vbase[0]);
+	Assign_Vector(Sphere[last_sph].Vbase[1], Segment[last_seg].Vbase[1]);
 
 	// Center
 	Assign_Vector(Sphere[last_sph].Center,
@@ -1840,8 +1849,8 @@ void SphereSweep::Compute()
 	              Segment[last_seg].Radius_Coef[0];
 	Sphere[last_sph].Uvalue=1.0;
   // Copy Vbase from last segment 
-    Assign_Vector(Sphere[last_sph].Vbase[0], Segment[last_seg].Vbase[0]);
-    Assign_Vector(Sphere[last_sph].Vbase[1], Segment[last_seg].Vbase[1]);
+	Assign_Vector(Segment[last_seg].Vbase[2], Segment[last_seg].Vbase[0]);
+	Assign_Vector(Segment[last_seg].Vbase[3], Segment[last_seg].Vbase[1]);
 
 	for(coef = 1; coef < Segment[last_seg].Num_Coefs; coef++)
 	{
@@ -1852,6 +1861,14 @@ void SphereSweep::Compute()
 		// Radius
 		Sphere[last_sph].Radius +=
 		       Segment[last_seg].Radius_Coef[coef];
+	}
+  // use the Vbase of the spheres at each end on each segment
+  for(i = 0; i < Num_Segments; i++)
+	{
+		Assign_Vector(Segment[i].Vbase[0], Sphere[i].Vbase[0]);
+		Assign_Vector(Segment[i].Vbase[1], Sphere[i].Vbase[1]);
+		Assign_Vector(Segment[i].Vbase[2], Sphere[i+1].Vbase[0]);
+		Assign_Vector(Segment[i].Vbase[3], Sphere[i+1].Vbase[1]);
 	}
 }
 
@@ -2048,4 +2065,42 @@ void SphereSweep::UVCoord(UV_VECT Result, const Intersection *Inter, TraceThread
   Result[U] = Inter->Iuv[U];
   Result[V] = Inter->Iuv[V];
 }
+
+/*
+ * Use Slerp : Spherical Linear intERPolation
+ * Constant speed motion along a unit-radius great-circle arc.
+ * start and end must be unit-length (normalized)
+ * ratio must be between 0.0 and 1.0
+ */
+void SphereSweep::NormalVectorInterpolation(VECTOR r, const VECTOR start, DBL ratio, const VECTOR end)
+{
+	DBL cosomega, omega, sinomega;
+	VDot(cosomega, start,end);
+	// we need that angle, otherwise sinomega= sqrt(1.0 - cosomega*cosomega) would have been easier
+	omega = acos(cosomega);
+  sinomega = sin(omega);
+	if (sinomega)
+	{
+		VLinComb2(r,sin((1.0-ratio)*omega)/sinomega,start,sin(ratio*omega)/sinomega,end);
+		// no need to normalize, the 1.0/sin(omega) factor did it already
+	}
+	else 
+	{
+    /*
+     * same start & end: no problem, always the same answer
+     *
+     * opposite start & end, choose one: the nearest
+     * there is no right answer for 0.5, so arbitrary choice between > and >=
+     */
+    if (ratio >0.5)
+    {
+			Assign_Vector(r,end);
+    }
+    else
+    {
+			Assign_Vector(r,start);
+    }
+	}
+}
+
 }
