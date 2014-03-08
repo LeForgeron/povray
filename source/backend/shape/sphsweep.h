@@ -87,7 +87,7 @@ struct Sphere_Sweep_Segment_Struct
 	VECTOR  Center_Coef[SPH_SWP_MAX_COEFS]; /* Coefs of center polynomial    */
 	DBL     Radius_Coef[SPH_SWP_MAX_COEFS]; /* Coefs of radius polynomial    */
   DBL         Uvalue[2];
-  VECTOR      Vbase[2];
+  VECTOR      Vbase[4];
 };
 
 // Temporary storage for intersection values
@@ -137,6 +137,7 @@ class SphereSweep : public ObjectBase
 		static int Find_Valid_Points(SPHSWEEP_INT *Inter, int Num_Inter, const Ray &ray);
 		static int Comp_Isects(const void *Intersection_1, const void *Intersection_2);
 		static int bezier_01(int degree, const DBL* Coef, DBL* Roots, bool sturm, DBL tolerance, TraceThreadData *Thread);
+    static void NormalVectorInterpolation(VECTOR r, const VECTOR start, DBL ratio, const VECTOR end);
 };
 
 }
