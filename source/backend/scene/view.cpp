@@ -1094,7 +1094,7 @@ void View::StartRender(POVMS_Object& renderOptions)
 	{
 		// do render with mosaic preview start size
 		for(int i = 0; i < maxRenderThreads; i++)
-			viewThreadData.push_back(dynamic_cast<ViewThreadData *>(renderTasks.AppendTask(new TraceTask(&viewData, 0, jitterscale, aathreshold, aadepth, aaGammaCurve, previewstartsize, false, false, highReproducibility))));
+			viewThreadData.push_back(dynamic_cast<ViewThreadData *>(renderTasks.AppendTask(new TraceTask(&viewData, 0, jitterscale, aathreshold, aadepth, aaGammaCurve, previewstartsize, false, true, highReproducibility))));
 
 		for(unsigned int step = (previewstartsize >> 1); step >= previewendsize; step >>= 1)
 		{
@@ -1109,7 +1109,7 @@ void View::StartRender(POVMS_Object& renderOptions)
 
 			// do render with current mosaic preview size
 			for(int i = 0; i < maxRenderThreads; i++)
-				viewThreadData.push_back(dynamic_cast<ViewThreadData *>(renderTasks.AppendTask(new TraceTask(&viewData, 0, jitterscale, aathreshold, aadepth, aaGammaCurve, step, true, ((step == 1) && (tracingmethod == 0)), highReproducibility))));
+				viewThreadData.push_back(dynamic_cast<ViewThreadData *>(renderTasks.AppendTask(new TraceTask(&viewData, 0, jitterscale, aathreshold, aadepth, aaGammaCurve, step, true, true, highReproducibility))));
 		}
 
 		// do render everything again if the final mosaic preview block size was not one or anti-aliasing is required
