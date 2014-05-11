@@ -521,7 +521,7 @@ void Scene::StartParser(POVMS_Object& parseOptions)
 
 	// do bounding - we always call this even if the bounding is turned off
 	// because it also generates object statistics
-	sceneThreadData.push_back(dynamic_cast<SceneThreadData *>(parserTasks.AppendTask(new BoundingTask(sceneData, parseOptions.TryGetInt(kPOVAttrib_BoundingThreshold, 1)))));
+	sceneThreadData.push_back(dynamic_cast<SceneThreadData *>(parserTasks.AppendTask(new BoundingTask(sceneData, parseOptions.TryGetInt(kPOVAttrib_BoundingThreshold, 3)))));
 
 	// wait for bounding
 	parserTasks.AppendSync();
