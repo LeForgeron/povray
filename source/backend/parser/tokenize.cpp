@@ -363,9 +363,9 @@ void Parser::Get_Token ()
 
 		Begin_String_Fast();
 
-		String[0] = c; /* This isn't necessary but helps debugging */
+		//String[0] = c; /* This isn't necessary but helps debugging */
 
-		String[1] = '\0';
+		//String[1] = '\0';
 
 		/*String_Index = 0;*/
 
@@ -811,9 +811,13 @@ inline void Parser::Begin_String()
 	if((String != NULL) && (String != String_Fast_Buffer))
 		POV_FREE(String);
 
+/*
 	String = reinterpret_cast<char *>(POV_MALLOC(256, "C String"));
 	String_Buffer_Free = 256;
 	String_Index = 0;
+*/
+  SlowString.clear();
+  SlowString.reserve(256);
 }
 
 
@@ -838,6 +842,7 @@ inline void Parser::Begin_String()
 
 inline void Parser::Stuff_Character(int chr)
 {
+/*
 	if(String_Buffer_Free <= 0)
 	{
 		Error("String too long.");
@@ -849,6 +854,8 @@ inline void Parser::Stuff_Character(int chr)
 	String[String_Index] = chr;
 	String_Buffer_Free--;
 	String_Index++;
+*/
+  SlowString+=char(chr);
 }
 
 
@@ -874,11 +881,14 @@ inline void Parser::Stuff_Character(int chr)
 inline void Parser::End_String()
 {
 	Stuff_Character(0);
-
+/*
 	if(String_Buffer_Free > 0)
 		String = reinterpret_cast<char *>(POV_REALLOC(String, String_Index, "String Literal Buffer"));
 
 	String_Buffer_Free = 0;
+*/
+  String = reinterpret_cast<char *>(POV_MALLOC(SlowString.length(), "String Literal Buffer"));
+  SlowString.copy(String, SlowString.length());
 }
 
 
@@ -903,11 +913,15 @@ inline void Parser::End_String()
 
 inline void Parser::Begin_String_Fast()
 {
+/*
 	if((String != NULL) && (String != String_Fast_Buffer))
 		POV_FREE(String);
 
 	String = String_Fast_Buffer;
 	String_Index = 0;
+*/
+  SlowString.clear();
+  SlowString.reserve(256);
 }
 
 
@@ -932,8 +946,11 @@ inline void Parser::Begin_String_Fast()
 
 inline void Parser::Stuff_Character_Fast(int chr)
 {
+/*
 	String[String_Index & MAX_STRING_LEN_MASK] = chr;
 	String_Index++;
+*/
+  SlowString+=char(chr);
 }
 
 
@@ -959,11 +976,15 @@ inline void Parser::Stuff_Character_Fast(int chr)
 inline void Parser::End_String_Fast()
 {
 	Stuff_Character_Fast(0);
-
+/*
 	String_Index--; // Stuff_Character_Fast incremented this
-
+  
 	if(String_Index != (String_Index & MAX_STRING_LEN_MASK))
+*/
+	if( MAX_STRING_LEN_FAST < SlowString.length()) 
 		Error("String too long.");
+  SlowString.copy(String_Fast_Buffer, MAX_STRING_LEN_FAST);
+  String = String_Fast_Buffer;
 }
 
 

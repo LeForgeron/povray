@@ -463,11 +463,12 @@ class Parser : public Task
 
 		char String_Fast_Buffer[MAX_STRING_LEN_FAST];
 
-		int String_Index;
-		int String_Buffer_Free;
+		//int String_Index;
+		//int String_Buffer_Free;
 
 		char *String;
 		char *String2;
+    std::string SlowString;
 
 		POV_LONG last_progress;
 
