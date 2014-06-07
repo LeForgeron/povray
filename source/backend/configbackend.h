@@ -167,7 +167,7 @@
 #define SMALL_TOLERANCE 0.001
 #define MAX_DISTANCE 1.0e7
 
-#define MIN_ISECT_DEPTH 1.0e-4
+#define MIN_ISECT_DEPTH 0.0
 
 #ifndef DBL_FORMAT_STRING
 	#define DBL_FORMAT_STRING "%lf"
