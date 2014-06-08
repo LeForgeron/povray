@@ -11,9 +11,9 @@
 
 /************************************************************************************
  * $File: //depot/povray/smp/distribution/scenes/camera/mesh_camera/demo_common.inc $
- * $Revision: #2 $
- * $Change: 5377 $
- * $DateTime: 2011/01/09 19:56:00 $
+ * $Revision: #6 $
+ * $Change: 6194 $
+ * $DateTime: 2014/02/13 12:05:00 $
  * $Author: jholsenback $
  ***********************************************************************************/
 
@@ -121,7 +121,7 @@ object{room
 #if (use_baking<2)
 light_source{
   <-2,8,-2>
-  rgb lc1
+  lc1
   spotlight radius 90 falloff -90 tightness 1 point_at <0,0,0>
   area_light .5*x,.5*z,4,4 jitter adaptive 1 orient circular
   fade_distance 1
@@ -129,7 +129,7 @@ light_source{
 }
 light_source{
   <1,1,0>*10
-  rgb lc2
+  lc2
   spotlight radius 90 falloff -90 tightness 1 point_at <0,1,0>
   area_light 1*x,1*z,4,4 jitter adaptive 1 orient circular
   fade_distance 1

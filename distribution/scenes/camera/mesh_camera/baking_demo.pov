@@ -14,16 +14,12 @@
 
 /************************************************************************************
  * $File: //depot/povray/smp/distribution/scenes/camera/mesh_camera/baking_demo.pov $
- * $Revision: #4 $
- * $Change: 5378 $
- * $DateTime: 2011/01/09 21:25:00 $
+ * $Revision: #8 $
+ * $Change: 6194 $
+ * $DateTime: 2014/02/13 12:05:00 $
  * $Author: jholsenback $
  ***********************************************************************************/
 #version 3.7;
-
-// standard includes
-#include "colors.inc"
-#include "textures.inc"
 
 // control center
 #ifndef(use_baking) // do not set it if  it is already set on the command line by the bake.sh script
@@ -43,9 +39,16 @@ global_settings{
 }
 #default{texture{finish{ambient 0 diffuse 1}}}
 #else
+global_settings{
+ assumed_gamma 1.0
+}
 // ...otherwise, just use emission on all the finishes
 #default{texture{finish{ambient 0 emission 1 diffuse 0}}}
 #end
+
+// standard includes
+#include "colors.inc"
+#include "textures.inc"
 
 // common test subject and scenario for all the demos
 #include "demo_common.inc"
