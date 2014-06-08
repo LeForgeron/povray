@@ -12,12 +12,16 @@
 
 /********************************************************************************************
  * $File: //depot/povray/smp/distribution/scenes/camera/mesh_camera/baking_repair_seams.pov $
- * $Revision: #2 $
- * $Change: 5377 $
- * $DateTime: 2011/01/09 19:56:00 $
+ * $Revision: #6 $
+ * $Change: 6194 $
+ * $DateTime: 2014/02/13 12:05:00 $
  * $Author: jholsenback $
  *******************************************************************************************/
 #version 3.7;
+
+global_settings{
+ assumed_gamma 1.0
+}
 
 #declare bake_padding=.005;
 
