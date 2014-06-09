@@ -6141,7 +6141,6 @@ ObjectPtr Parser::Parse_TrueType ()
 	DBL depth;
 	VECTOR offset;
 	int builtin_font = 0;
-	TRANSFORM Local_Trans;
 
 	Parse_Begin ();
 
@@ -6190,11 +6189,6 @@ ObjectPtr Parser::Parse_TrueType ()
 
 	/**** Compute_TTF_BBox(Object); */
 	Object->Compute_BBox();
-
-	/* This tiny rotation should fix cracks in text that lies along an axis */
-	Make_Vector(offset, 0.001, 0.001, 0.001);
-	Compute_Rotation_Transform(&Local_Trans, offset);
-	Rotate_Object (reinterpret_cast<ObjectPtr>(Object), offset, &Local_Trans);
 
 	/* Get any rotate/translate or texturing stuff */
 	Object = Parse_Object_Mods (reinterpret_cast<ObjectPtr>(Object));
