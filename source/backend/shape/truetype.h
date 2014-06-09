@@ -78,6 +78,7 @@ class TrueType : public ObjectBase
 		virtual void Compute_BBox();
 
 		static void ProcessNewTTF(CSG *Object, const char *filename, const int font_id, const UCS2 *text_string, DBL depth, const VECTOR offset, Parser *parser, shared_ptr<SceneData>& sceneData);
+		static void ProcessTTFGalley(CSG *Object, const char *filename, const int font_id, const UCS2 *text_string, const VECTOR vecone, const VECTOR spec, Parser *parser, shared_ptr<SceneData>& sceneData);
 	protected:
 		bool Inside_Glyph(double x, double y, const GlyphStruct* glyph) const;
 		int solve_quad(double *x, double *y, double mindist, DBL maxdist) const;

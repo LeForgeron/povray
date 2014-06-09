@@ -83,6 +83,7 @@ enum
 	POV_File_Data_LOG,
 	POV_File_Data_Backup,
 	POV_File_Font_TTF,
+	POV_File_Data_GTS,
 	POV_File_Count
 };
 
@@ -151,6 +152,7 @@ class IStream : public IOBase
 		virtual IStream& UnRead_Byte(int c);
 		virtual IStream& getline(char *s, size_t buflen);
 		IStream& ignore(POV_LONG count) { seekg(count, seek_cur); return *this; }
+		inline FILE *File(){return f;} // TODO FIXME [jg] needed for fscanf in parser/tesselation.cpp
 };
 
 /*

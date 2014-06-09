@@ -134,6 +134,11 @@ inline void BOUNDS_VOLUME(DBL& a, const BBOX& b)
 	a = b.Lengths[X] * b.Lengths[Y] * b.Lengths[Z];
 }
 
+inline bool IS_FINITE(const BBOX&b)
+{
+	return ( (pow(b.Lengths[X],3)<BOUND_HUGE)&& (pow(b.Lengths[Y],3)<BOUND_HUGE)&& (pow(b.Lengths[Z],3)<BOUND_HUGE));
+}
+
 }
 
 #endif

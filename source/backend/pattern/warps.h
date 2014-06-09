@@ -56,6 +56,10 @@ namespace pov
 #define PLANAR_WARP         9
 // JN2007: Cubic warp
 #define CUBIC_WARP         10
+#define SPHERE_WARP        11
+#define CYLINDER_WARP      12
+#define TORUS_WARP         13
+#define CONE_WARP          14
 
 
 /*****************************************************************************
@@ -69,6 +73,10 @@ typedef struct Spherical_Warp SPHEREW;
 typedef struct Cylindrical_Warp CYLW;
 typedef struct Toroidal_Warp TOROIDAL;
 typedef struct Planar_Warp PLANARW;
+typedef struct Angular_Warp SPHEREWARP;
+typedef struct Angular_Warp CYLINDERWARP;
+typedef struct Angular2_Warp TORUSWARP;
+typedef struct Angular2_Warp CONEWARP;
 
 struct Toroidal_Warp : public Warps_Struct
 {
@@ -105,6 +113,21 @@ struct Repeat_Warp : public Warps_Struct
 struct Trans_Warp : public Warps_Struct
 {
 	TRANSFORM Trans;
+};
+
+struct Angular_Warp : public Warps_Struct
+{
+  VECTOR      Center ;
+  VECTOR      Param ;
+  int         Inversed;
+};
+ 
+struct Angular2_Warp : public Warps_Struct
+{
+  VECTOR      Center ;
+  VECTOR      Param ;
+  DBL         Radius ;
+  int         Inversed;
 };
 
 struct Black_Hole_Warp : public Warps_Struct

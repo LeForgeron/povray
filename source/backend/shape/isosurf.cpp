@@ -644,7 +644,6 @@ IsoSurface::IsoSurface() : ObjectBase(ISOSURFACE_OBJECT)
 	eval = false;
 	closed = true;
 	container_shape = 0;
-	isCopy = false;
 
 	max_gradient = 1.1;
 	gradient = 0.0;
@@ -657,6 +656,7 @@ IsoSurface::IsoSurface() : ObjectBase(ISOSURFACE_OBJECT)
 	mginfo->eval_max = 0.0;
 	mginfo->eval_cnt = 0.0;
 	mginfo->eval_gradient_sum = 0.0;
+    mginfo->print_done = false;
 }
 
 
@@ -698,9 +698,6 @@ ObjectPtr IsoSurface::Copy()
 
 	New->mginfo = mginfo;
 	New->mginfo->refcnt++;
-
-	// mark it as copy for use by max_gradient warning code
-	New->isCopy = true;
 
 	return (New);
 }
@@ -776,8 +773,9 @@ void IsoSurface::DispatchShutdownMessages(MessageFactory& messageFactory)
 	mginfo->gradient = max(gradient, mginfo->gradient);
 	mginfo->max_gradient = max((DBL)temp_max_gradient, mginfo->max_gradient);
 
-	if (isCopy == false)
+	if (mginfo->print_done == false)
 	{
+        mginfo->print_done == true;
 		FunctionCode *fn = vm->GetFunction(*(Function));
 
 		if (fn != NULL)

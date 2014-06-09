@@ -447,6 +447,9 @@ void Trace::ComputeTextureColour(Intersection& isect, Colour& colour, const Ray&
 	double normaldirection;
 	Colour tmpCol;
 	Colour c1;
+	ColourInterpolation ci=CI_RGB;
+	DBL h,s,v,l,sh,ss=0.0,sv=0.0,sl=0.0,sx=0.0,sy=0.0,x,y;
+	COLC r,g,b;
 	Vector2d uvcoords;
 	Vector3d rawnormal;
 	Vector3d ipoint(isect.IPoint);
@@ -503,7 +506,7 @@ void Trace::ComputeTextureColour(Intersection& isect, Colour& colour, const Ray&
 	// get textures and weights
 	if(isMultiTextured == true)
 	{
-		isect.Object->Determine_Textures(&isect, normaldirection > 0.0, wtextures, threadData);
+		isect.Object->Determine_Textures(&isect, normaldirection > 0.0, wtextures, ci, threadData);
 	}
 	else if(isect.Object->Texture != NULL)
 	{
@@ -550,11 +553,93 @@ void Trace::ComputeTextureColour(Intersection& isect, Colour& colour, const Ray&
 		{
 			ComputeOneTextureColour(c1, i->texture, *warps, ipoint, rawnormal, ray, weight, isect, false, false, ticket);
 
-			tmpCol.red()    += i->weight * c1.red();
-			tmpCol.green()  += i->weight * c1.green();
-			tmpCol.blue()   += i->weight * c1.blue();
+			switch(ci)
+			{
+				case CI_RGB:
+					/* no change */
+					tmpCol.red()    += i->weight * c1.red();
+					tmpCol.green()  += i->weight * c1.green();
+					tmpCol.blue()   += i->weight * c1.blue();
+					break;
+				case CI_HSV:
+					ConvertRGB2HSV(c1.red(),c1.green(),c1.blue(),&h,&s,&v);
+					sv += i->weight*v;
+					ss += i->weight*s;
+					/* handle H as vector , length S*/
+					ConvertHS2XY(h,s,&x,&y);
+					sx += i->weight*x;
+					sy += i->weight*y;
+					break;
+					break;
+				case CI_HSL:
+					ConvertRGB2HSL(c1.red(),c1.green(),c1.blue(),&h,&s,&l);
+					sl += i->weight*l;
+					ss += i->weight*s;
+					/* handle H as vector , length S*/
+					ConvertHS2XY(h,s,&x,&y);
+					sx += i->weight*x;
+					sy += i->weight*y;
+					break;
+				case CI_XYV:
+					ConvertRGB2HSV(c1.red(),c1.green(),c1.blue(),&h,&s,&v);
+					ConvertHS2XY(h,s,&x,&y);
+					sv += i->weight*v;
+					sx += i->weight*x;
+					sy += i->weight*y;
+					break;
+				case CI_XYL:
+					ConvertRGB2HSL(c1.red(),c1.green(),c1.blue(),&h,&s,&l);
+					ConvertHS2XY(h,s,&x,&y);
+					sl += i->weight*l;
+					sx += i->weight*x;
+					sy += i->weight*y;
+					break;
+			}
 			tmpCol.transm() += i->weight * c1.transm();
 		}
+	}
+	if(photonPass != true)
+	{
+		switch(ci)
+		{
+			case CI_RGB:
+				/* no change */
+				r = tmpCol.red();
+				g = tmpCol.green();
+				b = tmpCol.blue();
+				break;
+			case CI_HSV:
+				/* handle sh as vector */
+				ConvertXY2HS(sx,sy,&sh,&sl); /* drop S into sl, ignore it */
+				if (!(sl>0.00000001))
+				{
+					sh=0;
+					ss=0;
+				}
+				ConvertHSV2RGB(sh,ss,sv,r,g,b);
+				break;
+			case CI_HSL:
+				/* handle sh as vector */
+				ConvertXY2HS(sx,sy,&sh,&sv); /* drop S into sv, ignore it */
+				if (!(sv>0.00000001))
+				{
+					sh=0;
+					ss=0;
+				}
+				ConvertHSL2RGB(sh,ss,sl,r,g,b);
+				break;
+			case CI_XYV:
+				ConvertXY2HS(sx,sy,&sh,&ss);
+				ConvertHSV2RGB(sh,ss,sv,r,g,b);
+				break;
+			case CI_XYL:
+				ConvertXY2HS(sx,sy,&sh,&ss);
+				ConvertHSL2RGB(sh,ss,sl,r,g,b);
+				break;
+		}
+		tmpCol.red() = r;
+		tmpCol.green() = g;
+		tmpCol.blue() = b;
 	}
 
 	// [CLi] moved this here from Trace::ComputeShadowTexture() and Trace::ComputeLightedTexture(), respectively,
@@ -666,8 +751,9 @@ void Trace::ComputeOneTextureColour(Colour& resultcolour, const TEXTURE *texture
 			{
 				ComputeOneTextureColour(c2, prev->Vals.Texture, warps, tpoint, rawnormal, ray, weight, isect, shadowflag, photonPass, ticket);
 				value1 = (value1 - prev->value) / (cur->value - prev->value);
-				value2 = 1.0 - value1;
-				resultcolour = value1 * resultcolour + value2 * c2;
+				Interpolate2Colors(resultcolour,c2,resultcolour,value1,blendmap->Space);
+				//value2 = 1.0 - value1;
+				//resultcolour = value1 * resultcolour + value2 * c2;
 			}
 		}
 	}
@@ -2210,6 +2296,9 @@ void Trace::ComputeShadowColour(const LightSource &lightsource, Intersection& is
 	Vector3d ipoint;
 	Vector3d raw_Normal;
 	Colour fc1, temp_Colour;
+	ColourInterpolation ci=CI_RGB;
+	COLC r,g,b;
+	DBL h,s,v,l,sh,ss=0.0,sv=0.0,sl=0.0,sx=0.0,sy=0.0,x,y;
 	Vector2d uv_Coords;
 	double normaldirection;
 
@@ -2308,7 +2397,7 @@ void Trace::ComputeShadowColour(const LightSource &lightsource, Intersection& is
 	// get textures and weights
 	if(isMultiTextured == true)
 	{
-		isect.Object->Determine_Textures(&isect, normaldirection > 0.0, wtextures, threadData);
+		isect.Object->Determine_Textures(&isect, normaldirection > 0.0, wtextures, ci, threadData);
 	}
 	else if(isect.Object->Texture != NULL)
 	{
@@ -2339,7 +2428,82 @@ void Trace::ComputeShadowColour(const LightSource &lightsource, Intersection& is
 		ComputeOneTextureColour(fc1, i->texture, *warps, ipoint, raw_Normal, lightsourceray, 0.0, isect, true, false, ticket);
 
 		temp_Colour += i->weight * fc1;
+		switch(ci)
+		{
+			case CI_RGB: // Do nothing more  (Transmit & Filter are common to all cases)
+				break;
+			case CI_HSV:
+				ConvertRGB2HSV(fc1.red(),fc1.green(),fc1.blue(),&h,&s,&v);
+				sv += i->weight*v;
+				ss += i->weight*s;
+				/* handle H as vector , length S*/
+				ConvertHS2XY(h,s,&x,&y);
+				sx += i->weight*x;
+				sy += i->weight*y;
+				break;
+			case CI_HSL:
+				ConvertRGB2HSL(fc1.red(),fc1.green(),fc1.blue(),&h,&s,&l);
+				sl += i->weight*l;
+				ss += i->weight*s;
+				/* handle H as vector , length S*/
+				ConvertHS2XY(h,s,&x,&y);
+				sx += i->weight*x;
+				sy += i->weight*y;
+				break;
+			case CI_XYV:
+				ConvertRGB2HSV(fc1.red(),fc1.green(),fc1.blue(),&h,&s,&v);
+				ConvertHS2XY(h,s,&x,&y);
+				sv += i->weight*v;
+				sx += i->weight*x;
+				sy += i->weight*y;
+				break;
+			case CI_XYL:
+				ConvertRGB2HSL(fc1.red(),fc1.green(),fc1.blue(),&h,&s,&l);
+				ConvertHS2XY(h,s,&x,&y);
+				sl += i->weight*l;
+				sx += i->weight*x;
+				sy += i->weight*y;
+				break;
+		}
 	}
+	switch(ci)
+	{
+		case CI_RGB:
+			/* no change */
+			r = temp_Colour.red();
+			g = temp_Colour.green();
+			b = temp_Colour.blue();
+			break;
+		case CI_HSV:
+			/* handle sh as vector */
+			ConvertXY2HS(sx,sy,&sh,&sl); /* drop S into sl, ignore it */
+			if (!(sl>0.00000001))
+			{
+				sh=0;
+				ss=0;
+			}
+			ConvertHSV2RGB(sh,ss,sv,r,g,b);
+			break;
+		case CI_HSL:
+			/* handle sh as vector */
+			ConvertXY2HS(sx,sy,&sh,&sv); /* drop S into sv, ignore it */
+			if (!(sv>0.00000001))
+			{
+				sh=0;
+				ss=0;
+			}
+			ConvertHSL2RGB(sh,ss,sl,r,g,b);
+			break;
+		case CI_XYV:
+			ConvertXY2HS(sx,sy,&sh,&ss);
+			ConvertHSV2RGB(sh,ss,sv,r,g,b);
+			break;
+		case CI_XYL:
+			ConvertXY2HS(sx,sy,&sh,&ss);
+			ConvertHSL2RGB(sh,ss,sl,r,g,b);
+			break;
+	}
+	temp_Colour.set(r,g,b,temp_Colour.filter(),temp_Colour.transm());
 
 	lightColorCacheIndex--;
 

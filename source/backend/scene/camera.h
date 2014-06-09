@@ -55,6 +55,28 @@ namespace pov
 #define CYL_4_CAMERA           10
 #define SPHERICAL_CAMERA       11
 #define MESH_CAMERA            12
+#define PROJ_TETRA_CAMERA                13
+#define PROJ_CUBE_CAMERA                 14
+#define PROJ_OCTA_CAMERA                 15
+#define PROJ_ICOSA_CAMERA                16
+#define PROJ_MERCATOR_CAMERA             17
+#define PROJ_LAMBERT_CYL_CAMERA          18
+#define PROJ_BEHRMANN_CAMERA             19
+#define PROJ_CRASTER_CAMERA              20
+#define PROJ_EDWARDS_CAMERA              21
+#define PROJ_HOBO_DYER_CAMERA            22
+#define PROJ_PETERS_CAMERA               23
+#define PROJ_GALL_CAMERA                 24
+#define PROJ_BALTHASART_CAMERA           25
+#define PROJ_AITOFF_CAMERA               26
+#define PROJ_MOLLWEIDE_CAMERA            27
+#define PROJ_LAMBERT_AZI_CAMERA          28
+#define PROJ_VAN_DER_GRINTEN_CAMERA      29
+#define PROJ_PLATECARREE_CAMERA          30
+#define PROJ_ECKERT4_CAMERA              31
+#define PROJ_ECKERT6_CAMERA              32
+#define PROJ_MILLER_CAMERA               33
+#define STEREOSCOPIC_CAMERA         34
 
 /*****************************************************************************
 * Global typedefs
@@ -82,6 +104,8 @@ public:
 	TNORMAL *Tnormal;               // Primary ray pertubation.
 	TRANSFORM *Trans;               // Used only to record the user's input
 	PIGMENT *Bokeh;                 // Pigment to use for the bokeh
+    DBL Eye_Distance;               // Stereoscopic camera
+    DBL Parallaxe;                  // Stereoscopic camera
 
 	// the following declarations are used for the mesh camera
 	unsigned int Face_Distribution_Method;  // how to associate a pixel to a face within a mesh

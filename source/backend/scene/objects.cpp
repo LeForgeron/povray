@@ -945,14 +945,15 @@ void ObjectBase::UVCoord(UV_VECT Result, const Intersection *Inter, TraceThreadD
 	Result[V] = Inter->IPoint[Y];
 }
 
-void ObjectBase::Determine_Textures(Intersection *isect, bool hitinside, WeightedTextureVector& textures, TraceThreadData *threaddata)
+void ObjectBase::Determine_Textures(Intersection *isect, bool hitinside, WeightedTextureVector& textures, ColourInterpolation& ci, TraceThreadData *threaddata)
 {
+	ci = CI_RGB; /* That's the usual value everybody is used to */
 	if((Interior_Texture != NULL) && (hitinside == true))
 		textures.push_back(WeightedTexture(1.0, Interior_Texture));
 	else if(Texture != NULL)
 		textures.push_back(WeightedTexture(1.0, Texture));
 	else if(isect->Csg != NULL)
-		isect->Csg->Determine_Textures(isect, hitinside, textures, threaddata);
+		isect->Csg->Determine_Textures(isect, hitinside, textures, ci, threaddata);
 }
 
 bool ObjectBase::Intersect_BBox(BBoxDirection variant, const BBOX_VECT& origin, const BBOX_VECT& invdir, BBOX_VAL maxd) const

@@ -64,6 +64,8 @@
 #include "backend/shape/polygon.h"
 #include "backend/scene/threaddata.h"
 #include "base/pov_err.h"
+// Added to copy the texture list
+#include "backend/texture/texture.h"
 
 #include <algorithm>
 
@@ -539,6 +541,9 @@ Polygon::Polygon() : ObjectBase(POLYGON_OBJECT)
 	Make_Vector(S_Normal, 0.0, 0.0, 1.0);
 
 	Data = NULL;
+	Textures = NULL;
+	Strength = 1.0;
+	Colour_Interpolation = CI_RGB;
 }
 
 
@@ -582,7 +587,22 @@ ObjectPtr Polygon::Copy()
 	New->Trans = Copy_Transform(Trans);
 	New->Data = Data;
 	New->Data->References++;
-
+	if (this->Textures)
+	{
+  // TODO: Share the Textures instead of copying
+		New->Textures = (TEXTURE **)POV_MALLOC((New->Data->Number+1)*sizeof(TEXTURE*), "temporary polygon textures");
+		for (int i=0;i<=New->Data->Number;i++)
+		{
+			if (this->Textures[i])
+			{
+				New->Textures[i] = Copy_Texture_Pointer((TEXTURE *)this->Textures[i]);
+			}
+			else
+			{
+				New->Textures[i] = NULL;
+			}
+		}
+	}
 	return (New);
 }
 
@@ -627,6 +647,11 @@ Polygon::~Polygon()
 		POV_FREE (Data->Points);
 
 		POV_FREE (Data);
+	}
+
+	if (Textures)
+	{
+		POV_FREE(Textures);
 	}
 
 	Destroy_Transform(Trans);
@@ -1007,6 +1032,220 @@ bool Polygon::in_polygon(int number, UV_VECT *points, DBL u, DBL  v)
 	}
 
 	return(inside_flag);
+}
+
+
+void Polygon::Determine_Textures(Intersection * isec, bool, WeightedTextureVector& wtv, ColourInterpolation& ci, TraceThreadData *)
+{
+
+	VECTOR P;
+	DBL Zar,Yar,Xar,k;
+	DBL sum,maxw,product,minw;
+	int i;
+	int Active=0;
+	int nearer;
+	int Count;
+
+	ci = this->Colour_Interpolation;
+
+	/* Transform the point into the blob space. */
+
+	if (this->Trans != NULL)
+	{
+		MInvTransPoint(P, isec->IPoint, this->Trans);
+	}
+	else
+	{
+		Assign_Vector(P, isec->IPoint);
+	}
+
+	Count = this->Data->Number;
+	DBL Weights[Count];
+	/* Final weight (not normalised) is product of all squared distances
+	 * to other points of the polygon.
+	 * this->Texture[i] is null for duplicated point to ignore.
+	 * Their distance is 1 in the first step.
+	 * Then we reduce the max distance to 1
+	 * (the scaling is not done for duplicated points)
+	 *
+	 * compute the product of all elements,
+	 * replace the distance as product/distance 
+	 * (for duplicated point, set to 0)
+	 *
+	 * Final stage is a classical normalisation
+	 */
+	maxw=0;
+	minw=INFINITY;
+	nearer=0;
+	for(i=0;i<Count;i++)
+	{
+		if (this->Textures[i])
+		{
+			Xar=this->Data->Points[i][X]-P[X];
+			Yar=this->Data->Points[i][Y]-P[Y];
+			Zar=P[Z]; /* should be null, but distance is 3D */
+			Weights[i]=Xar*Xar+Yar*Yar+Zar*Zar;
+			if (Weights[i]>maxw)
+			{
+				maxw=Weights[i];
+			} 
+			if (Weights[i]<minw)
+			{
+				minw=Weights[i];
+				nearer=i;
+			}
+		}
+		else
+		{
+			Weights[i]=1.0;
+		}
+	}
+	maxw=1.0/maxw; /* Divide once now, multiply many times later */
+	k=1/exp(this->Strength);
+	if (minw>0)
+	{
+		minw=0.0; /* reusing as max that time */
+		for(i=0;i<Count;i++)
+		{
+			if (this->Textures[i])
+			{
+				Weights[i]*=maxw; /* reduce to less than 1. */
+				/* now that W is less than 1, log(W)<0, so
+				 * S*log(W) < 0, and therefor 0 < exp(S*log(W) <1
+				 * which means no problem of overflow.
+				 * (underflow are possible, but rounded to 0 should be fine)
+				 *
+				 * So here we compute W^S
+				 */
+				Weights[i]=exp(this->Strength * log(Weights[i]))*k;
+				if (minw < Weights[i])
+				{
+					minw = Weights[i];
+				}
+			}
+		}
+		maxw = 1.0/minw;
+		minw=INFINITY;
+		for(i=0;i<Count;i++)
+		{
+			if (this->Textures[i])
+			{
+				Weights[i]*=maxw; /* reduce to less than 1. */
+				if (minw > Weights[i])
+				{
+					minw = Weights[i];
+				}
+			}
+		}
+		product=1.0;
+		for(i=0;i< Count;i++)
+		{
+			product*=Weights[i];
+		}
+	}
+	else
+	{
+		product=0.0;
+		minw=0.0;
+	} 
+	if ((product > 1e-275))
+	{
+		/* beware of underflow & overflow */
+		for(i=0;i< Count;i++)
+		{
+			if (this->Textures[i])
+			{
+				Weights[i]=product/Weights[i];
+			}
+			else
+			{
+				Weights[i]=0;
+			}
+		}
+	}
+	else 
+	{
+		/* intersection is at a vertex of the polygon 
+		 * so let's inverse the binary weights: 0 (distance) become 1
+		 * non-null distance become 0.
+		 *
+		 * multiple textures are possible if the polygon has holes 
+		 */
+		k=(minw)*sqrt(Count);
+
+		for(i=0;i< Count;i++)
+		{
+			if (this->Textures[i])
+			{
+				if (minw)
+				{
+					Weights[i]=(Weights[i]<=k)?(minw/Weights[i]):0.0;
+				}
+				else
+				{
+					Weights[i]=(Weights[i]<=k)?1.0:0.0;
+				}
+				if (Weights[i])
+				{
+					Active++;
+				}
+			}
+			else
+			{
+				Weights[i]=0.0;
+			}
+		}
+		if (!Active)
+		{
+			/* product was null per multiplication of very small values */
+			Weights[nearer]=1.0;
+		}
+	} 
+
+
+	/* Normalize weights so that their sum is 1. */
+	/* A null sum is not possible, in theory */
+	/* but an infinite value is (especially with big Strength) */
+	sum = 0.0;
+	maxw = 0.0;
+
+	for (i = 0; i < Count; i++)
+	{
+		sum += Weights[i];
+		if (maxw < Weights[i])
+		{
+			maxw = Weights[i];
+		}
+	}
+
+	if ((sum == 0.0)&&(Active))
+	{
+		/* should not happen unless underflow due to very small Strength
+		 * In such case, every texture get the same weigth which is 
+		 * 1/Active
+		 */
+		for(i=0;i< Count;i++)
+		{
+			if (this->Textures[i])
+			{
+				wtv.push_back(WeightedTexture(1/Active,Textures[i]));
+			}
+		}
+	}
+	else if ((Active==0)&&(sum==0.0))
+	{
+		wtv.push_back(WeightedTexture(1.0,Textures[nearer]));
+	} 
+	else 
+	{
+		for(i=0;i< Count;i++)
+		{
+			if (Weights[i]&&Textures[i])
+			{
+				wtv.push_back(WeightedTexture(Weights[i]/sum,Textures[i]));
+			}
+		}
+	}
 }
 
 }

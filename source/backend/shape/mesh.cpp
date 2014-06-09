@@ -667,6 +667,7 @@ Mesh::Mesh() : ObjectBase(MESH_OBJECT)
 
 	Number_Of_Textures=0; /* [LSK] these were uninitialized */
 	Textures=NULL;
+	Colour_Interpolation = CI_RGB;
 }
 
 
@@ -2485,7 +2486,7 @@ bool Mesh::inside_bbox_tree(const Ray &ray, TraceThreadData *Thread) const
 	return ((found & 1) != 0);
 }
 
-void Mesh::Determine_Textures(Intersection *isect, bool hitinside, WeightedTextureVector& textures, TraceThreadData *Threaddata)
+void Mesh::Determine_Textures(Intersection *isect, bool hitinside, WeightedTextureVector& textures, ColourInterpolation& ci,  TraceThreadData *Threaddata)
 {
 	const MESH_TRIANGLE *tri = reinterpret_cast<const MESH_TRIANGLE *>(isect->Pointer);
 
@@ -2497,6 +2498,7 @@ void Mesh::Determine_Textures(Intersection *isect, bool hitinside, WeightedTextu
 		VECTOR epoint;
 		COLC w1, w2, w3;
 		COLC wsum;
+		ci = Colour_Interpolation;
 
 		if(Trans != NULL)
 			MInvTransPoint(epoint, isect->IPoint, Trans);

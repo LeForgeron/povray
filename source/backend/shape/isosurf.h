@@ -64,6 +64,7 @@ struct ISO_Max_Gradient
 	unsigned int refcnt;
 	DBL max_gradient, gradient;
 	DBL eval_max, eval_cnt, eval_gradient_sum, eval_var;
+    bool print_done;
 };
 
 struct ISO_ThreadData
@@ -92,7 +93,6 @@ class IsoSurface : public ObjectBase
 		int max_trace;
 		bool closed;
 		bool eval;
-		bool isCopy;
 
 		int container_shape;
 		union

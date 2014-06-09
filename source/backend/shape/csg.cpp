@@ -1003,8 +1003,9 @@ void CSG::Compute_BBox()
 *
 ******************************************************************************/
 
-void CSG::Determine_Textures(Intersection *isect, bool hitinside, WeightedTextureVector& textures, TraceThreadData *threaddata)
+void CSG::Determine_Textures(Intersection *isect, bool hitinside, WeightedTextureVector& textures, ColourInterpolation& ci, TraceThreadData *threaddata)
 {
+	ci = CI_RGB; /* unless overriden by a deeper compound object */
 	if(!children.empty())
 	{
 		if(Type & CSG_DIFFERENCE_OBJECT)
@@ -1016,7 +1017,7 @@ void CSG::Determine_Textures(Intersection *isect, bool hitinside, WeightedTextur
 			if(children[0]->Inside(isect->IPoint, threaddata))
 			{
 				if(children[0]->Type & IS_COMPOUND_OBJECT)
-					children[0]->Determine_Textures(isect, hitinside, textures, threaddata);
+					children[0]->Determine_Textures(isect, hitinside, textures, ci, threaddata);
 				else if(children[0]->Texture != NULL)
 					textures.push_back(WeightedTexture(1.0, children[0]->Texture));
 			}
@@ -1030,7 +1031,7 @@ void CSG::Determine_Textures(Intersection *isect, bool hitinside, WeightedTextur
 				if((*Current_Sib)->Inside(isect->IPoint, threaddata))
 				{
 					if((*Current_Sib)->Type & IS_COMPOUND_OBJECT)
-						(*Current_Sib)->Determine_Textures(isect, hitinside, textures, threaddata);
+						(*Current_Sib)->Determine_Textures(isect, hitinside, textures, ci, threaddata); // [JG] Possible issue for conflicting ci
 					else if((*Current_Sib)->Texture != NULL)
 						textures.push_back(WeightedTexture(1.0, (*Current_Sib)->Texture));
 				}

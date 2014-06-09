@@ -150,6 +150,291 @@ enum
 	pTRANSM = 4
 };
 
+enum ColourInterpolation
+{
+	CI_RGB,
+	CI_HSV,
+	CI_HSL,
+	CI_XYV,
+	CI_XYL
+};
+
+inline COLC SubHSL2RGB(DBL t,DBL p,DBL q)
+{
+	if (t<1.0/6.0)
+	{
+		return (p+((q-p)*6.0*t));
+	}
+	else if (t<0.5)
+	{
+		return q;
+	} else if (t<2.0/3.0)
+	{
+		return (p+(q-p)*6.0*(2.0/3.0-t));
+	} else
+	{
+		return p;
+	}
+}
+
+inline void ConvertRGB2HSL(COLC r,COLC g,COLC b,DBL *h,DBL *s,DBL *l)
+{
+
+	DBL mx, mn, delta;
+
+	/* ----------- Convert to HSV -------------- */
+
+	mx = max3(r,g,b);
+	mn = min3(r,g,b);
+
+	*l = (mx+mn)/2;
+	*h = 3.0;
+
+	delta = mx-mn;
+	if( delta > 0.0 && mx > 0.0 )
+	{
+		if (*l>0.5)
+		{
+			*s = delta/(2.0-mx-mn);
+		}
+		else
+		{
+			*s = delta/(mx+mn);
+		}
+
+		if( r == mx )
+			*h = (g-b)/delta;
+		else if( g == mx )
+			*h = 2.0 + (b-r)/delta;
+		else if( b == mx )
+			*h = 4.0 + (r-g)/delta;
+	}
+	else
+	{
+		*s=0.0;
+	}
+
+	*h *= 60.0;
+	if( *h < 0.0 ) *h += 360.0;
+
+}
+
+inline void ConvertRGB2HSV(COLC r,COLC g,COLC b,DBL *h,DBL *s,DBL *v)
+{
+	DBL mx, mn, delta;
+
+	/* ----------- Convert to HSV -------------- */
+
+	mx = max3(r,g,b);
+	mn = min3(r,g,b);
+
+	*v = mx;
+	*h = 5.0;
+
+	delta = mx-mn;
+	if( delta > 0.0 && mx > 0.0 )
+	{
+		*s = delta/mx;
+
+		if( r == mx )
+			*h = (g-b)/delta;
+		else if( g == mx )
+			*h = 2.0 + (b-r)/delta;
+		else if( b == mx )
+			*h = 4.0 + (r-g)/delta;
+	}
+	else
+	{
+		*s=0.0;
+	}
+
+	*h *= 60.0;
+	while( *h < 0.0 ) {*h += 360.0;}
+	while( *h > 360.0 ) {*h -= 360.0;}
+
+}
+
+inline void ConvertHSV2RGB(DBL h,DBL s,DBL v,COLC &r,COLC &g,COLC &b)
+{
+	if (s>0.0)
+	{
+		int hi;
+		DBL f,p,q,t;
+		while(h>=360.0) { h-=360.0; }
+		while(h<0.0) { h+=360.0; }
+
+		hi=((int)(h/60.0))%6;
+
+		if (s>1.0) { s=1.0; }
+		f= h/60.0 - hi;
+		p= v*(1.0-s);
+		q= v*(1.0-f*s);
+		t= v*(1.0-(1.0-f)*s);
+		switch(hi)
+		{
+			case 0:
+				r = v;
+				g = t;
+				b = p;
+				break;
+			case 1:
+				r = q;
+				g = v;
+				b = p;
+				break;
+			case 2:
+				r = p;
+				g = v;
+				b = t;
+				break;
+			case 3:
+				r = p;
+				g = q;
+				b = v;
+				break;
+			case 4:
+				r = t;
+				g = p;
+				b = v;
+				break;
+			case 5:
+				r = v;
+				g = p;
+				b = q;
+				break;
+		}
+	}
+	else
+	{
+		r = g = b = v;
+	}
+}
+
+inline void ConvertHSL2RGB(DBL h,DBL s,DBL l,COLC &r,COLC &g,COLC &b)
+{
+	if (s>0.0)
+	{
+		DBL tr,tg,tb;
+		DBL q,p;
+		if (l<0.5)
+		{
+			q=l*(1.0+s);
+		}
+		else
+		{
+			q=l+s-(l*s);
+		}
+		p=2.0*l-q;
+		tg=h/360.0;
+		tr=h/360.0+1.0/3.0;
+		tb=h/360.0-1.0/3.0;
+		while (tr>1.0) { tr -=1.0; }
+		while (tg>1.0) { tg -=1.0; }
+		while (tb>1.0) { tb -=1.0; }
+		while (tr<0.0) { tr +=1.0; }
+		while (tg<0.0) { tg +=1.0; }
+		while (tb<0.0) { tb +=1.0; }
+		r = SubHSL2RGB(tr,p,q);
+		g = SubHSL2RGB(tg,p,q);
+		b = SubHSL2RGB(tb,p,q);
+	}
+	else
+	{
+		r = g = b = l;
+	}
+}
+
+
+inline void ConvertHS2XY( DBL h,DBL s, DBL *x,DBL *y)
+{
+	*x = sin(h*M_PI_180)*s;
+	*y = cos(h*M_PI_180)*s;
+}
+inline void ConvertXY2HS(DBL x,DBL y,DBL *sh,DBL *ss)
+{
+	*ss = sqrt(x*x+y*y);
+	*sh = atan2(x,y)/M_PI_180;
+	while (*sh <0.0) {*sh+=360.0;}
+	while (*sh >360.0) {*sh-=360.0;}
+}
+
+inline void Interpolate2Colors(Colour &result, Colour &first, Colour &second, DBL percent, ColourInterpolation space)
+{
+	Colour tmp; /* take care of &result being first or second (or both) */
+	DBL fh,fs,fv,sh,ss,sv,rh,rs,rv,fx,fy,sx,sy,rx,ry;
+	switch(space)
+	{
+		case CI_HSV:
+			ConvertRGB2HSV(first.red(),first.green(),first.blue(),&fh,&fs,&fv);
+			ConvertRGB2HSV(second.red(),second.green(),second.blue(),&sh,&ss,&sv);
+			ConvertHS2XY(fh,fs,&fx,&fy);
+			ConvertHS2XY(sh,ss,&sx,&sy);
+			rs = fs + percent * (ss - fs);
+			rv = fv + percent * (sv - fv);
+			rx = fx + percent * (sx - fx);
+			ry = fy + percent * (sy - fy);
+			ConvertXY2HS(rx,ry,&rh,&ss); /* ss is only temporary needed here for next test */
+			if (!(ss>0.00000001))
+			{
+				rh = 0;
+				rs = 0;
+			}
+			ConvertHSV2RGB(rh,rs,rv,tmp.red(),tmp.green(),tmp.blue());
+			tmp.transm()= first.transm() + percent * (second.transm() - first.transm());
+			tmp.filter()= first.filter() + percent * (second.filter() - first.filter());
+			break;
+		case CI_HSL:
+			ConvertRGB2HSL(first.red(),first.green(),first.blue(),&fh,&fs,&fv);
+			ConvertRGB2HSL(second.red(),second.green(),second.blue(),&sh,&ss,&sv);
+			ConvertHS2XY(fh,fs,&fx,&fy);
+			ConvertHS2XY(sh,ss,&sx,&sy);
+			rs = fs + percent * (ss - fs);
+			rv = fv + percent * (sv - fv);
+			rx = fx + percent * (sx - fx);
+			ry = fy + percent * (sy - fy);
+			ConvertXY2HS(rx,ry,&rh,&ss); /* ss is only temporary needed here for next test */
+			if (!(ss>0.00000001))
+			{
+				rh = 0;
+				rs = 0;
+			}
+			ConvertHSL2RGB(rh,rs,rv,tmp.red(),tmp.green(),tmp.blue());
+			tmp.transm()= first.transm() + percent * (second.transm() - first.transm());
+			tmp.filter()= first.filter() + percent * (second.filter() - first.filter());
+			break;
+		case CI_XYV:
+			ConvertRGB2HSV(first.red(),first.green(),first.blue(),&fh,&fs,&fv);
+			ConvertRGB2HSV(second.red(),second.green(),second.blue(),&sh,&ss,&sv);
+			ConvertHS2XY(fh,fs,&fx,&fy);
+			ConvertHS2XY(sh,ss,&sx,&sy);
+			rv = fv + percent * (sv - fv);
+			rx = fx + percent * (sx - fx);
+			ry = fy + percent * (sy - fy);
+			ConvertXY2HS(rx,ry,&rh,&rs);
+			ConvertHSV2RGB(rh,rs,rv,tmp.red(),tmp.green(),tmp.blue());
+			tmp.transm()= first.transm() + percent * (second.transm() - first.transm());
+			tmp.filter()= first.filter() + percent * (second.filter() - first.filter());
+			break;
+		case CI_XYL:
+			ConvertRGB2HSL(first.red(),first.green(),first.blue(),&fh,&fs,&fv);
+			ConvertRGB2HSL(second.red(),second.green(),second.blue(),&sh,&ss,&sv);
+			ConvertHS2XY(fh,fs,&fx,&fy);
+			ConvertHS2XY(sh,ss,&sx,&sy);
+			rv = fv + percent * (sv - fv);
+			rx = fx + percent * (sx - fx);
+			ry = fy + percent * (sy - fy);
+			ConvertXY2HS(rx,ry,&rh,&rs);
+			ConvertHSL2RGB(rh,rs,rv,tmp.red(),tmp.green(),tmp.blue());
+			tmp.transm()= first.transm() + percent * (second.transm() - first.transm());
+			tmp.filter()= first.filter() + percent * (second.filter() - first.filter());
+			break;
+		default:
+		case CI_RGB:
+			tmp = first + percent * (second - first);
+			break;
+	}
+  result = tmp;
+}
 // Macros to manipulate scalars, vectors, and colors.
 
 inline void Assign_Vector(VECTOR d, const VECTOR s)
@@ -909,6 +1194,7 @@ struct Blend_Map_Struct
 	int Users;
 	short Number_Of_Entries;
 	char Transparency_Flag, Type;
+	ColourInterpolation Space;
 	BLEND_MAP_ENTRY *Blend_Map_Entries;
 };
 
@@ -1013,7 +1299,22 @@ struct Spline_Entry
 {
 	DBL par;      // Parameter
 	DBL vec[5];   // Value at the parameter
-	DBL coeff[5]; // Interpolating coefficients at the parameter
+	DBL coeff[5][4]; // Interpolating coefficients at the parameter
+	// sor_like_spline uses 0-3
+	// tcp_spline uses 0-1
+	// akima_spline uses 0-3
+	// others use only 0 for last index
+	union {
+		DBL freedom_degree;
+		struct {
+			DBL in_tension;
+			DBL out_tension;
+			DBL in_bias;
+			DBL out_bias;
+			DBL in_continuity;
+			DBL out_continuity;
+		} tcb;
+	} extra;
 };
 
 struct Spline_Struct
@@ -1021,13 +1322,23 @@ struct Spline_Struct
 	int Number_Of_Entries, Type;
 	int Max_Entries;
 	SPLINE_ENTRY *SplineEntries;
-	int Coeffs_Computed;
+	bool Coeffs_Computed;
 	int Terms;
 /* [JG] flyspray #294 : cache is not thread-safe 
  * (and seems useless, as slower than without it)
 	bool Cache_Valid;
 	int Cache_Type;
 	DBL Cache_Point;
+  */
+	union {
+		DBL freedom_degree;
+		struct {
+			DBL tension;
+			DBL bias;
+			DBL continuity;
+		} tcb;
+	} extra;
+ /*
 	EXPRESS Cache_Data;
  */
 	int ref_count;
@@ -1162,6 +1473,10 @@ struct Pattern_Struct
 		struct { unsigned char Pattern; } Tiling;
 		PIGMENT *Pigment;
 		ObjectBase *Object;
+		struct { ObjectBase *Object; DBL Range;} Proximity;
+		vector<ObjectPtr> * Object_vect;
+    vector<Vector3d> * Point_vect;
+    struct { vector<Vector3d> * Cell_vect; vector<DBL> * Cell_value; DBL Thickness,Middle,Border;} Masonry;
 	} Vals;
 };
 
@@ -1408,7 +1723,7 @@ class ObjectBase
 		virtual void Transform(const TRANSFORM *) = 0;
 		virtual void Invert() = 0;
 		virtual void Compute_BBox() = 0;
-		virtual void Determine_Textures(Intersection *, bool, WeightedTextureVector&, TraceThreadData *Thread); // could be "(const Intersection*...) const" if it wasn't for blob specials
+		virtual void Determine_Textures(Intersection *, bool, WeightedTextureVector&, ColourInterpolation&, TraceThreadData *Thread); // could be "(const Intersection*...) const" if it wasn't for blob specials
 		virtual bool Intersect_BBox(BBoxDirection, const BBOX_VECT&, const BBOX_VECT&, BBOX_VAL = HUGE_VAL) const;
 
 		// optional post-render message dispatcher; will be called upon completion
