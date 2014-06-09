@@ -71,6 +71,8 @@ class ImageProcessing
 		bool toStdout;
 		bool toStderr;
 
+		void RGB2XYZ(const COLC *rgb, COLC *xyz);
+		void XYZ2RGB(const COLC *xyz, COLC *rgb);
 	private:
 		ImageProcessing();
 		ImageProcessing(const ImageProcessing&);

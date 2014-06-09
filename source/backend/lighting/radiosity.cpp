@@ -317,13 +317,10 @@ void RadiosityFunction::ResetTopLevelStats()
 
 void RadiosityFunction::BeforeTile(int id, unsigned int pts)
 {
-	// TODO - find out why this assertion does not hold true when mosaic pretrace is enabled
-	/*
 	if (isFinalTrace)
 		assert( pts == FINAL_TRACE );
 	else
 		assert( (pts >= PRETRACE_FIRST) && (pts <= PRETRACE_MAX) );
-	*/
 
 	// different pretrace step than last tile
 	if (pts != pretraceStep)

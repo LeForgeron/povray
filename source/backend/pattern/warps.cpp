@@ -110,6 +110,12 @@ void Warp_EPoint (VECTOR TPoint, const VECTOR EPoint, const TPATTERN *TPat)
 	REPEAT *Repeat;
 	BLACK_HOLE *Black_Hole;
 	VECTOR Delta, Center;
+    SPHEREWARP *Spheric_warp;
+    CYLINDERWARP *Cylindric_warp;
+    TORUSWARP *Toric_warp;
+    CONEWARP *Conic_warp;
+    TRANSFORM Trans;
+
 
 	Assign_Vector(TPoint, EPoint);
 
@@ -264,6 +270,149 @@ void Warp_EPoint (VECTOR TPoint, const VECTOR EPoint, const TPATTERN *TPat)
 			case CUBIC_WARP:
 				warp_cubic(TPoint);
 				break;
+
+      case SPHERE_WARP:
+        Spheric_warp = reinterpret_cast<SPHEREWARP *>(Warp);
+        Assign_Vector (Center, Spheric_warp->Center) ;
+        VSub(Delta, TPoint, Center);
+        if (!Spheric_warp->Inversed)
+        {
+          VLength (Length, Delta) ;
+          TPoint [X] = Length * (Spheric_warp->Param [X]);
+
+          Center [Y] = atan2(Delta[Z],Delta[X]);
+          Center [X] = 0.0;
+          Center [Z] = 0.0;
+
+          TPoint [Z] = Center[Y]/M_PI * Spheric_warp->Param[Z];
+
+          Center [Y] *= 180.0/M_PI;
+          Compute_Rotation_Transform(&Trans,Center);
+          MTransPoint(Center, Delta, &Trans);
+          TPoint [Y] = atan2(Center[Y],Center[X])/M_PI_2 
+                          * Spheric_warp->Param[Y];
+        }
+        else
+        {
+          /* Delta[]
+          ** X is angle (elevation) [-1,1]
+          ** Y is length [0...infinity]
+          ** Z is angle  [-1,1]
+          */
+          Length = Delta [Y];
+          Center [X] = -1.0*fmod( Delta [X], 2.0)*M_PI_2;
+          Center [Z] = fmod( Delta [Z], 2.0)*M_PI;
+          TPoint [X] = Length * cos (Center [X])*cos(Center[Z]) * Spheric_warp->Param[X];
+          TPoint [Y] = Length * sin(Center[X])* Spheric_warp->Param[Y];
+          TPoint [Z] = Length * cos (Center [X])*sin(Center[Z])* Spheric_warp->Param[Z];
+        }
+        break;
+
+      case CYLINDER_WARP:
+        Cylindric_warp = reinterpret_cast<CYLINDERWARP *>(Warp);
+        Assign_Vector (Center, Cylindric_warp->Center) ;
+        VSub(Delta, TPoint, Center);
+        if (!Cylindric_warp->Inversed) 
+        {
+          TPoint [Y] = Delta[Y] * Cylindric_warp->Param [Y];
+          Delta[Y] = 0.0;
+          VLength (Length, Delta) ;
+          TPoint [X] = Length * (Cylindric_warp->Param [X]);
+          TPoint [Z] = atan2(Delta[Z],Delta[X])/M_PI
+                        * Cylindric_warp->Param[Z];
+        }
+        else
+        {
+          /* Delta[]
+          ** X is radial length in x,z plane
+          ** Y is height
+          ** Z is angle [-1,1]
+          */
+          Center [Z] = fmod( Delta [Z], 2.0)*M_PI;
+          Length = Delta [X];
+          TPoint [Y] = Delta[Y] * Cylindric_warp->Param [Y];
+          TPoint [X] = Length * cos(Center[Z]) * Cylindric_warp->Param[X];
+          TPoint [Z] = Length * sin(Center[Z]) * Cylindric_warp->Param[Z];
+        }
+        break;
+
+      case TORUS_WARP:
+        Toric_warp = reinterpret_cast<TORUSWARP *>(Warp);
+        Assign_Vector (Center, Toric_warp->Center) ;
+        VSub(Delta, TPoint, Center);
+        if (!Toric_warp->Inversed)
+        {
+          Center[Y] = atan2(Delta[Z],Delta[X]);
+          Center[X] = 0.0;
+          Center[Z] = 0.0;
+          TPoint [Z] = Center[Y]/M_PI * Toric_warp->Param[Z];
+          Center [Y] *= 180.0/M_PI;
+          Compute_Rotation_Transform(&Trans,Center);
+          MTransPoint(Center, Delta, &Trans);
+          Center[X] -= Toric_warp->Radius;
+          VLength (Length, Center) ;
+          TPoint [X] = Length * (Toric_warp->Param [X]);
+          TPoint [Y] = atan2(Center[Y],Center[X])/M_PI * Toric_warp->Param[Y];
+        }
+        else
+        {
+          /* Delta[]
+          ** X is angle [-1,1], elevation
+          ** Y is length from circle
+          ** Z is angle [-1,1]
+          */
+          Center [X] = -1.0*fmod( Delta [X], 2.0)*M_PI;
+          Center [Z] = fmod( Delta [Z], 2.0)*M_PI;
+          Length = Delta [Y];
+          TPoint[Y] = Length * sin(Center[X]) * Toric_warp->Param[Y];
+          TPoint[X] = (Toric_warp->Radius + (Length * cos(Center[X])))*cos(Center[Z])
+                       * Toric_warp->Param[X];
+          TPoint[Z] = (Toric_warp->Radius + (Length * cos(Center[X])))*sin(Center[Z])
+                       * Toric_warp->Param[Z];
+        }
+        break;
+
+
+      case CONE_WARP:
+        Conic_warp = reinterpret_cast<CONEWARP *>(Warp);
+        Assign_Vector (Center, Conic_warp->Center) ;
+        VSub(Delta, TPoint, Center);
+        if (!Conic_warp->Inversed)
+        {
+          Center [Y] = Delta [Y];
+          if (Delta[Y] != 0.0)
+          {
+						Delta[Y] = 0.0;
+						VLength (Length, Delta) ;
+             TPoint [X] = Length * (Conic_warp->Param [X])
+                       / Conic_warp->Radius /fabs( Center[Y]);
+          }
+          else
+          {  
+              /* Special case: the <xz> plane at the origin cannot be described
+                 with the conic coordinates
+                 Let's keep the Z valid, but the X is at the origin 
+              */
+              TPoint [X] = 0.0;
+          }
+          TPoint [Y] = Center[Y] * Conic_warp->Param [Y];
+          TPoint [Z] = atan2(Delta[Z],Delta[X])/M_PI * Conic_warp->Param[Z];
+        }
+        else
+        {
+          /* Delta[]
+          ** X is cone slope
+          ** Y is height
+          ** Z is angle [-1,1]
+          */
+          Center [Z] = fmod( Delta [Z], 2.0)*M_PI;
+          TPoint[Y] = Delta[Y] * Conic_warp->Param[Y];
+          Length = Delta[X] * Conic_warp->Radius * fabs(Delta[Y]) ;
+          TPoint[Z] = Length * sin(Center[Z]) * Conic_warp->Param[Z];
+          TPoint[X] = Length * cos(Center[Z]) * Conic_warp->Param[X];
+
+        }
+        break;
 
 			default:
 				throw POV_EXCEPTION_STRING("Warp type not yet implemented.");
@@ -791,6 +940,11 @@ WARP *Create_Warp (int Warp_Type)
 	SPHEREW *SNew;
 	CYLW *CNew;
 	PLANARW *PNew;
+    SPHEREWARP *SeNew;
+    CYLINDERWARP *CrNew;
+    TORUSWARP *TONew;
+    CONEWARP *CONew;
+
 
 	New = NULL;
 
@@ -886,6 +1040,40 @@ WARP *Create_Warp (int Warp_Type)
 		case CUBIC_WARP:
 			New = reinterpret_cast<WARP *>(POV_MALLOC(sizeof(WARP),"cubic warp"));
 			break;
+
+    case SPHERE_WARP:
+      SeNew = reinterpret_cast<SPHEREWARP *>(POV_MALLOC (sizeof (SPHEREWARP), "sphere warp"));
+      Make_Vector (SeNew->Center, 0.0, 0.0, 0.0);
+      Make_Vector (SeNew->Param, 1.0, 1.0, 1.0);
+      SeNew->Inversed = 0;
+      New = reinterpret_cast<WARP *>(SeNew);
+      break;
+ 
+    case CYLINDER_WARP:
+      CrNew = reinterpret_cast<CYLINDERWARP *>(POV_MALLOC (sizeof (CYLINDERWARP), "cylinder warp"));
+      Make_Vector (CrNew->Center, 0.0, 0.0, 0.0);
+      Make_Vector (CrNew->Param, 1.0, 1.0, 1.0);
+      CrNew->Inversed = 0;
+      New = reinterpret_cast<WARP *>(CrNew);
+      break;
+ 
+    case TORUS_WARP:
+      TONew = reinterpret_cast<TORUSWARP *>(POV_MALLOC (sizeof (TORUSWARP), "torus warp"));
+      Make_Vector (TONew->Center, 0.0, 0.0, 0.0);
+      Make_Vector (TONew->Param, 1.0, 1.0, 1.0);
+      TONew->Radius = 1.0;
+      TONew->Inversed = 0;
+      New = reinterpret_cast<WARP *>(TONew);
+      break;
+ 
+    case CONE_WARP:
+      CONew = reinterpret_cast<CONEWARP *>(POV_MALLOC (sizeof (CONEWARP), "cone warp"));
+      Make_Vector (CONew->Center, 0.0, 0.0, 0.0);
+      Make_Vector (CONew->Param, 1.0, 1.0, 1.0);
+      CONew->Radius = 1.0;
+      CONew->Inversed = 0;
+      New = reinterpret_cast<WARP *>(CONew);
+      break;
 
 		default:
 			throw POV_EXCEPTION_STRING("Unknown Warp type.");
@@ -999,6 +1187,18 @@ WARP *Copy_Warps (const WARP *Old)
 			// JN2007: Cubic warp
 			case CUBIC_WARP:
 				POV_MEMCPY(New,Old,sizeof(WARP));
+				break;
+      case SPHERE_WARP:
+				POV_MEMCPY(New,Old,sizeof(SPHEREWARP));
+				break;
+      case CYLINDER_WARP:
+				POV_MEMCPY(New,Old,sizeof(CYLINDERWARP));
+				break;
+      case TORUS_WARP:
+				POV_MEMCPY(New,Old,sizeof(TORUSWARP));
+				break;
+      case CONE_WARP:
+				POV_MEMCPY(New,Old,sizeof(CONEWARP));
 				break;
 		}
 		New->Next_Warp = Copy_Warps(Old->Next_Warp);

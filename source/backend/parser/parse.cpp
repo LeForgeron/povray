@@ -86,6 +86,7 @@
 #include "backend/lighting/point.h"
 #include "backend/lighting/radiosity.h"
 #include "backend/lighting/subsurface.h"
+#include "backend/shape/gsd.h"
 
 #include "lightgrp.h" // TODO
 
@@ -98,10 +99,6 @@ namespace pov
 /*****************************************************************************
 * Local preprocessor defines
 ******************************************************************************/
-
-/* Volume that is considered to be infinite. [DB 9/94] */
-
-const DBL INFINITE_VOLUME = BOUND_HUGE;
 
 
 /*****************************************************************************
@@ -848,6 +845,35 @@ ObjectPtr Parser::Parse_Blob()
 		/*************************************************************************
 		 * Read sperical component (old syntax).
 		 *************************************************************************/
+    CASE(COLOUR_SPACE_TOKEN)
+      EXPECT_ONE
+
+      	CASE(POV_TOKEN)
+      		Object->Colour_Interpolation=CI_RGB;
+      	END_CASE
+
+      	CASE(HSL_TOKEN)
+      		Object->Colour_Interpolation=CI_HSL;
+      	END_CASE
+
+      	CASE(HSV_TOKEN)
+      		Object->Colour_Interpolation=CI_HSV;
+      	END_CASE
+
+      	CASE(XYL_TOKEN)
+      		Object->Colour_Interpolation=CI_XYL;
+      	END_CASE
+
+      	CASE(XYV_TOKEN)
+      		Object->Colour_Interpolation=CI_XYV;
+      	END_CASE
+
+    		OTHERWISE
+      		UNGET
+      		EXIT
+    		END_CASE
+      END_EXPECT
+    END_CASE
 
 		CASE (COMPONENT_TOKEN)
 			blob_component = Object->Create_Blob_List_Element();
@@ -1391,14 +1417,104 @@ void Parser::Parse_Camera (Camera& Cam)
 		Make_Vector(New.Focal_Point, HUGE_VAL, HUGE_VAL, HUGE_VAL);
 		old_angle = New.Angle;
 		New.Angle = HUGE_VAL;
+        New.Parallaxe = 0.0;
+        New.Eye_Distance = 1.0;
 
 		EXPECT
 			CASE (PERSPECTIVE_TOKEN)
 				New.Type = PERSPECTIVE_CAMERA;
 			END_CASE
 
+			CASE (TETRA_TOKEN)
+				New.Type = PROJ_TETRA_CAMERA;
+			END_CASE
+
+			CASE (CUBE_TOKEN)
+				New.Type = PROJ_CUBE_CAMERA;
+			END_CASE
+
+			CASE (OCTA_TOKEN)
+				New.Type = PROJ_OCTA_CAMERA;
+			END_CASE
+
+			CASE (ICOSA_TOKEN)
+				New.Type = PROJ_ICOSA_CAMERA;
+			END_CASE
+
 			CASE (ORTHOGRAPHIC_TOKEN)
 				New.Type = ORTHOGRAPHIC_CAMERA;
+			END_CASE
+
+			CASE (PLATECARREE_TOKEN)
+				New.Type = PROJ_PLATECARREE_CAMERA;
+			END_CASE
+
+			CASE (MERCATOR_TOKEN)
+				New.Type = PROJ_MERCATOR_CAMERA;
+			END_CASE
+
+			CASE (LAMBERTAZIMUTHAL_TOKEN)
+				New.Type = PROJ_LAMBERT_AZI_CAMERA;
+			END_CASE
+
+			CASE (VAN_DER_GRINTEN_TOKEN)
+				New.Type = PROJ_VAN_DER_GRINTEN_CAMERA;
+			END_CASE
+
+			CASE (LAMBERTCYLINDRICAL_TOKEN)
+				New.Type = PROJ_LAMBERT_CYL_CAMERA;
+			END_CASE
+
+			CASE (BEHRMANN_TOKEN)
+				New.Type = PROJ_BEHRMANN_CAMERA;
+			END_CASE
+
+			CASE (SMYTH_CRASTER_TOKEN)
+				New.Type = PROJ_CRASTER_CAMERA;
+			END_CASE
+
+			CASE (EDWARDS_TOKEN)
+				New.Type = PROJ_EDWARDS_CAMERA;
+			END_CASE
+
+			CASE (HOBO_DYER_TOKEN)
+				New.Type = PROJ_HOBO_DYER_CAMERA;
+			END_CASE
+
+			CASE (PETERS_TOKEN)
+				New.Type = PROJ_PETERS_CAMERA;
+			END_CASE
+
+			CASE (GALL_TOKEN)
+				New.Type = PROJ_GALL_CAMERA;
+			END_CASE
+
+			CASE (BALTHASART_TOKEN)
+				New.Type = PROJ_BALTHASART_CAMERA;
+			END_CASE
+
+			CASE (MOLLWEIDE_TOKEN)
+				New.Type = PROJ_MOLLWEIDE_CAMERA;
+			END_CASE
+
+			CASE (AITOFF_HAMMER_TOKEN)
+				New.Type = PROJ_AITOFF_CAMERA;
+			END_CASE
+
+			CASE (ECKERT4_TOKEN)
+				New.Type = PROJ_ECKERT4_CAMERA;
+			END_CASE
+
+			CASE (ECKERT6_TOKEN)
+				New.Type = PROJ_ECKERT6_CAMERA;
+			END_CASE
+
+			CASE (MILLERCYLINDRICAL_TOKEN)
+				New.Type = PROJ_MILLER_CAMERA;
+			END_CASE
+
+			CASE (STEREO_TOKEN)
+				New.Type = STEREOSCOPIC_CAMERA;
 			END_CASE
 
 			CASE (FISHEYE_TOKEN)
@@ -1455,7 +1571,12 @@ void Parser::Parse_Camera (Camera& Cam)
 					END_CASE
 
 					CASE5(ORTHOGRAPHIC_TOKEN, FISHEYE_TOKEN, ULTRA_WIDE_ANGLE_TOKEN, OMNIMAX_TOKEN, PANORAMIC_TOKEN)
-					CASE2(SPHERICAL_TOKEN, CYLINDER_TOKEN)
+					CASE4(SPHERICAL_TOKEN, CYLINDER_TOKEN, MERCATOR_TOKEN, PLATECARREE_TOKEN)
+					CASE(LAMBERTAZIMUTHAL_TOKEN)
+					CASE5(	VAN_DER_GRINTEN_TOKEN, LAMBERTCYLINDRICAL_TOKEN, BEHRMANN_TOKEN, SMYTH_CRASTER_TOKEN, EDWARDS_TOKEN)
+					CASE5(	HOBO_DYER_TOKEN, PETERS_TOKEN, GALL_TOKEN, BALTHASART_TOKEN, MOLLWEIDE_TOKEN)
+					CASE4(	AITOFF_HAMMER_TOKEN, ECKERT4_TOKEN, ECKERT6_TOKEN, MILLERCYLINDRICAL_TOKEN)
+					CASE5( TETRA_TOKEN, CUBE_TOKEN, OCTA_TOKEN, ICOSA_TOKEN, STEREO_TOKEN )
 						Expectation_Error("perspective camera modifier");
 					END_CASE
 
@@ -1475,7 +1596,12 @@ void Parser::Parse_Camera (Camera& Cam)
 					END_CASE
 
 					CASE5(PERSPECTIVE_TOKEN, FISHEYE_TOKEN, ULTRA_WIDE_ANGLE_TOKEN, OMNIMAX_TOKEN, PANORAMIC_TOKEN)
-					CASE2(SPHERICAL_TOKEN, CYLINDER_TOKEN)
+					CASE4(SPHERICAL_TOKEN, CYLINDER_TOKEN, MERCATOR_TOKEN, PLATECARREE_TOKEN)
+					CASE(LAMBERTAZIMUTHAL_TOKEN)
+					CASE5(	VAN_DER_GRINTEN_TOKEN, LAMBERTCYLINDRICAL_TOKEN, BEHRMANN_TOKEN, SMYTH_CRASTER_TOKEN, EDWARDS_TOKEN)
+					CASE5(	HOBO_DYER_TOKEN, PETERS_TOKEN, GALL_TOKEN, BALTHASART_TOKEN, MOLLWEIDE_TOKEN)
+					CASE4(	AITOFF_HAMMER_TOKEN, ECKERT4_TOKEN, ECKERT6_TOKEN, MILLERCYLINDRICAL_TOKEN)
+					CASE5( TETRA_TOKEN, CUBE_TOKEN, OCTA_TOKEN, ICOSA_TOKEN, STEREO_TOKEN )
 						Expectation_Error("orthographic camera modifier");
 					END_CASE
 
@@ -1495,7 +1621,12 @@ void Parser::Parse_Camera (Camera& Cam)
 					END_CASE
 
 					CASE5(PERSPECTIVE_TOKEN, ORTHOGRAPHIC_TOKEN, ULTRA_WIDE_ANGLE_TOKEN, OMNIMAX_TOKEN, PANORAMIC_TOKEN)
-					CASE3(SPHERICAL_TOKEN, CYLINDER_TOKEN, MESH_CAMERA_TOKEN)
+					CASE5(SPHERICAL_TOKEN, CYLINDER_TOKEN, MESH_CAMERA_TOKEN, MERCATOR_TOKEN, PLATECARREE_TOKEN)
+					CASE(LAMBERTAZIMUTHAL_TOKEN)
+					CASE5(	VAN_DER_GRINTEN_TOKEN, LAMBERTCYLINDRICAL_TOKEN, BEHRMANN_TOKEN, SMYTH_CRASTER_TOKEN, EDWARDS_TOKEN)
+					CASE5(	HOBO_DYER_TOKEN, PETERS_TOKEN, GALL_TOKEN, BALTHASART_TOKEN, MOLLWEIDE_TOKEN)
+					CASE4(	AITOFF_HAMMER_TOKEN, ECKERT4_TOKEN, ECKERT6_TOKEN, MILLERCYLINDRICAL_TOKEN)
+					CASE5( TETRA_TOKEN, CUBE_TOKEN, OCTA_TOKEN, ICOSA_TOKEN, STEREO_TOKEN )
 						Expectation_Error("fisheye camera modifier");
 					END_CASE
 
@@ -1515,7 +1646,12 @@ void Parser::Parse_Camera (Camera& Cam)
 					END_CASE
 
 					CASE5(PERSPECTIVE_TOKEN, ORTHOGRAPHIC_TOKEN, FISHEYE_TOKEN, OMNIMAX_TOKEN, PANORAMIC_TOKEN)
-					CASE3(SPHERICAL_TOKEN, CYLINDER_TOKEN, MESH_CAMERA_TOKEN)
+					CASE5(SPHERICAL_TOKEN, CYLINDER_TOKEN, MESH_CAMERA_TOKEN, MERCATOR_TOKEN, PLATECARREE_TOKEN)
+					CASE(LAMBERTAZIMUTHAL_TOKEN)
+					CASE5(	VAN_DER_GRINTEN_TOKEN, LAMBERTCYLINDRICAL_TOKEN, BEHRMANN_TOKEN, SMYTH_CRASTER_TOKEN, EDWARDS_TOKEN)
+					CASE5(	HOBO_DYER_TOKEN, PETERS_TOKEN, GALL_TOKEN, BALTHASART_TOKEN, MOLLWEIDE_TOKEN)
+					CASE4(	AITOFF_HAMMER_TOKEN, ECKERT4_TOKEN, ECKERT6_TOKEN, MILLERCYLINDRICAL_TOKEN)
+					CASE5( TETRA_TOKEN, CUBE_TOKEN, OCTA_TOKEN, ICOSA_TOKEN, STEREO_TOKEN )
 						Expectation_Error("ultra_wide_angle camera modifier");
 					END_CASE
 
@@ -1535,7 +1671,12 @@ void Parser::Parse_Camera (Camera& Cam)
 					END_CASE
 
 					CASE5(PERSPECTIVE_TOKEN, ORTHOGRAPHIC_TOKEN, FISHEYE_TOKEN, ULTRA_WIDE_ANGLE_TOKEN, PANORAMIC_TOKEN)
-					CASE3(SPHERICAL_TOKEN, CYLINDER_TOKEN, MESH_CAMERA_TOKEN)
+					CASE5(SPHERICAL_TOKEN, CYLINDER_TOKEN, MESH_CAMERA_TOKEN, MERCATOR_TOKEN, PLATECARREE_TOKEN)
+					CASE(LAMBERTAZIMUTHAL_TOKEN)
+					CASE5(	VAN_DER_GRINTEN_TOKEN, LAMBERTCYLINDRICAL_TOKEN, BEHRMANN_TOKEN, SMYTH_CRASTER_TOKEN, EDWARDS_TOKEN)
+					CASE5(	HOBO_DYER_TOKEN, PETERS_TOKEN, GALL_TOKEN, BALTHASART_TOKEN, MOLLWEIDE_TOKEN)
+					CASE4(	AITOFF_HAMMER_TOKEN, ECKERT4_TOKEN, ECKERT6_TOKEN, MILLERCYLINDRICAL_TOKEN)
+					CASE5( TETRA_TOKEN, CUBE_TOKEN, OCTA_TOKEN, ICOSA_TOKEN, STEREO_TOKEN )
 						Expectation_Error("omnimax camera modifier");
 					END_CASE
 
@@ -1555,7 +1696,12 @@ void Parser::Parse_Camera (Camera& Cam)
 					END_CASE
 
 					CASE5(PERSPECTIVE_TOKEN, ORTHOGRAPHIC_TOKEN, FISHEYE_TOKEN, ULTRA_WIDE_ANGLE_TOKEN, OMNIMAX_TOKEN)
-					CASE3(SPHERICAL_TOKEN, CYLINDER_TOKEN, MESH_CAMERA_TOKEN)
+					CASE5(SPHERICAL_TOKEN, CYLINDER_TOKEN, MESH_CAMERA_TOKEN, MERCATOR_TOKEN, PLATECARREE_TOKEN)
+					CASE(LAMBERTAZIMUTHAL_TOKEN)
+					CASE5(	VAN_DER_GRINTEN_TOKEN, LAMBERTCYLINDRICAL_TOKEN, BEHRMANN_TOKEN, SMYTH_CRASTER_TOKEN, EDWARDS_TOKEN)
+					CASE5(	HOBO_DYER_TOKEN, PETERS_TOKEN, GALL_TOKEN, BALTHASART_TOKEN, MOLLWEIDE_TOKEN)
+					CASE4(	AITOFF_HAMMER_TOKEN, ECKERT4_TOKEN, ECKERT6_TOKEN, MILLERCYLINDRICAL_TOKEN)
+					CASE5( TETRA_TOKEN, CUBE_TOKEN, OCTA_TOKEN, ICOSA_TOKEN, STEREO_TOKEN )
 						Expectation_Error("panoramic camera modifier");
 					END_CASE
 
@@ -1578,7 +1724,12 @@ void Parser::Parse_Camera (Camera& Cam)
 					END_CASE
 
 					CASE6(PERSPECTIVE_TOKEN, ORTHOGRAPHIC_TOKEN, FISHEYE_TOKEN, ULTRA_WIDE_ANGLE_TOKEN, OMNIMAX_TOKEN, PANORAMIC_TOKEN)
-					CASE2(SPHERICAL_TOKEN, MESH_CAMERA_TOKEN)
+					CASE4(SPHERICAL_TOKEN, MESH_CAMERA_TOKEN, MERCATOR_TOKEN, PLATECARREE_TOKEN)
+					CASE(LAMBERTAZIMUTHAL_TOKEN)
+					CASE5(	VAN_DER_GRINTEN_TOKEN, LAMBERTCYLINDRICAL_TOKEN, BEHRMANN_TOKEN, SMYTH_CRASTER_TOKEN, EDWARDS_TOKEN)
+					CASE5(	HOBO_DYER_TOKEN, PETERS_TOKEN, GALL_TOKEN, BALTHASART_TOKEN, MOLLWEIDE_TOKEN)
+					CASE4(	AITOFF_HAMMER_TOKEN, ECKERT4_TOKEN, ECKERT6_TOKEN, MILLERCYLINDRICAL_TOKEN)
+					CASE5( TETRA_TOKEN, CUBE_TOKEN, OCTA_TOKEN, ICOSA_TOKEN, STEREO_TOKEN )
 						Expectation_Error("cylinder camera modifier");
 					END_CASE
 
@@ -1602,7 +1753,12 @@ void Parser::Parse_Camera (Camera& Cam)
 					END_CASE
 
 					CASE6(PERSPECTIVE_TOKEN, ORTHOGRAPHIC_TOKEN, FISHEYE_TOKEN, ULTRA_WIDE_ANGLE_TOKEN, OMNIMAX_TOKEN, PANORAMIC_TOKEN)
-					CASE2(CYLINDER_TOKEN, MESH_CAMERA_TOKEN)
+					CASE4(CYLINDER_TOKEN, MESH_CAMERA_TOKEN, MERCATOR_TOKEN, PLATECARREE_TOKEN)
+					CASE(LAMBERTAZIMUTHAL_TOKEN)
+					CASE5(	VAN_DER_GRINTEN_TOKEN, LAMBERTCYLINDRICAL_TOKEN, BEHRMANN_TOKEN, SMYTH_CRASTER_TOKEN, EDWARDS_TOKEN)
+					CASE5(	HOBO_DYER_TOKEN, PETERS_TOKEN, GALL_TOKEN, BALTHASART_TOKEN, MOLLWEIDE_TOKEN)
+					CASE4(	AITOFF_HAMMER_TOKEN, ECKERT4_TOKEN, ECKERT6_TOKEN, MILLERCYLINDRICAL_TOKEN)
+					CASE5( TETRA_TOKEN, CUBE_TOKEN, OCTA_TOKEN, ICOSA_TOKEN, STEREO_TOKEN )
 						Expectation_Error("spherical camera modifier");
 					END_CASE
 
@@ -1616,8 +1772,84 @@ void Parser::Parse_Camera (Camera& Cam)
 			case MESH_CAMERA:
 				EXPECT
 					CASE6(PERSPECTIVE_TOKEN, ORTHOGRAPHIC_TOKEN, FISHEYE_TOKEN, ULTRA_WIDE_ANGLE_TOKEN, OMNIMAX_TOKEN, PANORAMIC_TOKEN)
-					CASE2(CYLINDER_TOKEN, SPHERICAL_TOKEN)
+					CASE4(CYLINDER_TOKEN, SPHERICAL_TOKEN, MERCATOR_TOKEN, PLATECARREE_TOKEN)
+					CASE(LAMBERTAZIMUTHAL_TOKEN)
+					CASE5(	VAN_DER_GRINTEN_TOKEN, LAMBERTCYLINDRICAL_TOKEN, BEHRMANN_TOKEN, SMYTH_CRASTER_TOKEN, EDWARDS_TOKEN)
+					CASE5(	HOBO_DYER_TOKEN, PETERS_TOKEN, GALL_TOKEN, BALTHASART_TOKEN, MOLLWEIDE_TOKEN)
+					CASE4(	AITOFF_HAMMER_TOKEN, ECKERT4_TOKEN, ECKERT6_TOKEN, MILLERCYLINDRICAL_TOKEN)
+					CASE5( TETRA_TOKEN, CUBE_TOKEN, OCTA_TOKEN, ICOSA_TOKEN, STEREO_TOKEN )
 						Expectation_Error("mesh camera modifier");
+					END_CASE
+
+					OTHERWISE
+						UNGET
+						if(Parse_Camera_Mods(New) == false)
+							EXIT
+					END_CASE
+				END_EXPECT
+				break;
+
+			case PROJ_MERCATOR_CAMERA:
+			case PROJ_PLATECARREE_CAMERA:
+			case PROJ_LAMBERT_AZI_CAMERA:
+			case PROJ_VAN_DER_GRINTEN_CAMERA:
+			case PROJ_LAMBERT_CYL_CAMERA:
+			case PROJ_BEHRMANN_CAMERA:
+			case PROJ_CRASTER_CAMERA:
+			case PROJ_EDWARDS_CAMERA:
+			case PROJ_HOBO_DYER_CAMERA:
+			case PROJ_PETERS_CAMERA:
+			case PROJ_GALL_CAMERA:
+			case PROJ_BALTHASART_CAMERA:
+			case PROJ_MOLLWEIDE_CAMERA:
+			case PROJ_AITOFF_CAMERA:
+			case PROJ_ECKERT4_CAMERA:
+			case PROJ_ECKERT6_CAMERA:
+			case PROJ_MILLER_CAMERA:
+			case PROJ_TETRA_CAMERA:
+			case PROJ_CUBE_CAMERA:
+			case PROJ_OCTA_CAMERA:
+			case PROJ_ICOSA_CAMERA:
+				EXPECT
+					CASE6(PERSPECTIVE_TOKEN, ORTHOGRAPHIC_TOKEN, FISHEYE_TOKEN, ULTRA_WIDE_ANGLE_TOKEN, OMNIMAX_TOKEN, PANORAMIC_TOKEN)
+					CASE4(CYLINDER_TOKEN, SPHERICAL_TOKEN, MESH_CAMERA_TOKEN, MERCATOR_TOKEN)
+					CASE2(PLATECARREE_TOKEN,LAMBERTAZIMUTHAL_TOKEN)
+					CASE5(	VAN_DER_GRINTEN_TOKEN, LAMBERTCYLINDRICAL_TOKEN, BEHRMANN_TOKEN, SMYTH_CRASTER_TOKEN, EDWARDS_TOKEN)
+					CASE5(	HOBO_DYER_TOKEN, PETERS_TOKEN, GALL_TOKEN, BALTHASART_TOKEN, MOLLWEIDE_TOKEN)
+					CASE4(	AITOFF_HAMMER_TOKEN, ECKERT4_TOKEN, ECKERT6_TOKEN, MILLERCYLINDRICAL_TOKEN)
+					CASE5( TETRA_TOKEN, CUBE_TOKEN, OCTA_TOKEN, ICOSA_TOKEN, STEREO_TOKEN )
+						Expectation_Error("camera modifier, not another camera type");
+					END_CASE
+
+					OTHERWISE
+						UNGET
+						if(Parse_Camera_Mods(New) == false)
+							EXIT
+					END_CASE
+				END_EXPECT
+				break;
+      case STEREOSCOPIC_CAMERA:
+				EXPECT
+					CASE (ANGLE_TOKEN)
+						New.Angle = Parse_Float();
+						if (New.Angle < 0.0)
+							Error("Negative viewing angle.");
+					END_CASE
+          CASE (PARALLAXE_TOKEN)
+            New.Parallaxe = Parse_Float();
+					END_CASE
+          CASE (DISTANCE_TOKEN)
+            New.Eye_Distance = Parse_Float();
+					END_CASE
+
+					CASE5(ORTHOGRAPHIC_TOKEN, FISHEYE_TOKEN, ULTRA_WIDE_ANGLE_TOKEN, OMNIMAX_TOKEN, PANORAMIC_TOKEN)
+					CASE5(PERSPECTIVE_TOKEN, SPHERICAL_TOKEN, CYLINDER_TOKEN, MERCATOR_TOKEN, PLATECARREE_TOKEN)
+					CASE(LAMBERTAZIMUTHAL_TOKEN)
+					CASE5(	VAN_DER_GRINTEN_TOKEN, LAMBERTCYLINDRICAL_TOKEN, BEHRMANN_TOKEN, SMYTH_CRASTER_TOKEN, EDWARDS_TOKEN)
+					CASE5(	HOBO_DYER_TOKEN, PETERS_TOKEN, GALL_TOKEN, BALTHASART_TOKEN, MOLLWEIDE_TOKEN)
+					CASE4(	AITOFF_HAMMER_TOKEN, ECKERT4_TOKEN, ECKERT6_TOKEN, MILLERCYLINDRICAL_TOKEN)
+					CASE5( TETRA_TOKEN, CUBE_TOKEN, OCTA_TOKEN, ICOSA_TOKEN, STEREO_TOKEN )
+						Expectation_Error("perspective camera modifier");
 					END_CASE
 
 					OTHERWISE
@@ -1648,7 +1880,7 @@ void Parser::Parse_Camera (Camera& Cam)
 		// apply "angle"
 		if (New.Angle != HUGE_VAL)
 		{
-			if ((New.Type == PERSPECTIVE_CAMERA) || (New.Type == ORTHOGRAPHIC_CAMERA))
+			if ((New.Type == PERSPECTIVE_CAMERA) || (New.Type == ORTHOGRAPHIC_CAMERA)|| (New.Type == STEREOSCOPIC_CAMERA))
 			{
 				if (New.Angle >= 180.0)
 					Error("Viewing angle has to be smaller than 180 degrees.");
@@ -1670,7 +1902,37 @@ void Parser::Parse_Camera (Camera& Cam)
 		// apply "look_at"
 		if (New.Look_At[X] != HUGE_VAL)
 		{
+			if (
+					(New.Type == PROJ_MERCATOR_CAMERA )
+					||(New.Type == PROJ_PLATECARREE_CAMERA )
+					||(New.Type == PROJ_LAMBERT_AZI_CAMERA )
+					||(New.Type == PROJ_VAN_DER_GRINTEN_CAMERA )
+					||(New.Type == PROJ_LAMBERT_CYL_CAMERA )
+					||(New.Type == PROJ_BEHRMANN_CAMERA )
+					||(New.Type == PROJ_CRASTER_CAMERA )
+					||(New.Type == PROJ_EDWARDS_CAMERA )
+					||(New.Type == PROJ_HOBO_DYER_CAMERA )
+					||(New.Type == PROJ_PETERS_CAMERA )
+					||(New.Type == PROJ_GALL_CAMERA )
+					||(New.Type == PROJ_BALTHASART_CAMERA )
+					||(New.Type == PROJ_MOLLWEIDE_CAMERA )
+					||(New.Type == PROJ_AITOFF_CAMERA )
+					||(New.Type == PROJ_ECKERT4_CAMERA )
+					||(New.Type == PROJ_ECKERT6_CAMERA )
+					||(New.Type == PROJ_MILLER_CAMERA )
+					||(New.Type == PROJ_TETRA_CAMERA )
+					||(New.Type == PROJ_ICOSA_CAMERA )
+					||(New.Type == PROJ_CUBE_CAMERA )
+					||(New.Type == PROJ_OCTA_CAMERA )
+				 )
+			{ // look_at define the new center of the world
+				VSub(tempv, New.Look_At, New.Location);
+				VLength(Direction_Length, tempv);
+			}
+			else
+			{
 			VLength (Direction_Length, New.Direction);
+			}
 			VLength (Up_Length,        New.Up);
 			VLength (Right_Length,     New.Right);
 			VCross  (tempv,            New.Up, New.Direction);
@@ -1792,6 +2054,14 @@ void Parser::Parse_Camera (Camera& Cam)
 			END_CASE
 
 			CASE (MESH_CAMERA_TOKEN)
+				Error("This camera type not supported for language version < 3.5");
+			END_CASE
+
+			CASE3 (MERCATOR_TOKEN, PLATECARREE_TOKEN, LAMBERTAZIMUTHAL_TOKEN)
+			CASE5(	VAN_DER_GRINTEN_TOKEN, LAMBERTCYLINDRICAL_TOKEN, BEHRMANN_TOKEN, SMYTH_CRASTER_TOKEN, EDWARDS_TOKEN)
+			CASE5(	HOBO_DYER_TOKEN, PETERS_TOKEN, GALL_TOKEN, BALTHASART_TOKEN, MOLLWEIDE_TOKEN)
+			CASE4(	AITOFF_HAMMER_TOKEN, ECKERT4_TOKEN, ECKERT6_TOKEN, MILLERCYLINDRICAL_TOKEN)
+			CASE5( TETRA_TOKEN, CUBE_TOKEN, OCTA_TOKEN, ICOSA_TOKEN, STEREO_TOKEN )
 				Error("This camera type not supported for language version < 3.5");
 			END_CASE
 
@@ -2199,6 +2469,96 @@ ObjectPtr Parser::Parse_CSG(int CSG_Type)
 	return (reinterpret_cast<ObjectPtr>(Object));
 }
 
+
+/*****************************************************************************
+*
+* FUNCTION
+*
+* INPUT
+*   
+* OUTPUT
+*   
+* RETURNS
+*   
+* AUTHOR
+*   
+* DESCRIPTION
+*
+* CHANGES
+*
+******************************************************************************/
+
+ObjectPtr Parser::Parse_GSD(GSD_TYPE GSD_Type)
+{
+  VECTOR Local_Vector;
+	GSDInterUnion *Object;
+	ObjectPtr Local;
+	int Object_Count = 0;
+	int Light_Source_Union = true;
+
+	Parse_Begin();
+
+  switch(GSD_Type)
+	{
+		case GSD_INTERUNION_TYPE:
+			Object = new GSDInterUnion();
+			break;
+		case GSD_INTERMERGE_TYPE:
+			Object = new GSDInterMerge();
+			break;
+	}
+
+	while((Local = Parse_Object()) != NULL)
+	{
+		if(Local->Type & PATCH_OBJECT)
+			Error("Patch objects not allowed in gsd (intermerge, interunion).");
+		Object_Count++;
+
+		Object->Type |= (Local->Type & CHILDREN_FLAGS);
+		Local->Type |= IS_CHILD_OBJECT;
+		Link(Local, Object->children);
+	}
+
+	if(Object_Count < 3) 
+		Error("Should have at least 3 objects in gsd (intermerge, interunion).");
+
+  Object->selected.resize(Object_Count+1,false);
+
+  EXPECT
+    CASE(RANGE_TOKEN)
+    GET(LEFT_CURLY_TOKEN)
+    while(Allow_Vector(Local_Vector))
+    {
+       ssize_t idx1 = Local_Vector[0];
+       ssize_t idx2 = Local_Vector[1];
+       if (idx1 < 0) idx1 += Object_Count+1;
+       if (idx2 < 0) idx2 += Object_Count+1;
+       if ((idx1>=0)&&(idx1 <= Object_Count)&&(idx2>=0)&&(idx2 <= Object_Count)&&(idx1<=idx2))
+       {
+         for(size_t i = idx1;i<=idx2;++i)
+         {
+					 Object->selected[i] = true;
+         }
+       }
+			 Parse_Comma();
+    }
+    GET(RIGHT_CURLY_TOKEN)
+    EXIT
+    END_CASE
+
+    OTHERWISE
+    UNGET
+    EXIT
+		END_CASE
+  END_EXPECT
+
+
+	Object->Compute_BBox();
+
+	Parse_Object_Mods(reinterpret_cast<ObjectPtr>(Object));
+
+	return (reinterpret_cast<ObjectPtr>(Object));
+}
 /*****************************************************************************
 *
 * FUNCTION
@@ -3590,6 +3950,129 @@ ObjectPtr Parser::Parse_Mesh()
 	Object->Create_Mesh_Hash_Tables();
 
 	EXPECT
+/* TESSELATIONPATCH --> */
+    CASE(GTS_LOAD_TOKEN)
+      Parse_Load_In_Mesh(Object,
+                                &Triangles, &Textures, &Vertices, &Normals, 
+                                &fully_textured, &max_triangles, &max_textures,
+                                &max_vertices, &max_normals, 
+                                &number_of_triangles, &number_of_textures,
+                                &number_of_vertices, &number_of_normals);
+    END_CASE
+    CASE(KEEP_TOKEN)
+      Parse_Select_In_Mesh(Object,
+                                &Triangles, &Textures, &Vertices, &Normals, 
+                                &fully_textured, &max_triangles, &max_textures,
+                                &max_vertices, &max_normals, 
+                                &number_of_triangles, &number_of_textures,
+                                &number_of_vertices, &number_of_normals);
+    END_CASE
+    CASE(CUBICLE_TOKEN)
+      Parse_Cubicle_In_Mesh(Object,
+                                &Triangles, &Textures, &Vertices, &Normals, 
+                                &fully_textured, &max_triangles, &max_textures,
+                                &max_vertices, &max_normals, 
+                                &number_of_triangles, &number_of_textures,
+                                &number_of_vertices, &number_of_normals);
+    END_CASE
+    CASE(CRISTAL_TOKEN)
+      Parse_Cristal_In_Mesh(Object,
+                                &Triangles, &Textures, &Vertices, &Normals, 
+                                &fully_textured, &max_triangles, &max_textures,
+                                &max_vertices, &max_normals, 
+                                &number_of_triangles, &number_of_textures,
+                                &number_of_vertices, &number_of_normals);
+    END_CASE
+    CASE(BOURKE_TOKEN)
+      Parse_Bourke_In_Mesh(Object,
+                                &Triangles, &Textures, &Vertices, &Normals, 
+                                &fully_textured, &max_triangles, &max_textures,
+                                &max_vertices, &max_normals, 
+                                &number_of_triangles, &number_of_textures,
+                                &number_of_vertices, &number_of_normals);
+    END_CASE
+    CASE(HELLER_TOKEN)
+      Parse_Heller_In_Mesh(Object,
+                                &Triangles, &Textures, &Vertices, &Normals, 
+                                &fully_textured, &max_triangles, &max_textures,
+                                &max_vertices, &max_normals, 
+                                &number_of_triangles, &number_of_textures,
+                                &number_of_vertices, &number_of_normals);
+    END_CASE
+    CASE(ROLL_TOKEN)
+      Parse_Roll_In_Mesh(Object,
+                                &Triangles, &Textures, &Vertices, &Normals, 
+                                &fully_textured, &max_triangles, &max_textures,
+                                &max_vertices, &max_normals, 
+                                &number_of_triangles, &number_of_textures,
+                                &number_of_vertices, &number_of_normals);
+    END_CASE
+    CASE(BEND_TOKEN)
+      Parse_Bend_In_Mesh(Object,
+                                &Triangles, &Textures, &Vertices, &Normals, 
+                                &fully_textured, &max_triangles, &max_textures,
+                                &max_vertices, &max_normals, 
+                                &number_of_triangles, &number_of_textures,
+                                &number_of_vertices, &number_of_normals);
+    END_CASE
+    CASE(MOVE_TOKEN)
+      Parse_Move_In_Mesh(Object,
+                                &Triangles, &Textures, &Vertices, &Normals, 
+                                &fully_textured, &max_triangles, &max_textures,
+                                &max_vertices, &max_normals, 
+                                &number_of_triangles, &number_of_textures,
+                                &number_of_vertices, &number_of_normals);
+    END_CASE
+    CASE(WARP_TOKEN)
+      Parse_Warp_In_Mesh(Object,
+                                &Triangles, &Textures, &Vertices, &Normals, 
+                                &fully_textured, &max_triangles, &max_textures,
+                                &max_vertices, &max_normals, 
+                                &number_of_triangles, &number_of_textures,
+                                &number_of_vertices, &number_of_normals);
+    END_CASE
+    CASE(SCREW_TOKEN)
+      Parse_Screw_In_Mesh(Object,
+                                &Triangles, &Textures, &Vertices, &Normals, 
+                                &fully_textured, &max_triangles, &max_textures,
+                                &max_vertices, &max_normals, 
+                                &number_of_triangles, &number_of_textures,
+                                &number_of_vertices, &number_of_normals);
+    END_CASE
+    CASE(SMOOTH_TOKEN)
+      Parse_Smooth_In_Mesh(Object,
+                                &Triangles, &Textures, &Vertices, &Normals, 
+                                &fully_textured, &max_triangles, &max_textures,
+                                &max_vertices, &max_normals, 
+                                &number_of_triangles, &number_of_textures,
+                                &number_of_vertices, &number_of_normals);
+    END_CASE
+    CASE(DISPLACE_TOKEN)
+      Parse_Displace_In_Mesh(Object,
+                                &Triangles, &Textures, &Vertices, &Normals, 
+                                &fully_textured, &max_triangles, &max_textures,
+                                &max_vertices, &max_normals, 
+                                &number_of_triangles, &number_of_textures,
+                                &number_of_vertices, &number_of_normals);
+    END_CASE
+/* --> TESSELATIONPATCH */
+    CASE(TESSELATE_TOKEN)
+      Parse_Tesselation_In_Mesh(Object,
+                                &Triangles, &Textures, &Vertices, &Normals, 
+                                &fully_textured, &max_triangles, &max_textures,
+                                &max_vertices, &max_normals, 
+                                &number_of_triangles, &number_of_textures,
+                                &number_of_vertices, &number_of_normals);
+    END_CASE
+    CASE(TESSEL_TOKEN)
+      Parse_Tessel_In_Mesh(Object,
+                                &Triangles, &Textures, &Vertices, &Normals, 
+                                &fully_textured, &max_triangles, &max_textures,
+                                &max_vertices, &max_normals, 
+                                &number_of_triangles, &number_of_textures,
+                                &number_of_vertices, &number_of_normals);
+    END_CASE
+/* TESSELATIONPATCH <-- */                                                      
 		CASE(TRIANGLE_TOKEN)
 			Parse_Begin();
 
@@ -3787,7 +4270,29 @@ ObjectPtr Parser::Parse_Mesh()
 
 		END_CASE
 		/* NK ---- */
-
+    CASE(COLOUR_SPACE_TOKEN)
+      EXPECT_ONE
+      	CASE(POV_TOKEN)
+      		Object->Colour_Interpolation=CI_RGB;
+      	END_CASE
+      	CASE(HSL_TOKEN)
+      		Object->Colour_Interpolation=CI_HSL;
+      	END_CASE
+      	CASE(HSV_TOKEN)
+      		Object->Colour_Interpolation=CI_HSV;
+      	END_CASE
+      	CASE(XYL_TOKEN)
+      		Object->Colour_Interpolation=CI_XYL;
+      	END_CASE
+      	CASE(XYV_TOKEN)
+      		Object->Colour_Interpolation=CI_XYV;
+      	END_CASE
+    		OTHERWISE
+      		UNGET
+      		EXIT
+    		END_CASE
+      END_EXPECT
+    END_CASE
 		OTHERWISE
 			UNGET
 			EXIT
@@ -5172,6 +5677,8 @@ ObjectPtr Parser::Parse_Polygon()
 	Polygon *Object;
 	VECTOR *Points;
 	VECTOR P;
+	TEXTURE **TTextures;
+	bool *T_Need;
 
 	Parse_Begin();
 
@@ -5190,6 +5697,8 @@ ObjectPtr Parser::Parse_Polygon()
 	}
 
 	Points = reinterpret_cast<VECTOR *>(POV_MALLOC((Number+1)*sizeof(VECTOR), "temporary polygon points"));
+	TTextures = reinterpret_cast<TEXTURE **>(POV_MALLOC((Number+1)*sizeof(TEXTURE*), "temporary polygon textures"));
+	T_Need = reinterpret_cast<bool *>(POV_MALLOC((Number+2)*sizeof(bool), "temporary poylgon boolean"));
 
 	for (i = 0; i < Number; i++)
 	{
@@ -5201,10 +5710,12 @@ ObjectPtr Parser::Parse_Polygon()
 	/* Check for closed polygons. */
 
 	Assign_Vector(P, Points[0]);
-
+	T_Need[0]=true; /* marking as needing a texture */
+	T_Need[Number]=false;
 	for (i = 1; i < Number; i++)
 	{
 		closed = false;
+		T_Need[i]=true; /* marking as needing a texture */
 
 		if ((fabs(P[X] - Points[i][X]) < EPSILON) &&
 		    (fabs(P[Y] - Points[i][Y]) < EPSILON) &&
@@ -5214,11 +5725,13 @@ ObjectPtr Parser::Parse_Polygon()
 			// to make processing easier later
 			Assign_Vector(Points[i], P);
 
+			T_Need[i]=false; /* marking as duplicate */
 			i++;
 
 			if (i < Number)
 			{
 				Assign_Vector(P, Points[i]);
+				T_Need[i]=true; /* marking as needing a texture */
 			}
 
 			closed = true;
@@ -5230,13 +5743,78 @@ ObjectPtr Parser::Parse_Polygon()
 		Warning(0, "Polygon not closed. Closing it.");
 
 		Assign_Vector(Points[Number], P);
+		T_Need[Number] = false; /* marking as duplicate */
 
 		Number++;
+		T_Need[Number] = false;
 	}
 
 	Object->Compute_Polygon(Number, Points);
 
+  EXPECT
+    CASE(TEXTURE_LIST_TOKEN)
+		  if (!TTextures)
+			{
+				Error("Texture list already defined");
+			}
+      Parse_Begin();
+      for (i = 0; i <= Number; i++)
+      {
+         if (T_Need[i])
+         {
+            GET(TEXTURE_ID_TOKEN);
+            TTextures[i] = Copy_Texture_Pointer((TEXTURE *)Token.Data);
+            Parse_Comma();
+         }
+         else 
+         {
+            TTextures[i]=NULL; /* no texture for duplicate */
+         }
+      }
+      Parse_End();
+      Object->Textures=TTextures;
+			TTextures = NULL;
+      Set_Flag(Object, MULTITEXTURE_FLAG);
+    END_CASE
+    CASE(STRENGTH_TOKEN)
+      Object->Strength=Parse_Float();
+    END_CASE
+
+    CASE(COLOUR_SPACE_TOKEN)
+      EXPECT_ONE
+      CASE(POV_TOKEN)
+      Object->Colour_Interpolation=CI_RGB;
+      END_CASE
+      CASE(HSL_TOKEN)
+      Object->Colour_Interpolation=CI_HSL;
+      END_CASE
+      CASE(HSV_TOKEN)
+      Object->Colour_Interpolation=CI_HSV;
+      END_CASE
+      CASE(XYL_TOKEN)
+      Object->Colour_Interpolation=CI_XYL;
+      END_CASE
+      CASE(XYV_TOKEN)
+      Object->Colour_Interpolation=CI_XYV;
+      END_CASE
+    OTHERWISE
+      UNGET
+      EXIT
+    END_CASE
+      END_EXPECT
+    END_CASE
+    OTHERWISE
+      UNGET
+      if (TTextures)
+      {
+         POV_FREE (TTextures);
+      }
+      EXIT
+    END_CASE
+  END_EXPECT
+
 	POV_FREE (Points);
+	POV_FREE (T_Need);
 
 	Parse_Object_Mods (reinterpret_cast<ObjectPtr>(Object));
 
@@ -6067,6 +6645,58 @@ ObjectPtr Parser::Parse_Torus()
 }
 
 
+/*****************************************************************************
+*
+* FUNCTION
+*
+* INPUT
+*   
+* OUTPUT
+*   
+* RETURNS
+*   
+* AUTHOR
+*   
+* DESCRIPTION
+*
+* CHANGES
+*
+******************************************************************************/
+
+ObjectPtr Parser::Parse_Child()
+{
+	ObjectPtr Local,Parent;
+	CSG * RealParent;
+	int Object_Index = 0;
+  
+	Parse_Begin();
+  Parent = Parse_Object_Id();
+
+	if (!(Parent->Type & IS_COMPOUND_OBJECT))
+		Error("Object is not Compound.");
+
+	if (!(Parent->Type & IS_CSG_OBJECT))
+		Error("Object is not CSG.");
+
+	GET(LEFT_PAREN_TOKEN);
+	Object_Index = (int)Parse_Float();
+	GET(RIGHT_PAREN_TOKEN);
+	if (Object_Index < 0)
+		Error("index must be at least 0.");
+	
+
+
+  RealParent = (CSG*) Parent;
+	if (Object_Index >= RealParent->children.size())
+		Error("There is not enough children to reach that index value.");
+	Local = RealParent->children[Object_Index];
+
+	Local = (ObjectPtr)Copy_Object(Local);
+	Local->Type &= ~IS_CHILD_OBJECT; /* drop the flag about being a child */
+	Destroy_Object(Parent);
+	return Local;
+
+}
 
 /*****************************************************************************
 *
@@ -6141,7 +6771,6 @@ ObjectPtr Parser::Parse_TrueType ()
 	DBL depth;
 	VECTOR offset;
 	int builtin_font = 0;
-	TRANSFORM Local_Trans;
 
 	Parse_Begin ();
 
@@ -6191,17 +6820,95 @@ ObjectPtr Parser::Parse_TrueType ()
 	/**** Compute_TTF_BBox(Object); */
 	Object->Compute_BBox();
 
-	/* This tiny rotation should fix cracks in text that lies along an axis */
-	Make_Vector(offset, 0.001, 0.001, 0.001);
-	Compute_Rotation_Transform(&Local_Trans, offset);
-	Rotate_Object (reinterpret_cast<ObjectPtr>(Object), offset, &Local_Trans);
-
 	/* Get any rotate/translate or texturing stuff */
 	Object = Parse_Object_Mods (reinterpret_cast<ObjectPtr>(Object));
 
 	return (reinterpret_cast<ObjectPtr>(Object));
 }
 
+
+
+/*****************************************************************************
+*
+* FUNCTION
+*
+* INPUT
+*   
+* OUTPUT
+*   
+* RETURNS
+*   
+* AUTHOR
+*   
+* DESCRIPTION
+*
+* CHANGES
+*
+******************************************************************************/
+
+ObjectPtr Parser::Parse_Galley ()
+{
+	ObjectPtr Object;
+	char *filename = NULL;
+	UCS2 *text_string;
+	VECTOR vecone;
+	VECTOR spec;
+	int builtin_font = 0;
+  
+
+	Parse_Begin ();
+
+	if ( (Object = reinterpret_cast<ObjectPtr>(Parse_Object_Id())) != NULL)
+		return (reinterpret_cast<ObjectPtr>(Object));
+
+	EXPECT
+		CASE(TTF_TOKEN)
+			filename = Parse_C_String(true);
+			EXIT
+		END_CASE
+		CASE(INTERNAL_TOKEN) 
+			builtin_font = (int)Parse_Float();
+			EXIT
+		END_CASE
+		OTHERWISE
+			Expectation_Error ("ttf or internal");
+		END_CASE
+	END_EXPECT
+
+
+	/*** Object = Create_TTF(); */
+	Parse_Comma();
+
+	/* Parse the text string to be rendered */
+	text_string = Parse_String();
+	Parse_Comma();
+
+	/* Get the extrusion depth and coefficient for line feed */
+	Parse_Vector(vecone); Parse_Comma ();
+
+	/* Get the specification vector */
+	Parse_Vector(spec);
+
+	/* Process all this good info */
+	Object = new CSGUnion();
+	TrueType::ProcessTTFGalley(reinterpret_cast<CSG *>(Object), filename, builtin_font, text_string, vecone, spec, this, sceneData);
+	if (filename)
+	{
+		/* Free up the filename  */
+		POV_FREE (filename);
+	}
+
+	/* Free up the text string memory */
+	POV_FREE (text_string);
+
+	/**** Compute_TTF_BBox(Object); */
+	Object->Compute_BBox();
+
+	/* Get any rotate/translate or texturing stuff */
+	Object = Parse_Object_Mods (reinterpret_cast<ObjectPtr>(Object));
+
+	return (reinterpret_cast<ObjectPtr>(Object));
+}
 
 
 /*****************************************************************************
@@ -6362,10 +7069,25 @@ ObjectPtr Parser::Parse_Object ()
 			EXIT
 		END_CASE
 
+		CASE (GALLEY_TOKEN)
+			Object = Parse_Galley ();
+			EXIT
+		END_CASE
+
 		CASE (OBJECT_ID_TOKEN)
 			Object = Copy_Object(reinterpret_cast<ObjectPtr>(Token.Data));
 			EXIT
 		END_CASE
+
+    CASE (INTERUNION_TOKEN)
+      Object = Parse_GSD (GSD_INTERUNION_TYPE);
+      EXIT
+    END_CASE
+
+    CASE (INTERMERGE_TOKEN)
+      Object = Parse_GSD (GSD_INTERMERGE_TYPE);
+      EXIT
+    END_CASE
 
 		CASE (UNION_TOKEN)
 			Object = Parse_CSG (CSG_UNION_TYPE);
@@ -6432,6 +7154,95 @@ ObjectPtr Parser::Parse_Object ()
 			Object = Parse_Light_Source ();
 			EXIT
 		END_CASE
+
+/* TESSELATIONPATCH --> */
+     CASE (GRID_TOKEN)
+       Object = Parse_Grid();
+       EXIT
+     END_CASE
+
+     CASE (GTS_LOAD_TOKEN)
+       Object = Parse_Gts_Load();
+       EXIT
+     END_CASE
+
+     CASE (KEEP_TOKEN)
+       Object = Parse_Select();
+       EXIT
+     END_CASE
+
+     CASE (CUBICLE_TOKEN)
+       Object = Parse_Cubicle();
+       EXIT
+     END_CASE
+
+     CASE (CRISTAL_TOKEN)
+       Object = Parse_Cristal();
+       EXIT
+     END_CASE
+
+     CASE (BOURKE_TOKEN)
+       Object = Parse_Bourke();
+       EXIT
+     END_CASE
+
+     CASE (HELLER_TOKEN)
+       Object = Parse_Heller();
+       EXIT
+     END_CASE
+
+     CASE (ROLL_TOKEN)
+       Object = Parse_Roll();
+       EXIT
+     END_CASE
+
+     CASE (BEND_TOKEN)
+       Object = Parse_Bend();
+       EXIT
+     END_CASE
+
+     CASE (MOVE_TOKEN)
+       Object = Parse_Move_Object();
+       EXIT
+     END_CASE
+
+     CASE (WARP_TOKEN)
+       Object = Parse_Warp_Object();
+       EXIT
+     END_CASE
+
+     CASE (SCREW_TOKEN)
+       Object = Parse_Screw();
+       EXIT
+     END_CASE
+
+     CASE (SMOOTH_TOKEN)
+       Object = Parse_Smooth();
+       EXIT
+     END_CASE
+     CASE (DISPLACE_TOKEN)
+       Object = Parse_Displace();
+       EXIT
+     END_CASE
+     CASE (PLANET_TOKEN)
+       Object = Parse_Planet();
+       EXIT
+     END_CASE
+  /* --> TESSELATIONPATCH */
+     CASE (TESSELATE_TOKEN)
+       Object = Parse_Tesselation();
+       EXIT
+     END_CASE
+     CASE (TESSEL_TOKEN)
+       Object = Parse_Tessel();
+       EXIT
+     END_CASE
+  /* TESSELATIONPATCH <-- */                                                    
+
+     CASE (CHILD_TOKEN)
+       Object = Parse_Child();
+       EXIT
+     END_CASE
 
 		CASE (OBJECT_TOKEN)
 			Parse_Begin ();
@@ -9286,7 +10097,6 @@ void Parser::MAError (const char *, long)
 
 void Parser::Post_Process (ObjectPtr Object, ObjectPtr Parent)
 {
-	DBL Volume;
 	FINISH *Finish;
 
 	if (Object == NULL)
@@ -9560,9 +10370,7 @@ void Parser::Post_Process (ObjectPtr Object, ObjectPtr Parent)
 	// Test wether the object is finite or infinite. [DB 9/94]
 	// CJC TODO FIXME: see if this can be improved, and/or if it is appropriate for all bounding systems
 
-	BOUNDS_VOLUME(Volume, Object->BBox);
-
-	if (Volume > INFINITE_VOLUME)
+	if (!IS_FINITE(Object->BBox))
 	{
 		Set_Flag(Object, INFINITE_FLAG);
 	}
@@ -9632,6 +10440,7 @@ void Parser::Link_To_Frame(ObjectPtr Object)
 		if ((dynamic_cast<CSGUnion *>(Object) == NULL)        && // FIXME
 		    (dynamic_cast<CSGIntersection *>(Object) == NULL) && // FIXME
 		    (dynamic_cast<CSGMerge *>(Object) == NULL)        && // FIXME
+		    (dynamic_cast<GSDInterUnion *>(Object) == NULL)   && // FIXME
 		    (dynamic_cast<Poly *>(Object) == NULL)            && // FIXME
 		    (dynamic_cast<TrueType *>(Object) == NULL)        && // FIXME
 		    ((dynamic_cast<Quadric *>(Object) == NULL) || (dynamic_cast<Quadric *>(Object)->Automatic_Bounds)))
@@ -9693,11 +10502,9 @@ void Parser::Link_To_Frame(ObjectPtr Object)
 	{
 		/* Test if all siblings are finite. */
 		bool finite = true;
-		DBL Volume;
 		for(vector<ObjectPtr>::iterator This_Sib = (reinterpret_cast<CSG *>(Object))->children.begin(); This_Sib != (reinterpret_cast<CSG *>(Object))->children.end(); This_Sib++)
 		{
-			BOUNDS_VOLUME(Volume, (*This_Sib)->BBox);
-			if (Volume > BOUND_HUGE)
+			if (!IS_FINITE((*This_Sib)->BBox))
 			{
 				finite = false;
 				break;

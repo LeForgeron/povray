@@ -63,6 +63,9 @@ class Polygon : public ObjectBase
 	public:
 		VECTOR S_Normal;
 		POLYGON_DATA *Data;
+		ColourInterpolation Colour_Interpolation;
+		SNGL Strength; /* Strength of interpolation for textures */
+		TEXTURE **Textures;
 
 		Polygon();
 		virtual ~Polygon();
@@ -81,6 +84,8 @@ class Polygon : public ObjectBase
 		virtual void Compute_BBox();
 
 		void Compute_Polygon(int number, VECTOR *points);
+		void Determine_Textures(Intersection *, bool, WeightedTextureVector&, ColourInterpolation&, TraceThreadData *);
+
 	protected:
 		bool Intersect(const Ray& ray, DBL *Depth, TraceThreadData *Thread) const;
 		static bool in_polygon(int number, UV_VECT *points, DBL u, DBL  v);

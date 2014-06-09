@@ -76,7 +76,7 @@ static BLEND_MAP_ENTRY Black_White_Entries[2] =
 	 {1.0, false, {{1.0, 1.0, 1.0, 0.0, 0.0}}}};
 
 const BLEND_MAP Gray_Default_Map =
-	{ -1,  2,  false, COLOUR_TYPE,  Black_White_Entries};
+	{ -1,  2,  false, COLOUR_TYPE, CI_RGB,  Black_White_Entries};
 
 static BLEND_MAP_ENTRY Bozo_Entries[6] =
 	{{0.4, false, {{1.0, 1.0, 1.0, 0.0, 0.0}}},
@@ -87,14 +87,14 @@ static BLEND_MAP_ENTRY Bozo_Entries[6] =
 	 {0.8, false, {{1.0, 0.0, 0.0, 0.0, 0.0}}}};
 
 const BLEND_MAP Bozo_Default_Map =
-	{ -1,  6,  false, COLOUR_TYPE,  Bozo_Entries};
+	{ -1,  6,  false, COLOUR_TYPE, CI_RGB,  Bozo_Entries};
 
 static BLEND_MAP_ENTRY Wood_Entries[2] =
 	{{0.6, false, {{0.666, 0.312,  0.2,   0.0, 0.0}}},
 	 {0.6, false, {{0.4,   0.1333, 0.066, 0.0, 0.0}}}};
 
 const BLEND_MAP Wood_Default_Map =
-	{ -1,  2,  false, COLOUR_TYPE,  Wood_Entries};
+	{ -1,  2,  false, COLOUR_TYPE,  CI_RGB, Wood_Entries};
 
 static BLEND_MAP_ENTRY Mandel_Entries[5] =
 	{{0.001, false, {{0.0, 0.0, 0.0, 0.0, 0.0}}},
@@ -104,7 +104,7 @@ static BLEND_MAP_ENTRY Mandel_Entries[5] =
 	 {0.1,   false, {{0.0, 1.0, 1.0, 0.0, 0.0}}}};
 
 const BLEND_MAP Mandel_Default_Map =
-	{ -1,  5,  false, COLOUR_TYPE,  Mandel_Entries};
+	{ -1,  5,  false, COLOUR_TYPE,  CI_RGB, Mandel_Entries};
 
 static BLEND_MAP_ENTRY Agate_Entries[6] =
 	{{0.0, false, {{1.0,  1.0,  1.0,  0.0, 0.0}}},
@@ -115,7 +115,7 @@ static BLEND_MAP_ENTRY Agate_Entries[6] =
 	 {1.0, false, {{0.6,  0.3,  0.0,  0.0, 0.0}}}};
 
 const BLEND_MAP Agate_Default_Map =
-	{ -1,  6,  false, COLOUR_TYPE,  Agate_Entries};
+	{ -1,  6,  false, COLOUR_TYPE, CI_RGB, Agate_Entries};
 
 static BLEND_MAP_ENTRY Radial_Entries[4] =
 	{{0.0,   false, {{0.0, 1.0, 1.0, 0.0, 0.0}}},
@@ -124,7 +124,7 @@ static BLEND_MAP_ENTRY Radial_Entries[4] =
 	 {1.0,   false, {{0.0, 1.0, 1.0, 0.0, 0.0}}}};
 
 const BLEND_MAP Radial_Default_Map =
-	{ -1,  4,  false, COLOUR_TYPE,  Radial_Entries};
+	{ -1,  4,  false, COLOUR_TYPE, CI_RGB, Radial_Entries};
 
 static BLEND_MAP_ENTRY Marble_Entries[3] =
 	{{0.0, false, {{0.9, 0.8,  0.8,  0.0, 0.0}}},
@@ -132,14 +132,14 @@ static BLEND_MAP_ENTRY Marble_Entries[3] =
 	 {0.9, false, {{0.0, 0.0, 0.0, 0.0, 0.0}}}};
 
 const BLEND_MAP Marble_Default_Map =
-	{ -1,  3,  false, COLOUR_TYPE,  Marble_Entries};
+	{ -1,  3,  false, COLOUR_TYPE,  CI_RGB,Marble_Entries};
 
 static BLEND_MAP_ENTRY Brick_Entries[2] =
 	{{0.0, false, {{0.5, 0.5,  0.5,  0.0, 0.0}}},
 	 {1.0, false, {{0.6, 0.15, 0.15, 0.0, 0.0}}}};
 
 const BLEND_MAP Brick_Default_Map =
-	{ -1,  2,  false, COLOUR_TYPE,  Brick_Entries};
+	{ -1,  2,  false, COLOUR_TYPE,  CI_RGB,Brick_Entries};
 
 static BLEND_MAP_ENTRY Hex_Entries[3] =
 	{{0.0, false, {{0.0, 0.0, 1.0, 0.0, 0.0}}},
@@ -147,7 +147,7 @@ static BLEND_MAP_ENTRY Hex_Entries[3] =
 	 {2.0, false, {{1.0, 0.0, 0.0, 0.0, 0.0}}}};
 
 const BLEND_MAP Hex_Default_Map =
-	{ -1, 3, false,COLOUR_TYPE, Hex_Entries};
+	{ -1, 3, false,COLOUR_TYPE,CI_RGB, Hex_Entries};
 
 // JN2007: Cubic pattern
 static BLEND_MAP_ENTRY Cubic_Entries[6] =
@@ -158,16 +158,16 @@ static BLEND_MAP_ENTRY Cubic_Entries[6] =
 	 {1.0, false, {{0.0, 1.0, 1.0, 0.0, 0.0}}},
 	 {2.0, false, {{1.0, 0.0, 1.0, 0.0, 0.0}}}};
 const BLEND_MAP Cubic_Default_Map =
-	{ -1, 6, false,COLOUR_TYPE, Cubic_Entries};
+	{ -1, 6, false,COLOUR_TYPE,CI_RGB, Cubic_Entries};
 
 const BLEND_MAP Check_Default_Map =
-	{ -1, 2, false,COLOUR_TYPE, Hex_Entries}; /* Yes... Hex_Entries, not Check [CY] */
+	{ -1, 2, false,COLOUR_TYPE,CI_RGB, Hex_Entries}; /* Yes... Hex_Entries, not Check [CY] */
 
 const BLEND_MAP Triangular_Default_Map =
-	{ -1, 6, false,COLOUR_TYPE, Cubic_Entries}; /* Yes... Cubic_Entries, not Triangular [JG] */
+	{ -1, 6, false,COLOUR_TYPE,CI_RGB, Cubic_Entries}; /* Yes... Cubic_Entries, not Triangular [JG] */
 
 const BLEND_MAP Square_Default_Map =
-	{ -1, 4, false,COLOUR_TYPE, Cubic_Entries}; /* Yes... Cubic_Entries, not Square [JG] */
+	{ -1, 4, false,COLOUR_TYPE,CI_RGB, Cubic_Entries}; /* Yes... Cubic_Entries, not Square [JG] */
 
 
 
@@ -589,7 +589,7 @@ bool Compute_Pigment (Colour& colour, const PIGMENT *Pigment, const VECTOR EPoin
 	}
 	else
 	{
-		Warp_EPoint (TPoint, EPoint, reinterpret_cast<const TPATTERN *>(Pigment));
+		// Warp_EPoint (TPoint, EPoint, reinterpret_cast<const TPATTERN *>(Pigment)); already done, not needed, see 10 lines above
 
 		if (Compute_Pigment(colour, Cur->Vals.Pigment,TPoint,Intersect, ray, Thread))
 			Colour_Found = true;
@@ -611,7 +611,8 @@ bool Compute_Pigment (Colour& colour, const PIGMENT *Pigment, const VECTOR EPoin
 
 		fraction = (value - Prev->value) / (Cur->value - Prev->value);
 
-		colour = Temp_Colour + fraction * (colour - Temp_Colour);
+		Interpolate2Colors(colour,Temp_Colour,colour,fraction,Blend_Map->Space);
+		// colour = Temp_Colour + fraction * (colour - Temp_Colour);
 	}
 
 	return(Colour_Found);

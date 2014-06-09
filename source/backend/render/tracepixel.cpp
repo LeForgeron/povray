@@ -205,6 +205,7 @@ void TracePixel::SetupCamera(const Camera& cam)
 	aspectRatio = 4.0 / 3.0;
 	VLength(cameraLengthRight, *cameraRight);
 	VLength(cameraLengthUp, *cameraUp);
+	VLength(cameraLengthDirection, *cameraDirection);
 
 	switch(camera.Type)
 	{
@@ -226,6 +227,26 @@ void TracePixel::SetupCamera(const Camera& cam)
 		case FISHEYE_CAMERA:
 			aspectRatio = cameraLengthRight / cameraLengthUp;
 			normalise = true;
+			break;
+		case PROJ_PLATECARREE_CAMERA:
+		case PROJ_MERCATOR_CAMERA:
+		case PROJ_LAMBERT_AZI_CAMERA:
+		case PROJ_VAN_DER_GRINTEN_CAMERA:
+		case PROJ_LAMBERT_CYL_CAMERA:
+		case PROJ_BEHRMANN_CAMERA:
+		case PROJ_CRASTER_CAMERA:
+		case PROJ_EDWARDS_CAMERA:
+		case PROJ_HOBO_DYER_CAMERA:
+		case PROJ_PETERS_CAMERA:
+		case PROJ_GALL_CAMERA:
+		case PROJ_BALTHASART_CAMERA:
+		case PROJ_MOLLWEIDE_CAMERA:
+		case PROJ_AITOFF_CAMERA:
+		case PROJ_ECKERT4_CAMERA:
+		case PROJ_ECKERT6_CAMERA:
+		case PROJ_MILLER_CAMERA:
+			aspectRatio = cameraLengthRight / cameraLengthUp;
+			normalise = false;
 			break;
 		default:
 			aspectRatio = cameraLengthRight / cameraLengthUp;
@@ -322,7 +343,38 @@ bool TracePixel::CreateCameraRay(Ray& ray, DBL x, DBL y, DBL width, DBL height, 
 			else
 				InitRayContainerState(ray);
 			break;
+    // Stereoscopic projection: two perspective cameras, one for left, the other for right
+    case STEREOSCOPIC_CAMERA:
+			// Convert the x coordinate to be a DBL from -0.5 to 0.5, twice.
+			x0 = 2.0 * x / width - 1.0;// first -1.0 to 1.0
+      if (x0 < 0)
+      {// left eye
+        x0 +=0.5;
+        VAddScaledEq(ray.Origin, -camera.Eye_Distance/cameraLengthRight/2.0, *cameraRight);
+        Compute_Axis_Rotation_Transform(&Trans, *cameraUp, camera.Parallaxe/cameraLengthUp);
+      }
+      else
+      {// right eye
+        x0 -=0.5;
+        VAddScaledEq(ray.Origin, camera.Eye_Distance/cameraLengthRight/2.0, *cameraRight);
+        Compute_Axis_Rotation_Transform(&Trans, *cameraUp, -camera.Parallaxe/cameraLengthUp);
+      }
+      MTransPoint(V1,*cameraDirection,&Trans);
 
+			// Convert the y coordinate to be a DBL from -0.5 to 0.5.
+			y0 = ((height - 1) - y) / height - 0.5;
+			// Create primary ray.
+			VLinComb3(ray.Direction, 1.0, V1, x0/2.0, *cameraRight, y0, *cameraUp);
+
+			// Do focal blurring (by Dan Farmer).
+			if(useFocalBlur)
+			{
+				JitterCameraRay(ray, x, y, ray_number);
+				InitRayContainerState(ray, true);
+			}
+			else
+				InitRayContainerState(ray);
+			break;
 		// Orthographic projection.
 		case ORTHOGRAPHIC_CAMERA:
 			// Convert the x coordinate to be a DBL from -0.5 to 0.5.
@@ -836,6 +888,352 @@ bool TracePixel::CreateCameraRay(Ray& ray, DBL x, DBL y, DBL width, DBL height, 
 				}
 				InitRayContainerState(ray);
 			}
+			break;
+
+	  case PROJ_TETRA_CAMERA:
+			// Convert the x coordinate to be a DBL from 0.0 to 1.0
+			x0 = x / width ;
+
+			// Convert the y coordinate to be a DBL from 0.0 to 1.0
+			y0 = y / height ;
+			 
+      if (!ProjectionTetraCameraRay(ray,x0,y0))
+			  return false;
+
+			if(useFocalBlur)
+				JitterCameraRay(ray, x, y, ray_number);
+
+			InitRayContainerState(ray);
+			break;
+
+	  case PROJ_CUBE_CAMERA:
+			// Convert the x coordinate to be a DBL from 0.0 to 1.0
+			x0 = x / width ;
+
+			// Convert the y coordinate to be a DBL from 0.0 to 1.0
+			y0 = y / height ;
+			 
+      if (!ProjectionCubeCameraRay(ray,x0,y0))
+			  return false;
+
+			if(useFocalBlur)
+				JitterCameraRay(ray, x, y, ray_number);
+
+			InitRayContainerState(ray);
+			break;
+
+	  case PROJ_OCTA_CAMERA:
+			// Convert the x coordinate to be a DBL from 0.0 to 1.0
+			x0 = x / width ;
+
+			// Convert the y coordinate to be a DBL from 0.0 to 1.0
+			y0 = y / height ;
+			 
+      if (!ProjectionOctaCameraRay(ray,x0,y0))
+			  return false;
+
+			if(useFocalBlur)
+				JitterCameraRay(ray, x, y, ray_number);
+
+			InitRayContainerState(ray);
+			break;
+
+	  case PROJ_ICOSA_CAMERA:
+			// Convert the x coordinate to be a DBL from 0.0 to 1.0
+			x0 = x / width ;
+
+			// Convert the y coordinate to be a DBL from 0.0 to 1.0
+			y0 = y / height ;
+			 
+      if (!ProjectionIcosaCameraRay(ray,x0,y0))
+			  return false;
+
+			if(useFocalBlur)
+				JitterCameraRay(ray, x, y, ray_number);
+
+			InitRayContainerState(ray);
+			break;
+
+	  case PROJ_PLATECARREE_CAMERA:
+			// Convert the x coordinate to be a DBL from 0.0 to 1.0
+			x0 = x / width ;
+
+			// Convert the y coordinate to be a DBL from 0.0 to 1.0
+			y0 = ((height - 1) - y) / height ;
+			 
+      if (!ProjectionPlateCarreeCameraRay(ray,x0,y0))
+			  return false;
+
+			if(useFocalBlur)
+				JitterCameraRay(ray, x, y, ray_number);
+
+			InitRayContainerState(ray);
+			break;
+
+	  case PROJ_MERCATOR_CAMERA:
+			// Convert the x coordinate to be a DBL from 0.0 to 1.0
+			x0 = x / width ;
+
+			// Convert the y coordinate to be a DBL from 0.0 to 1.0
+			y0 = ((height - 1) - y) / height ;
+			 
+      if (!ProjectionMercatorCameraRay(ray,x0,y0))
+			  return false;
+
+			if(useFocalBlur)
+				JitterCameraRay(ray, x, y, ray_number);
+
+			InitRayContainerState(ray);
+			break;
+
+	  case PROJ_LAMBERT_AZI_CAMERA:
+			// Convert the x coordinate to be a DBL from -2.0 to 2.0
+			x0 = 4.0*(x / width)-2.0 ;
+
+			// Convert the y coordinate to be a DBL from -2.0 to 2.0
+			y0 = 4.0*(((height - 1) - y) / height) -2.0 ;
+			 
+      if (!ProjectionLambertAzimuthalCameraRay(ray,x0,y0))
+			  return false;
+
+			if(useFocalBlur)
+				JitterCameraRay(ray, x, y, ray_number);
+
+			InitRayContainerState(ray);
+			break;
+
+
+		case PROJ_LAMBERT_CYL_CAMERA:
+			cx = 1.0 ; 
+			// Convert the x coordinate to be a DBL from -1.0 to 1.0
+			x0 = 2.0*(x / width)-1.0 ;
+
+			// Convert the y coordinate to be a DBL from -1.0 to 1.0
+			y0 = 2.0*(((height - 1) - y) / height) -1.0 ;
+			 
+      if (!ProjectionEqualAreaCameraRay(ray,x0,y0,cx))
+			  return false;
+
+			if(useFocalBlur)
+				JitterCameraRay(ray, x, y, ray_number);
+
+			InitRayContainerState(ray);
+			break;
+
+		case PROJ_BEHRMANN_CAMERA:
+			cx = cos(30.0 * M_PI_180 );
+			// Convert the x coordinate to be a DBL from -1.0 to 1.0
+			x0 = 2.0*(x / width)-1.0 ;
+
+			// Convert the y coordinate to be a DBL from -1.0 to 1.0
+			y0 = 2.0*(((height - 1) - y) / height) -1.0 ;
+			 
+      if (!ProjectionEqualAreaCameraRay(ray,x0,y0,cx))
+			  return false;
+
+			if(useFocalBlur)
+				JitterCameraRay(ray, x, y, ray_number);
+
+			InitRayContainerState(ray);
+			break;
+
+		case PROJ_CRASTER_CAMERA: /* 37°04' , 37*60= 2220 */
+			cx = cos(2224.0/60.0 * M_PI_180 );
+			// Convert the x coordinate to be a DBL from -1.0 to 1.0
+			x0 = 2.0*(x / width)-1.0 ;
+
+			// Convert the y coordinate to be a DBL from -1.0 to 1.0
+			y0 = 2.0*(((height - 1) - y) / height) -1.0 ;
+			 
+      if (!ProjectionEqualAreaCameraRay(ray,x0,y0,cx))
+			  return false;
+
+			if(useFocalBlur)
+				JitterCameraRay(ray, x, y, ray_number);
+
+			InitRayContainerState(ray);
+			break;
+
+		case PROJ_EDWARDS_CAMERA: /* 37°24' */
+			cx = cos(37.4 * M_PI_180 );
+			// Convert the x coordinate to be a DBL from -1.0 to 1.0
+			x0 = 2.0*(x / width)-1.0 ;
+
+			// Convert the y coordinate to be a DBL from -1.0 to 1.0
+			y0 = 2.0*(((height - 1) - y) / height) -1.0 ;
+			 
+      if (!ProjectionEqualAreaCameraRay(ray,x0,y0,cx))
+			  return false;
+
+			if(useFocalBlur)
+				JitterCameraRay(ray, x, y, ray_number);
+
+			InitRayContainerState(ray);
+			break;
+
+		case PROJ_HOBO_DYER_CAMERA: /* 37°30' */
+			cx = cos(37.5 * M_PI_180 );
+			// Convert the x coordinate to be a DBL from -1.0 to 1.0
+			x0 = 2.0*(x / width)-1.0 ;
+
+			// Convert the y coordinate to be a DBL from -1.0 to 1.0
+			y0 = 2.0*(((height - 1) - y) / height) -1.0 ;
+			 
+      if (!ProjectionEqualAreaCameraRay(ray,x0,y0,cx))
+			  return false;
+
+			if(useFocalBlur)
+				JitterCameraRay(ray, x, y, ray_number);
+
+			InitRayContainerState(ray);
+			break;
+
+		case PROJ_PETERS_CAMERA:
+			cx = cos(44.138 * M_PI_180 );
+			// Convert the x coordinate to be a DBL from -1.0 to 1.0
+			x0 = 2.0*(x / width)-1.0 ;
+
+			// Convert the y coordinate to be a DBL from -1.0 to 1.0
+			y0 = 2.0*(((height - 1) - y) / height) -1.0 ;
+			 
+      if (!ProjectionEqualAreaCameraRay(ray,x0,y0,cx))
+			  return false;
+
+			if(useFocalBlur)
+				JitterCameraRay(ray, x, y, ray_number);
+
+			InitRayContainerState(ray);
+			break;
+
+		case PROJ_GALL_CAMERA:
+			cx = cos(45.0 * M_PI_180 );
+			// Convert the x coordinate to be a DBL from -1.0 to 1.0
+			x0 = 2.0*(x / width)-1.0 ;
+
+			// Convert the y coordinate to be a DBL from -1.0 to 1.0
+			y0 = 2.0*(((height - 1) - y) / height) -1.0 ;
+			 
+      if (!ProjectionEqualAreaCameraRay(ray,x0,y0,cx))
+			  return false;
+
+			if(useFocalBlur)
+				JitterCameraRay(ray, x, y, ray_number);
+
+			InitRayContainerState(ray);
+			break;
+
+		case PROJ_BALTHASART_CAMERA:
+			cx = cos(50.0 * M_PI_180 );
+			// Convert the x coordinate to be a DBL from -1.0 to 1.0
+			x0 = 2.0*(x / width)-1.0 ;
+
+			// Convert the y coordinate to be a DBL from -1.0 to 1.0
+			y0 = 2.0*(((height - 1) - y) / height) -1.0 ;
+			 
+      if (!ProjectionEqualAreaCameraRay(ray,x0,y0,cx))
+			  return false;
+
+			if(useFocalBlur)
+				JitterCameraRay(ray, x, y, ray_number);
+
+			InitRayContainerState(ray);
+			break;
+
+
+		case PROJ_VAN_DER_GRINTEN_CAMERA:
+			// Convert the x coordinate to be a DBL from -1.0 to 1.0
+			x0 = 2.0*(x / width)-1.0 ;
+
+			// Convert the y coordinate to be a DBL from -1.0 to 1.0
+			y0 = 2.0*(((height - 1) - y) / height) -1.0 ;
+			 
+      if (!ProjectionVanDerGrintenCameraRay(ray,x0,y0))
+			  return false;
+
+			if(useFocalBlur)
+				JitterCameraRay(ray, x, y, ray_number);
+
+			InitRayContainerState(ray);
+			break;
+
+		case PROJ_MOLLWEIDE_CAMERA:
+			// Convert the x coordinate to be a DBL from -1.0 to 1.0
+			x0 = 2.0*(x / width)-1.0 ;
+
+			// Convert the y coordinate to be a DBL from -1.0 to 1.0
+			y0 = 2.0*(((height - 1) - y) / height) -1.0 ;
+			 
+      if (!ProjectionMollweideCameraRay(ray,x0,y0))
+			  return false;
+
+			if(useFocalBlur)
+				JitterCameraRay(ray, x, y, ray_number);
+
+			InitRayContainerState(ray);
+			break;
+
+		case PROJ_AITOFF_CAMERA:
+			// Convert the x coordinate to be a DBL from -1.0 to 1.0
+			x0 = 2.0*(x / width)-1.0 ;
+
+			// Convert the y coordinate to be a DBL from -1.0 to 1.0
+			y0 = 2.0*(((height - 1) - y) / height) -1.0 ;
+			 
+      if (!ProjectionAitoffHammerCameraRay(ray,x0,y0))
+			  return false;
+
+			if(useFocalBlur)
+				JitterCameraRay(ray, x, y, ray_number);
+
+			InitRayContainerState(ray);
+			break;
+
+		case PROJ_ECKERT4_CAMERA:
+			// Convert the x coordinate to be a DBL from -1.0 to 1.0
+			x0 = 2.0*(x / width)-1.0 ;
+
+			// Convert the y coordinate to be a DBL from -1.0 to 1.0
+			y0 = 2.0*(((height - 1) - y) / height) -1.0 ;
+			 
+      if (!ProjectionEckert4CameraRay(ray,x0,y0))
+			  return false;
+
+			if(useFocalBlur)
+				JitterCameraRay(ray, x, y, ray_number);
+
+			InitRayContainerState(ray);
+			break;
+
+		case PROJ_ECKERT6_CAMERA:
+			// Convert the x coordinate to be a DBL from -1.0 to 1.0
+			x0 = 2.0*(x / width)-1.0 ;
+
+			// Convert the y coordinate to be a DBL from -1.0 to 1.0
+			y0 = 2.0*(((height - 1) - y) / height) -1.0 ;
+			 
+      if (!ProjectionEckert6CameraRay(ray,x0,y0))
+			  return false;
+
+			if(useFocalBlur)
+				JitterCameraRay(ray, x, y, ray_number);
+
+			InitRayContainerState(ray);
+			break;
+
+		case PROJ_MILLER_CAMERA:
+			// Convert the x coordinate to be a DBL from -1.0 to 1.0
+			x0 = 2.0*(x / width)-1.0 ;
+
+			// Convert the y coordinate to be a DBL from -1.0 to 1.0
+			y0 = 2.0*(((height - 1) - y) / height) -1.0 ;
+			 
+      if (!ProjectionMillerCameraRay(ray,x0,y0))
+			  return false;
+
+			if(useFocalBlur)
+				JitterCameraRay(ray, x, y, ray_number);
+
+			InitRayContainerState(ray);
 			break;
 
 		default:

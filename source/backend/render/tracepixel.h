@@ -245,6 +245,8 @@ class TracePixel : public Trace
 		DBL cameraLengthRight;
 		/// length of current camera's 'up' vector prior to normalisation
 		DBL cameraLengthUp;
+		/// length of current camera's 'direction' vector prior to normalisation
+		DBL cameraLengthDirection;
 		/// aspect ratio for current camera
 		DBL aspectRatio;
 		/// camera
@@ -268,6 +270,38 @@ class TracePixel : public Trace
 
 		void TraceRayWithFocalBlur(Colour& colour, DBL x, DBL y, DBL width, DBL height);
 		void JitterCameraRay(Ray& ray, DBL x, DBL y, size_t ray_number);
+
+		// Additional map projection camera in tracepixel_*.cpp
+		bool ProjectionTetraCameraRay(Ray& ray, DBL x,DBL y);
+		bool ProjectionCubeCameraRay(Ray& ray, DBL x,DBL y);
+		bool ProjectionOctaCameraRay(Ray& ray, DBL x,DBL y);
+		bool ProjectionIcosaCameraRay(Ray& ray, DBL x,DBL y);
+		bool ProjectionMercatorCameraRay(Ray& ray, DBL x,DBL y);
+		bool ProjectionPlateCarreeCameraRay(Ray& ray, DBL x,DBL y);
+		bool ProjectionLambertAzimuthalCameraRay(Ray& ray, DBL x,DBL y);
+
+		bool ProjectionEqualAreaCameraRay(Ray& ray, DBL x,DBL y, DBL cos_t);
+
+		bool ProjectionMollweideCameraRay(Ray& ray, DBL x,DBL y);
+		bool ProjectionAitoffHammerCameraRay(Ray& ray, DBL x,DBL y);
+		bool ProjectionVanDerGrintenCameraRay(Ray& ray, DBL x,DBL y);
+		bool ProjectionEckert4CameraRay(Ray& ray, DBL x,DBL y);
+		bool ProjectionEckert6CameraRay(Ray& ray, DBL x,DBL y);
+		bool ProjectionMillerCameraRay(Ray& ray, DBL x,DBL y);
+		void weight_in_triangle(Ray& ray, const DBL x,const DBL y,
+                    const Vector2d a,
+                    const Vector2d b,
+                    const Vector2d c,
+                    const Vector2d na,
+                    const Vector2d nb,
+                    const Vector2d nc);
+		void weight_in_rectriangle(Ray& ray, const DBL x,const DBL y,
+                    const Vector2d a,
+                    const Vector2d b,
+                    const Vector2d c,
+                    const Vector2d na,
+                    const Vector2d nb,
+                    const Vector2d nc);
 };
 
 }

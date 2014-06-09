@@ -57,8 +57,6 @@ namespace pov
 
 
 /* Define max. number of blob components. */
-// [CLi] un-comment the following line if you want a hard limit of blob components; should be obsolete by now.
-// #define MAX_BLOB_COMPONENTS 1000000
 
 /* Generate additional blob statistics. */
 
@@ -122,6 +120,7 @@ class Blob : public ObjectBase
 	public:
 		Blob_Data *Data;
 		TEXTURE **Element_Texture;
+		ColourInterpolation Colour_Interpolation;
 
 		Blob();
 		virtual ~Blob();
@@ -138,7 +137,7 @@ class Blob : public ObjectBase
 		virtual void Invert();
 		virtual void Compute_BBox();
 
-		void Determine_Textures(Intersection *, bool, WeightedTextureVector&, TraceThreadData *);
+		void Determine_Textures(Intersection *, bool, WeightedTextureVector&, ColourInterpolation&, TraceThreadData *);
 
 		Blob_List_Struct *Create_Blob_List_Element();
 		void Create_Blob_Element_Texture_List(Blob_List_Struct *BlobList, int npoints);

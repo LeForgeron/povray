@@ -107,6 +107,7 @@ class Mesh : public ObjectBase
 		long Number_Of_Textures;       /* Number of textures in the mesh.   */
 		TEXTURE **Textures;            /* Array of texture references.      */
 		short has_inside_vector;
+		ColourInterpolation Colour_Interpolation;
 
 		Mesh();
 		virtual ~Mesh();
@@ -138,7 +139,7 @@ class Mesh : public ObjectBase
 		int Mesh_Hash_UV(int *Number, int *Max, UV_VECT **Elements, const UV_VECT aPoint);
 		void Smooth_Mesh_Normal(VECTOR Result, const MESH_TRIANGLE *Triangle, const VECTOR IPoint) const;
 
-		void Determine_Textures(Intersection *, bool, WeightedTextureVector&, TraceThreadData *);
+		void Determine_Textures(Intersection *, bool, WeightedTextureVector&, ColourInterpolation&, TraceThreadData *);
 	protected:
 		bool Intersect(const Ray& ray, IStack& Depth_Stack, TraceThreadData *Thread);
 		void Compute_Mesh_BBox();

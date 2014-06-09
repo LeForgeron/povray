@@ -1214,6 +1214,90 @@ void Parser::Parse_Pattern (TPATTERN *New, int TPat_Type)
 		}
 		END_CASE
 
+		CASE (PROXIMITY_TOKEN)
+		{
+			Parse_Begin();
+			vector<ObjectPtr> tempObjects;
+			Parse_Bound_Clip(tempObjects, false);
+			if(tempObjects.size() != 1)
+				Error ("object or object identifier expected.");
+			New->Vals.Proximity.Object = tempObjects[0];
+			New->Vals.Proximity.Range = 1.0;
+			New->Type = PROXIMITY_PATTERN;
+			New->Frequency = 0.0;
+			Parse_End();
+			EXIT
+		}
+		END_CASE
+
+		CASE (PROPORTION_TOKEN)
+		{
+			Parse_Begin();
+			vector<ObjectPtr> tempObjects;
+			Parse_Bound_Clip(tempObjects, false);
+			if(tempObjects.size() < 1)
+				Error ("object(s) or object identifier(s) expected.");
+			New->Vals.Object_vect = new vector<ObjectPtr>;
+			*(New->Vals.Object_vect) = tempObjects;
+			New->Type = PROPORTION_PATTERN;
+			New->Frequency = 0.0;
+			Parse_End();
+			EXIT
+		}
+		END_CASE
+		CASE (BINARY_TOKEN)
+		{
+			Parse_Begin();
+			vector<ObjectPtr> tempObjects;
+			Parse_Bound_Clip(tempObjects, false);
+			if(tempObjects.size() < 1)
+				Error ("object(s) or object identifier(s) expected.");
+			New->Vals.Object_vect = new vector<ObjectPtr>;
+			*(New->Vals.Object_vect) = tempObjects;
+			New->Type = BINARY_PATTERN;
+			New->Frequency = 0.0;
+			Parse_End();
+			EXIT
+		}
+		END_CASE
+    CASE (VORONOI_TOKEN)
+    {
+			New->Type = VORONOI_PATTERN;
+      New->Vals.Point_vect = new vector<Vector3d>;
+      Parse_Begin();
+      while (Allow_Vector(Local_Vector))
+      {
+         Vector3d loc(Local_Vector);
+				 New->Vals.Point_vect->push_back(loc);
+         Parse_Comma();
+      }
+      Parse_End();
+			EXIT
+    }
+    END_CASE
+    CASE (MASONRY_TOKEN)
+    {
+      New->Type = MASONRY_PATTERN;
+      New->Vals.Masonry.Cell_vect = new vector<Vector3d>;
+      New->Vals.Masonry.Cell_value = new vector<DBL>;
+			Parse_Vector (Local_Vector);
+      New->Vals.Masonry.Thickness = Local_Vector[X];
+      New->Vals.Masonry.Border = Local_Vector[Y];
+      New->Vals.Masonry.Middle = Local_Vector[Z];
+      VECTOR_4D single_cell;
+      Parse_Begin();
+      while (Allow_Vector4D(single_cell))
+      {
+         New->Vals.Masonry.Cell_value->push_back(single_cell[3]);
+         Vector3d center(single_cell);
+				 New->Vals.Masonry.Cell_vect->push_back(center);
+         Parse_Comma();
+      }
+      Parse_End();
+			EXIT
+    }
+		END_CASE
+
 		CASE (CELLS_TOKEN)
 			New->Type = CELLS_PATTERN;
 			EXIT
@@ -1743,6 +1827,17 @@ void Parser::Parse_Pattern (TPATTERN *New, int TPat_Type)
 			New->Vals.Facets.UseCoords = Parse_Float();
 		END_CASE
 
+		CASE (RADIUS_TOKEN)
+		  if (New->Type == PROXIMITY_PATTERN )
+			{
+				New->Vals.Proximity.Range = Parse_Float();
+			}
+			else
+			{
+				Only_In("radius", "proximity");
+			}
+		END_CASE
+
 		CASE (SIZE_TOKEN)
 			if (New->Type == FACETS_PATTERN )
 			{
@@ -2169,6 +2264,19 @@ void Parser::Parse_Pattern (TPATTERN *New, int TPat_Type)
 	{
 		Error("Tiling number must be between 1 and 27.");
 	}
+
+  if ((New->Type==VORONOI_PATTERN) && ((New->Vals.Point_vect->size() < 2)))
+  {
+    delete New->Vals.Point_vect;
+    Error("Need at least 2 points.");
+  }
+
+  if ((New->Type==MASONRY_PATTERN) && ((New->Vals.Masonry.Cell_vect->size() < 2)))
+  {
+    delete New->Vals.Masonry.Cell_vect;
+    delete New->Vals.Masonry.Cell_value;
+    Error("Need at least 2 4D-Vectors.");
+  }
 }
 
 
@@ -4459,6 +4567,11 @@ void Parser::Parse_Warp (WARP **Warp_Ptr)
 	SPHEREW *SphereW;
 	TOROIDAL *Toroidal;
 	PLANARW *PlanarW;
+    SPHEREWARP *Spheric_warp;
+    CYLINDERWARP *Cylindric_warp;
+    TORUSWARP *Toric_warp;
+    CONEWARP *Conic_warp;
+
 
 	Parse_Begin();
 
@@ -4688,6 +4801,105 @@ void Parser::Parse_Warp (WARP **Warp_Ptr)
 			New = Create_Warp(CUBIC_WARP);
 			EXIT
 		END_CASE
+
+    CASE(SPHERE_TOKEN)
+    
+      New = Create_Warp(SPHERE_WARP) ;
+      Spheric_warp = reinterpret_cast<SPHEREWARP *>(New);
+      Parse_Vector (Local_Vector) ;
+      Assign_Vector (Spheric_warp->Center, Local_Vector) ;
+      Parse_Comma () ;
+      Parse_Vector (Local_Vector) ;
+      Assign_Vector (Spheric_warp->Param, Local_Vector) ;
+      EXPECT
+        CASE(INVERSE_TOKEN)
+        Spheric_warp->Inversed = 1;
+        END_CASE
+
+        OTHERWISE
+          UNGET
+          EXIT
+        END_CASE
+      END_EXPECT
+      EXIT
+    END_CASE
+
+    CASE(CYLINDER_TOKEN)
+      New = Create_Warp(CYLINDER_WARP) ;
+      Cylindric_warp = reinterpret_cast<CYLINDERWARP *>(New);
+      Parse_Vector (Local_Vector) ;
+      Assign_Vector (Cylindric_warp->Center, Local_Vector) ;
+      Parse_Comma () ;
+      Parse_Vector (Local_Vector) ;
+      Assign_Vector (Cylindric_warp->Param, Local_Vector) ;
+      EXPECT
+        CASE(INVERSE_TOKEN)
+        Cylindric_warp->Inversed = 1;
+        END_CASE
+
+        OTHERWISE
+          UNGET
+          EXIT
+        END_CASE
+      END_EXPECT
+      EXIT
+    END_CASE
+
+    CASE(TORUS_TOKEN)
+      New = Create_Warp(TORUS_WARP);
+      Toric_warp = reinterpret_cast<TORUSWARP *>(New);
+      Parse_Vector (Local_Vector) ;
+      Assign_Vector (Toric_warp->Center, Local_Vector) ;
+      Parse_Comma () ;
+      Toric_warp->Radius = Parse_Float();
+      if (Toric_warp->Radius == 0.0)
+      {
+         Warning(0.0,"Degenerated Torus warp (think about Sphere warp)\n");
+      }
+      Parse_Comma () ;
+      Parse_Vector (Local_Vector) ;
+      Assign_Vector (Toric_warp->Param, Local_Vector) ;
+      EXPECT
+        CASE(INVERSE_TOKEN)
+        Toric_warp->Inversed = 1;
+        END_CASE
+
+        OTHERWISE
+          UNGET
+          EXIT
+        END_CASE
+      END_EXPECT
+      EXIT
+    END_CASE
+     
+    CASE(CONE_TOKEN)
+      New = Create_Warp(CONE_WARP);
+      Conic_warp = reinterpret_cast<CONEWARP *>(New);
+      Parse_Vector (Local_Vector) ;
+      Assign_Vector (Conic_warp->Center, Local_Vector) ;
+      Parse_Comma () ;
+      Conic_warp->Radius = Parse_Float();
+      if (Conic_warp->Radius == 0.0)
+      {
+         Warning(0.0,"Radius of Cone warp is null, reset to 1.0");
+         Conic_warp->Radius = 1.0;
+      }
+      Parse_Comma () ;
+      Parse_Vector (Local_Vector) ;
+      Assign_Vector (Conic_warp->Param, Local_Vector) ;
+      EXPECT
+        CASE(INVERSE_TOKEN)
+        Conic_warp->Inversed = 1;
+        END_CASE
+
+        OTHERWISE
+          UNGET
+          EXIT
+        END_CASE
+      END_EXPECT
+      EXIT
+    END_CASE
+      
 
 		OTHERWISE
 			Expectation_Error ("warp type");

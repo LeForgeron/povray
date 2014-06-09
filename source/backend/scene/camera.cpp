@@ -243,6 +243,8 @@ void Camera::Init()
 	Tnormal = NULL;
 
 	Bokeh = NULL; // no user-defined bokeh by default
+    Eye_Distance = 0.0;
+    Parallaxe = 0.0;
 
 	Trans = Create_Transform();
 
@@ -342,6 +344,9 @@ Camera& Camera::operator=(const Camera& src)
 	if (Bokeh != NULL)
 		Destroy_Pigment(Bokeh);
 	Bokeh = src.Bokeh ? Copy_Pigment(src.Bokeh) : NULL;
+
+    Eye_Distance = src.Eye_Distance;
+    Parallaxe = src.Parallaxe; 
 
 	for (std::vector<ObjectPtr>::iterator it = Meshes.begin(); it != Meshes.end(); it++)
 		Destroy_Object(*it);

@@ -692,6 +692,8 @@ enum
 	kPOVList_Stat_VistaBufferTest,
 	kPOVList_Stat_RBezierTest,
 	kPOVList_Stat_OvusTest,
+	kPOVList_Stat_GSDIntermergeTest,
+	kPOVList_Stat_GSDInterunionTest,
 	kPOVList_Stat_Last
 };
 

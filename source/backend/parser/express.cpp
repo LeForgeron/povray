@@ -573,25 +573,23 @@ void Parser::Parse_Spline_Call(EXPRESS Express, int *Terms)
 {
 	SPLINE *spline = reinterpret_cast<SPLINE*>(Token.Data);
 	DBL Val;
+	int k;
 
 	// NB while parsing the call parameters, the parser may drop out of the current scope (macro or include file)
 	// before we get a chance to evaluate the spline, so we claim dibs on it.
 	// TODO - use smart pointers for this
 	Acquire_Spline_Reference(spline);
-
-	if(Parse_Call() == false)
-	{
-		Release_Spline_Reference(spline);
-		return;
-	}
+  
+	EXPECT
+	CASE (LEFT_PAREN_TOKEN)
 
 	Val=Parse_Float();
 	Get_Token();
 
-	if(Token.Token_Id == COMMA_TOKEN)
+  if(Token.Token_Id == COMMA_TOKEN)
 	{
-		/*If there is a second parameter, make a copy of the spline
-		with a new type and evaluate that.*/
+	  /*If there is a second parameter, make a copy of the spline
+			with a new type and evaluate that.*/
 
 		// we claimed dibs on the original spline, but since we've chosen to use a copy instead, we'll release the original
 		Release_Spline_Reference(spline);
@@ -612,24 +610,195 @@ void Parser::Parse_Spline_Call(EXPRESS Express, int *Terms)
 			case NATURAL_SPLINE_TOKEN:
 				spline->Type = NATURAL_SPLINE;
 				break;
-			default:
-				Error("linear_spline, quadratic_spline, natural_spline, or cubic_spline expected.");
+			case SOR_SPLINE_TOKEN:
+				spline->Type = SOR_LIKE_SPLINE;
 				break;
-		}
+			case TCB_SPLINE_TOKEN:
+				spline->Type = TCB_SPLINE;
+				EXPECT
+					CASE (TENSION_TOKEN)
+					spline->extra.tcb.tension = Parse_Float();
+					END_CASE
+					CASE (CONTINUITY_TOKEN)
+					spline->extra.tcb.continuity = Parse_Float();
+					END_CASE
+					CASE (BIAS_TOKEN)
+					spline->extra.tcb.bias = Parse_Float();
+					END_CASE
+					OTHERWISE
+					UNGET
+					EXIT
+					END_CASE
+				END_EXPECT
+				break;
+			case AKIMA_SPLINE_TOKEN:
+				spline->Type = AKIMA_SPLINE;
+					break;
+				case BASIC_X_SPLINE_TOKEN:
+					spline->Type = BASIC_X_SPLINE;
+					EXPECT
+						CASE (FREEDOM_DEGREE_TOKEN)
+						spline->extra.freedom_degree = Parse_Float();
+					EXIT
+						END_CASE
+						OTHERWISE
+						UNGET
+						EXIT
+						END_CASE
+						END_EXPECT
+						break;
+				case EXTENDED_X_SPLINE_TOKEN:
+					spline->Type = EXTENDED_X_SPLINE;
+					EXPECT
+						CASE (FREEDOM_DEGREE_TOKEN)
+						spline->extra.freedom_degree = Parse_Float();
+					EXIT
+						END_CASE
+						OTHERWISE
+						UNGET
+						EXIT
+						END_CASE
+						END_EXPECT
+						break;
+				case GENERAL_X_SPLINE_TOKEN:
+					spline->Type = GENERAL_X_SPLINE;
+					EXPECT
+						CASE (FREEDOM_DEGREE_TOKEN)
+						spline->extra.freedom_degree = Parse_Float();
+					EXIT
+						END_CASE
+						OTHERWISE
+						UNGET
+						EXIT
+						END_CASE
+						END_EXPECT
+						break;
 
-		GET(RIGHT_PAREN_TOKEN);
-		Get_Spline_Val(spline, Val, Express, Terms);
-		Destroy_Spline(spline);
-		spline = NULL;
+				default:
+					Error("sor_spline, tcb_spline, akima_spline, basic_x_spline, extended_x_spline, general_x_spline, linear_spline, quadratic_spline, natural_spline, or cubic_spline expected.");
+					break;
+			}
+
+			GET(RIGHT_PAREN_TOKEN);
+			Get_Spline_Val(spline, Val, Express, Terms);
+			Destroy_Spline(spline);
+			spline = NULL;
+		}
+		else
+		{
+			UNGET
+			GET(RIGHT_PAREN_TOKEN);
+			Get_Spline_Val(spline, Val, Express, Terms);
+			// we claimed dibs on the spline, so now that we're done with it we must say so
+			Release_Spline_Reference(spline);
+		}
+		EXIT
+		END_CASE
+
+		CASE (LEFT_SQUARE_TOKEN)
+			Val=Parse_Float();
+			k=int(1.0e-08+Val);
+			if ((k < 0) || (Val < -1.0e-08))
+			{
+				Error("Negative subscript");
+			}
+			if (k >= spline->Number_Of_Entries)
+			{
+				Error("Spline-Array subscript out of range");
+			}
+			GET(RIGHT_SQUARE_TOKEN);
+			GET(LEFT_SQUARE_TOKEN);
+			if ((int)Parse_Float())
+			{
+				*Terms = spline->Terms;
+				for(int j=0; j<spline->Terms; j++)
+				{
+					Express[j]=spline->SplineEntries[k].vec[j];
+				}
+			}
+			else
+			{
+				*Terms = 1;
+				Express[0]=spline->SplineEntries[k].par;
+			}
+			GET(RIGHT_SQUARE_TOKEN);
+		  Release_Spline_Reference(spline);
+			EXIT
+		END_CASE
+
+		OTHERWISE
+		  Release_Spline_Reference(spline);
+			UNGET
+			Expectation_Error ("( or [");
+		END_CASE
+	END_EXPECT
+
+}
+
+
+
+
+
+/*****************************************************************************
+*
+* FUNCTION Parse_Camera_Access
+*
+* INPUT
+*
+* OUTPUT
+*
+* RETURNS
+*
+* AUTHOR
+*
+* DESCRIPTION
+*
+* CHANGES
+*
+******************************************************************************/
+void Parser::Parse_Camera_Access(VECTOR &Vect,const TOKEN t)
+{
+	Camera that_camera;
+	unsigned int idx=0; /* default to first camera */
+	Make_Vector(Vect,0.0,0.0,0.0); // default value
+	if (sceneData->clocklessAnimation == true)
+	{
+		EXPECT
+			CASE(LEFT_SQUARE_TOKEN)
+				idx = (unsigned int)Parse_Float();
+				GET(RIGHT_SQUARE_TOKEN)
+				EXIT
+			END_CASE
+
+			OTHERWISE
+				UNGET
+				EXIT
+			END_CASE
+		END_EXPECT
+		if (!(idx<sceneData->cameras.size()))
+		{
+			Error("Not enough cameras.");
+		}
+		that_camera = sceneData->cameras[idx];
 	}
 	else
 	{
-		UNGET
-		GET(RIGHT_PAREN_TOKEN);
-		Get_Spline_Val(spline, Val, Express, Terms);
-
-		// we claimed dibs on the spline, so now that we're done with it we must say so
-		Release_Spline_Reference(spline);
+		that_camera = sceneData->parsedCamera;
+	}
+	switch(t)
+	{
+		case CAMERA_LOCATION_TOKEN:
+			Assign_Vector(Vect , that_camera.Location);
+			break;
+		case CAMERA_DIRECTION_TOKEN:
+			Assign_Vector(Vect , that_camera.Direction);
+			break;
+		case CAMERA_RIGHT_TOKEN:
+			Assign_Vector(Vect , that_camera.Right);
+			break;
+		case CAMERA_UP_TOKEN:
+			Assign_Vector(Vect , that_camera.Up);
+			break;
 	}
 }
 
@@ -657,6 +826,7 @@ void Parser::Parse_Num_Factor (EXPRESS Express,int *Terms)
 	int l1,l2;
 	DBL Val,Val2;
 	VECTOR Vect,Vect2,Vect3;
+	Mesh *localmesh;
 	ObjectPtr Object;
 	TRANSFORM Trans;
 	TURB Turb;
@@ -668,6 +838,7 @@ void Parser::Parse_Num_Factor (EXPRESS Express,int *Terms)
 	int Old_Ok=Ok_To_Declare;
 	DBL greater_val, less_val, equal_val ;
 	PIGMENT* Pigment; // JN2007: Image map dimensions
+	SPLINE *spline;
 
 	Ok_To_Declare=true;
 
@@ -1057,6 +1228,51 @@ void Parser::Parse_Num_Factor (EXPRESS Express,int *Terms)
 					Val = stream_rand(i);
 					break;
 
+				case GET_TRIANGLES_AMOUNT_TOKEN:
+					GET(LEFT_PAREN_TOKEN)
+					GET(OBJECT_ID_TOKEN)
+					Object = (ObjectPtr)Token.Data;
+					if (localmesh=dynamic_cast<Mesh*>(Object))
+					{
+             Val = localmesh->Data->Number_Of_Triangles;
+					}
+					else
+					{
+						Val = 0;
+					}
+					GET(RIGHT_PAREN_TOKEN)
+					break;
+
+				case GET_VERTICES_AMOUNT_TOKEN:
+					GET(LEFT_PAREN_TOKEN)
+					GET(OBJECT_ID_TOKEN)
+					Object = (ObjectPtr)Token.Data;
+					if (localmesh=dynamic_cast<Mesh*>(Object))
+					{
+             Val = localmesh->Data->Number_Of_Vertices;
+					}
+					else
+					{
+						Val = 0;
+					}
+					GET(RIGHT_PAREN_TOKEN)
+					break;
+
+				case GET_NORMALS_AMOUNT_TOKEN:
+					GET(LEFT_PAREN_TOKEN)
+					GET(OBJECT_ID_TOKEN)
+					Object = (ObjectPtr)Token.Data;
+					if (localmesh=dynamic_cast<Mesh*>(Object))
+					{
+             Val = localmesh->Data->Number_Of_Normals;
+					}
+					else
+					{
+						Val = 0;
+					}
+					GET(RIGHT_PAREN_TOKEN)
+					break;
+
 				case DIMENSIONS_TOKEN:
 					GET(LEFT_PAREN_TOKEN)
 					GET(ARRAY_ID_TOKEN)
@@ -1067,14 +1283,28 @@ void Parser::Parse_Num_Factor (EXPRESS Express,int *Terms)
 
 				case DIMENSION_SIZE_TOKEN:
 					GET(LEFT_PAREN_TOKEN)
-					GET(ARRAY_ID_TOKEN)
-					Parse_Comma();
-					a = reinterpret_cast<POV_ARRAY *>(*(Token.DataPtr));
-					i = (int)Parse_Float()-1.0;
-					if ((i < 0) || (i > a->Dims))
-						Val = 0.0;
-					else
-						Val = a->Sizes[i];
+					EXPECT
+						CASE(ARRAY_ID_TOKEN)
+							Parse_Comma();
+							a = reinterpret_cast<POV_ARRAY *>(*(Token.DataPtr));
+							i = (int)Parse_Float()-1.0;
+							if ((i < 0) || (i > a->Dims))
+								Val = 0.0;
+							else
+								Val = a->Sizes[i];
+							EXIT
+						END_CASE
+
+						CASE(SPLINE_ID_TOKEN)
+							spline = reinterpret_cast<SPLINE*>(Token.Data);
+							Val = spline->Number_Of_Entries;
+							EXIT
+						END_CASE
+
+						OTHERWISE
+							Expectation_Error("spline or array");
+							END_CASE
+						END_EXPECT
 					GET(RIGHT_PAREN_TOKEN)
 					break;
 
@@ -1231,6 +1461,95 @@ void Parser::Parse_Num_Factor (EXPRESS Express,int *Terms)
 						END_CASE
 					END_EXPECT
 					GET (RIGHT_PAREN_TOKEN);
+					break;
+
+				case CAMERA_LOCATION_TOKEN:
+				case CAMERA_DIRECTION_TOKEN:
+				case CAMERA_RIGHT_TOKEN:
+				case CAMERA_UP_TOKEN:
+          Parse_Camera_Access(Vect,Token.Function_Id);
+					break;
+				case GET_VERTEX_INDICES_TOKEN:
+					GET(LEFT_PAREN_TOKEN)
+					GET(OBJECT_ID_TOKEN)
+					Object = (ObjectPtr)Token.Data;
+					Parse_Comma();
+					i = (int)Parse_Float();
+					if ((localmesh = dynamic_cast<Mesh*>(Object))
+							&& (i>=0)
+							&&(localmesh->Data->Number_Of_Triangles > i))
+					{
+						Make_Vector(Vect,
+								localmesh->Data->Triangles[i].P1,
+								localmesh->Data->Triangles[i].P2,
+								localmesh->Data->Triangles[i].P3);
+					}
+					else
+					{
+					  Make_Vector(Vect,-1.0,-1.0,-1.0);
+					}
+          GET(RIGHT_PAREN_TOKEN)
+					break;
+				case GET_NORMAL_INDICES_TOKEN:
+					GET(LEFT_PAREN_TOKEN)
+					GET(OBJECT_ID_TOKEN)
+					Object = (ObjectPtr)Token.Data;
+					Parse_Comma();
+					i = (int)Parse_Float();
+					if ((localmesh = dynamic_cast<Mesh*>(Object))
+							&& (i>=0)
+							&&(localmesh->Data->Number_Of_Triangles > i))
+					{
+						Make_Vector(Vect,
+								localmesh->Data->Triangles[i].N1,
+								localmesh->Data->Triangles[i].N2,
+								localmesh->Data->Triangles[i].N3);
+					}
+					else
+					{
+					  Make_Vector(Vect,-1.0,-1.0,-1.0);
+					}
+          GET(RIGHT_PAREN_TOKEN)
+					break;
+				case GET_VERTEX_TOKEN:
+					GET(LEFT_PAREN_TOKEN)
+					GET(OBJECT_ID_TOKEN)
+					Object = (ObjectPtr)Token.Data;
+					Parse_Comma();
+					i = (int)Parse_Float();
+					if ((localmesh = dynamic_cast<Mesh*>(Object))
+							&& (i>=0)
+							&&(localmesh->Data->Number_Of_Vertices > i))
+					{
+						Vect[0]=localmesh->Data->Vertices[i][0];
+						Vect[1]=localmesh->Data->Vertices[i][1];
+						Vect[2]=localmesh->Data->Vertices[i][2];
+					}
+					else
+					{
+					  Make_Vector(Vect,0.0,0.0,0.0);
+					}
+          GET(RIGHT_PAREN_TOKEN)
+					break;
+				case GET_NORMAL_TOKEN:
+					GET(LEFT_PAREN_TOKEN)
+					GET(OBJECT_ID_TOKEN)
+					Object = (ObjectPtr)Token.Data;
+					Parse_Comma();
+					i = (int)Parse_Float();
+					if ((localmesh = dynamic_cast<Mesh*>(Object))
+							&& (i>=0)
+							&&(localmesh->Data->Number_Of_Normals > i))
+					{
+						Vect[0]=localmesh->Data->Normals[i][0];
+						Vect[1]=localmesh->Data->Normals[i][1];
+						Vect[2]=localmesh->Data->Normals[i][2];
+					}
+					else
+					{
+					  Make_Vector(Vect,0.0,0.0,0.0);
+					}
+          GET(RIGHT_PAREN_TOKEN)
 					break;
 			}
 
@@ -2130,6 +2449,46 @@ int Parser::Allow_Vector (VECTOR Vect)
 }
 
 
+/*****************************************************************************
+*
+* FUNCTION
+*
+* INPUT
+*
+* OUTPUT
+*
+* RETURNS
+*
+* AUTHOR
+*
+* DESCRIPTION
+*
+* CHANGES
+*
+******************************************************************************/
+
+int Parser::Allow_Vector4D (VECTOR_4D Vect)
+{
+	int retval;
+
+	EXPECT
+		CASE_EXPRESS
+			Parse_Vector4D(Vect);
+			retval = true;
+			EXIT
+		END_CASE
+
+		OTHERWISE
+			UNGET
+			retval = false;
+			EXIT
+		END_CASE
+	END_EXPECT
+
+	return (retval);
+}
+
+
 
 /*****************************************************************************
 *
@@ -2198,7 +2557,7 @@ void Parser::Parse_Vector (VECTOR Vector)
 *
 ******************************************************************************/
 
-void Parser::Parse_Vector4D (VECTOR Vector)
+void Parser::Parse_Vector4D (VECTOR_4D Vector)
 {
 	EXPRESS Express;
 	int Terms;
@@ -2731,6 +3090,7 @@ BLEND_MAP *Parser::Parse_Blend_Map (int Blend_Type,int Pat_Type)
 {
 	BLEND_MAP *New = NULL;
 	BLEND_MAP_ENTRY *Temp_Ent;
+	ColourInterpolation ci=CI_RGB;
 	int i;
 	bool old_allow_id = Allow_Identifier_In_Call;
 	Allow_Identifier_In_Call = false;
@@ -2754,6 +3114,36 @@ BLEND_MAP *Parser::Parse_Blend_Map (int Blend_Type,int Pat_Type)
 			i = 0;
 
 			EXPECT
+				CASE (COLOUR_SPACE_TOKEN)
+					EXPECT_ONE
+
+      			CASE(POV_TOKEN)
+							ci=CI_RGB;
+						END_CASE
+
+      			CASE(HSL_TOKEN)
+      				ci=CI_HSL;
+						END_CASE
+
+						CASE(HSV_TOKEN)
+							ci=CI_HSV;
+						END_CASE
+
+						CASE(XYL_TOKEN)
+							ci=CI_XYL;
+						END_CASE
+
+						CASE(XYV_TOKEN)
+							ci=CI_XYV;
+      			END_CASE
+
+    				OTHERWISE
+      				UNGET
+      				EXIT
+    				END_CASE
+      		END_EXPECT
+				END_CASE
+
 				CASE (LEFT_SQUARE_TOKEN)
 					if (i >= MAX_BLEND_MAP_ENTRIES)
 						Error ("Too many entries in map. The maximum is %d entries per map.", MAX_BLEND_MAP_ENTRIES);
@@ -2812,6 +3202,7 @@ BLEND_MAP *Parser::Parse_Blend_Map (int Blend_Type,int Pat_Type)
 					New->Number_Of_Entries = i;
 					New->Type=Blend_Type;
 					New->Transparency_Flag=true; /*Temp fix.  Really set in Post_???*/
+					New->Space=ci;
 					New->Blend_Map_Entries = reinterpret_cast<BLEND_MAP_ENTRY *>(POV_REALLOC(Temp_Ent,sizeof(BLEND_MAP_ENTRY)*i,"blend map entries"));
 					EXIT
 				END_CASE
@@ -3137,6 +3528,7 @@ BLEND_MAP *Parser::Parse_Colour_Map ()
 	int i,j,c,p,ii;
 	EXPRESS Express;
 	int Terms;
+	ColourInterpolation ci=CI_RGB;
 	BLEND_MAP_ENTRY *Temp_Ent;
 	bool old_allow_id = Allow_Identifier_In_Call;
 	Allow_Identifier_In_Call = false;
@@ -3156,6 +3548,36 @@ BLEND_MAP *Parser::Parse_Colour_Map ()
 			j = 1;
 
 			EXPECT
+				CASE (COLOUR_SPACE_TOKEN)
+					EXPECT_ONE
+
+      			CASE(POV_TOKEN)
+							ci=CI_RGB;
+						END_CASE
+
+      			CASE(HSL_TOKEN)
+      				ci=CI_HSL;
+						END_CASE
+
+						CASE(HSV_TOKEN)
+							ci=CI_HSV;
+						END_CASE
+
+						CASE(XYL_TOKEN)
+							ci=CI_XYL;
+						END_CASE
+
+						CASE(XYV_TOKEN)
+							ci=CI_XYV;
+      			END_CASE
+
+    				OTHERWISE
+      				UNGET
+      				EXIT
+    				END_CASE
+      		END_EXPECT
+				END_CASE
+
 				CASE (LEFT_SQUARE_TOKEN)
 					if (i >= MAX_BLEND_MAP_ENTRIES)
 						Error ("Blend_Map too long.");
@@ -3229,6 +3651,7 @@ BLEND_MAP *Parser::Parse_Colour_Map ()
 					New = Create_Blend_Map ();
 					New->Number_Of_Entries = p;
 					New->Type=COLOUR_TYPE;
+					New->Space=ci;
 					New->Transparency_Flag=true; /*Temp fix.  Really set in Post_???*/
 					New->Blend_Map_Entries = reinterpret_cast<BLEND_MAP_ENTRY *>(POV_REALLOC(Temp_Ent,sizeof(BLEND_MAP_ENTRY)*p,"blend map entries"));
 					EXIT
@@ -3285,6 +3708,15 @@ SPLINE *Parser::Parse_Spline()
 	DBL par;
 	bool old_allow_id = Allow_Identifier_In_Call;
 	Allow_Identifier_In_Call = false;
+	// for tcb spline
+	DBL in_tension=0.0;
+	DBL out_tension=0.0;
+	DBL in_continuity=0.0;
+	DBL out_continuity=0.0;
+	DBL in_bias=0.0;
+	DBL out_bias=0.0;
+	// for ..._x_spline
+	DBL freedom_degree=0.0;
 
 	MaxTerms = 2;
 
@@ -3322,6 +3754,30 @@ SPLINE *Parser::Parse_Spline()
 			Type = NATURAL_SPLINE;
 		END_CASE
 
+		CASE(SOR_SPLINE_TOKEN)
+			Type = SOR_LIKE_SPLINE;
+		END_CASE
+
+		CASE(TCB_SPLINE_TOKEN)
+			Type = TCB_SPLINE;
+		END_CASE
+
+		CASE(AKIMA_SPLINE_TOKEN)
+			Type = AKIMA_SPLINE;
+		END_CASE
+
+		CASE(BASIC_X_SPLINE_TOKEN)
+			Type = BASIC_X_SPLINE;
+		END_CASE
+
+		CASE(EXTENDED_X_SPLINE_TOKEN)
+			Type = EXTENDED_X_SPLINE;
+		END_CASE
+
+		CASE(GENERAL_X_SPLINE_TOKEN)
+			Type = GENERAL_X_SPLINE;
+		END_CASE
+
 		OTHERWISE
 			UNGET
 			EXIT
@@ -3333,20 +3789,131 @@ SPLINE *Parser::Parse_Spline()
 	else
 		New->Type = Type;
 
+	switch(Type)
+	{
+		case TCB_SPLINE:
+			EXPECT
+				CASE (TENSION_TOKEN)
+					New->extra.tcb.tension = Parse_Float();
+			  	Parse_Comma();
+				END_CASE
+				CASE (CONTINUITY_TOKEN)
+					New->extra.tcb.continuity = Parse_Float();
+					Parse_Comma();
+				END_CASE
+				CASE (BIAS_TOKEN)
+					New->extra.tcb.bias = Parse_Float();
+					Parse_Comma();
+				END_CASE
+				OTHERWISE
+					UNGET
+					EXIT
+				END_CASE
+			END_EXPECT
+			break;
+		case BASIC_X_SPLINE:
+		case EXTENDED_X_SPLINE:
+		case GENERAL_X_SPLINE:
+			EXPECT
+				CASE (FREEDOM_DEGREE_TOKEN)
+					New->extra.freedom_degree = Parse_Float();
+					Parse_Comma();
+					EXIT
+				END_CASE
+				OTHERWISE
+					UNGET
+					EXIT
+				END_CASE
+			END_EXPECT
+			break;
+	}
 	EXPECT
 		CASE_FLOAT
 			/* Entry has the form float,vector */
 			par = Parse_Float();
 			Parse_Comma();
+			// for TCB, it's float, [in+out] vector [out override]
+			// for any X, it's float, vector []
+			// with [] the optional set of parameters
+			// [] for tcb: tension float, continuity float, bias float,
+			// [] for any X: freedom_degree float
+			switch(Type)
+			{
+				case TCB_SPLINE:
+					in_tension = out_tension = New->extra.tcb.tension;
+					in_continuity = out_continuity = New->extra.tcb.continuity;
+					in_bias = out_bias = New->extra.tcb.bias;
+					EXPECT
+						CASE (TENSION_TOKEN)
+							in_tension = out_tension = Parse_Float();
+					    Parse_Comma();
+						END_CASE
+						CASE (CONTINUITY_TOKEN)
+							in_continuity = out_continuity = Parse_Float();
+							Parse_Comma();
+						END_CASE
+						CASE (BIAS_TOKEN)
+							in_bias = out_bias = Parse_Float();
+							Parse_Comma();
+						END_CASE
+						OTHERWISE
+							UNGET
+							EXIT
+						END_CASE
+					END_EXPECT
+					break;
+			}
 
 			Terms = 2;
 			Parse_Express(Express, &Terms);
 			if(Terms > 5)
 					Error("Too many components in vector!\n");
 			MaxTerms = max(MaxTerms, Terms);
-			Parse_Comma();
+			switch(Type)
+			{
+				case TCB_SPLINE:
+					EXPECT
+						CASE (TENSION_TOKEN)
+							out_tension = Parse_Float();
+					    Parse_Comma();
+						END_CASE
+						CASE (CONTINUITY_TOKEN)
+							out_continuity = Parse_Float();
+							Parse_Comma();
+						END_CASE
+						CASE (BIAS_TOKEN)
+							out_bias = Parse_Float();
+							Parse_Comma();
+						END_CASE
+						OTHERWISE
+							UNGET
+							EXIT
+						END_CASE
+					END_EXPECT
+					Insert_Spline_Entry(New, par, Express, in_tension, out_tension, in_continuity, out_continuity, in_bias, out_bias);
+					break;
+				case BASIC_X_SPLINE:
+				case EXTENDED_X_SPLINE:
+				case GENERAL_X_SPLINE:
+					freedom_degree = New->extra.freedom_degree;
+					EXPECT
+						CASE (FREEDOM_DEGREE_TOKEN)
+							freedom_degree = Parse_Float();
+							Parse_Comma();
+						END_CASE
+						OTHERWISE
+							UNGET
+							EXIT
+						END_CASE
+					END_EXPECT
+					Insert_Spline_Entry(New, par, Express, freedom_degree);
+					break;
+					default:
+						Parse_Comma();
 			/* MWW 2000 -- Changed call for dynamic allocation version */
-			Insert_Spline_Entry(New, par, Express);
+						Insert_Spline_Entry(New, par, Express);
+					break;
+			}
 			i++;
 		END_CASE
 

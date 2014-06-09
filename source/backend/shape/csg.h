@@ -71,7 +71,7 @@ class CSG : public CompoundObject
 		virtual void Compute_BBox();
 		virtual void Invert();
 
-		void Determine_Textures(Intersection *isect, bool hitinside, WeightedTextureVector& textures, TraceThreadData *Threaddata);
+		void Determine_Textures(Intersection *isect, bool hitinside, WeightedTextureVector& textures, ColourInterpolation& ci, TraceThreadData *Threaddata);
 		virtual CSG *Morph(void) = 0;
 };
 

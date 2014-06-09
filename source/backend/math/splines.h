@@ -44,6 +44,12 @@ namespace pov
 #define QUADRATIC_SPLINE      2
 #define NATURAL_SPLINE        3
 #define CATMULL_ROM_SPLINE    4
+#define SOR_LIKE_SPLINE       5
+#define TCB_SPLINE            6
+#define AKIMA_SPLINE          7
+#define BASIC_X_SPLINE        8
+#define EXTENDED_X_SPLINE     9
+#define GENERAL_X_SPLINE     10
 
 SPLINE * Create_Spline(int Type);
 SPLINE * Copy_Spline(const SPLINE * Old);
@@ -51,6 +57,8 @@ void Acquire_Spline_Reference(SPLINE * Spline);
 void Release_Spline_Reference(SPLINE * Spline);
 void Destroy_Spline(SPLINE * Spline);
 void Insert_Spline_Entry(SPLINE * Spline, DBL p, const EXPRESS v);
+void Insert_Spline_Entry(SPLINE * Spline, DBL p, const EXPRESS v, DBL in_tension, DBL out_tension, DBL in_continuity, DBL out_continuity, DBL in_bias, DBL out_bias);
+void Insert_Spline_Entry(SPLINE * Spline, DBL p, const EXPRESS v, DBL freedom_degree);
 DBL Get_Spline_Val(SPLINE * sp, DBL p, EXPRESS v, int *Terms);
 
 }
