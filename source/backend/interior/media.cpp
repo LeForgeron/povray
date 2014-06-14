@@ -24,11 +24,11 @@
  * DKBTrace was originally written by David K. Buck.
  * DKBTrace Ver 2.0-2.12 were written by David K. Buck & Aaron A. Collins.
  * ---------------------------------------------------------------------------
- * $File: //depot/povray/smp/source/backend/interior/media.cpp $
- * $Revision: #53 $
- * $Change: 6162 $
- * $DateTime: 2013/12/07 19:55:09 $
- * $Author: clipka $
+ * $File: N/A $
+ * $Revision: N/A $
+ * $Change: N/A $
+ * $DateTime: N/A $
+ * $Author: N/A $
  *******************************************************************************/
 
 // frame.h must always be the first POV file included (pulls in platform config)
