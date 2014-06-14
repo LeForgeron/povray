@@ -82,7 +82,7 @@ struct Sphere_Sweep_Sphere_Struct
 /* One segment of the sphere sweep */
 struct Sphere_Sweep_Segment_Struct
 {
-	SPHSWEEP_SPH  Closing_Sphere[2];        /* Spheres closing the segment   */
+	SPHSWEEP_SPH  Closing_Sphere[2];              /* Spheres closing the segment   */
 	Vector3d      Center_Deriv[2];    /* Derivatives of center funcs for 0 and 1   */
 	DBL           Radius_Deriv[2];    /* Derivatives of radius funcs for 0 and 1   */
 	int           Num_Coefs;                      /* Number of coefficients        */
