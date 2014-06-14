@@ -26,11 +26,11 @@
  * DKBTrace was originally written by David K. Buck.
  * DKBTrace Ver 2.0-2.12 were written by David K. Buck & Aaron A. Collins.
  * ---------------------------------------------------------------------------
- * $File: N/A $
- * $Revision: N/A $
- * $Change: N/A $
- * $DateTime: N/A $
- * $Author: N/A $
+ * $File: //depot/povray/smp/source/backend/math/hcmplx.cpp $
+ * $Revision: #24 $
+ * $Change: 6161 $
+ * $DateTime: 2013/12/05 18:42:17 $
+ * $Author: clipka $
  *******************************************************************************/
 
 // frame.h must always be the first POV file included (pulls in platform config)

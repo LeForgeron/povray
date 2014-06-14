@@ -351,14 +351,14 @@ bool SphereSweep::Intersect_Sphere(const BasicRay &ray, const SPHSWEEP_SPH *Sphe
 		Inter[0].t = t_Closest_Approach - Half_Chord;
 
 		// Calculate point
-    Inter[0].Point = ray.Evaluate(Inter[0].t);
+                Inter[0].Point = ray.Evaluate(Inter[0].t);
 
 
 		// Calculate normal
 		Inter[0].Normal = (Inter[0].Point - Sphere->Center) / Sphere->Radius;
-    Inter[0].uv[U] = Sphere->Uvalue;
-    Inter[0].Vbase[0] =  Sphere->Vbase[0];
-    Inter[0].Vbase[1] =  Sphere->Vbase[1];
+                Inter[0].uv[U] = Sphere->Uvalue;
+                Inter[0].Vbase[0] =  Sphere->Vbase[0];
+                Inter[0].Vbase[1] =  Sphere->Vbase[1];
 
 		// Calculate bigger depth
 		Inter[1].t = t_Closest_Approach + Half_Chord;
