@@ -7562,6 +7562,10 @@ void Parser::Parse_Frame ()
 			CASE (GLOBAL_SETTINGS_TOKEN)
 				Parse_Global_Settings();
 			END_CASE
+            
+            CASE (GTS_SAVE_TOKEN)
+                Parse_Gts_Save();
+            END_CASE
 
 			OTHERWISE
 				UNGET
