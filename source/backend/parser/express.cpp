@@ -828,6 +828,7 @@ void Parser::Parse_Num_Factor (EXPRESS Express,int *Terms)
 	VECTOR Vect,Vect2,Vect3;
 	Mesh *localmesh;
 	ObjectPtr Object;
+	CompoundObject* compoundObject;
 	TRANSFORM Trans;
 	TURB Turb;
 	UCS2 *Local_String, *Local_String2;
@@ -1301,6 +1302,27 @@ void Parser::Parse_Num_Factor (EXPRESS Express,int *Terms)
 							EXIT
 						END_CASE
 
+						OTHERWISE
+							Expectation_Error("spline or array");
+							END_CASE
+						END_EXPECT
+					GET(RIGHT_PAREN_TOKEN)
+					break;
+
+				case CHILDREN_TOKEN:
+					GET(LEFT_PAREN_TOKEN)
+					EXPECT
+						CASE(OBJECT_ID_TOKEN)
+                          compoundObject = dynamic_cast<CompoundObject*>(Token.data);
+                          if (compoundObject)
+                          {
+                             Val = compoundObject.children.size();
+                          }
+                          else
+                          {
+							Expectation_Error("Compound Object");
+                          }
+						END_CASE
 						OTHERWISE
 							Expectation_Error("spline or array");
 							END_CASE

@@ -145,6 +145,7 @@ const RESERVED_WORD Reserved_Words[LAST_TOKEN] = {
 	{CHARSET_TOKEN, "charset"},
 	{CHECKER_TOKEN, "checker"},
 	{CHILD_TOKEN, "child"},
+	{CHILDREN_TOKEN, "children"},
 	{CHR_TOKEN, "chr"},
 	{CIRCULAR_TOKEN,"circular"},
 	{CLIPPED_BY_TOKEN, "clipped_by"},
