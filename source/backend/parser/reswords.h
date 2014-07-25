@@ -133,6 +133,7 @@ enum TOKEN_IDS
 	GET_NORMALS_AMOUNT_TOKEN,
 	IS_SMOOTH_TRIANGLE_TOKEN,
 	/* TESSELATIONPATCH <-- */
+	CHILDREN_TOKEN,
 	FLOAT_FUNCT_TOKEN,/*WARNING: All new functions returning a float value must be placed before FLOAT_FUNCT_TOKEN or the parser won't work right. */
 
 	VAXIS_ROTATE_TOKEN,
@@ -750,7 +751,6 @@ enum TOKEN_IDS
   INTERMERGE_TOKEN,
   INTERUNION_TOKEN,
   GALLEY_TOKEN,
-  CHILDREN_TOKEN,
 	LAST_TOKEN
 };
 
