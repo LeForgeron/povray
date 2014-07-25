@@ -14,7 +14,6 @@ camera { location <0,-1,-16>
 
 plane{-z,-10  pigment{checker color rgb<1,1,1>*0.8 color rgb<1,1,1>} }
 
-#declare Value=5;
 #declare String=concat("Type : ",camera_type,"\n\nUp   : <",
 vstr(3,camera_up,",",0,3),">\nright: <",
 vstr(3,camera_right,",",0,3),">\ndir. : <",
