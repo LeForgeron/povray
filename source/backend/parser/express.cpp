@@ -1313,10 +1313,11 @@ void Parser::Parse_Num_Factor (EXPRESS Express,int *Terms)
 					GET(LEFT_PAREN_TOKEN)
 					EXPECT
 						CASE(OBJECT_ID_TOKEN)
-                          compoundObject = dynamic_cast<CompoundObject*>(Token.data);
+                          Object = (ObjectPtr)Token.Data;
+                          compoundObject = dynamic_cast<CompoundObject*>(Object);
                           if (compoundObject)
                           {
-                             Val = compoundObject.children.size();
+                             Val = compoundObject->children.size();
                           }
                           else
                           {
