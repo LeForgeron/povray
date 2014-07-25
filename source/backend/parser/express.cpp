@@ -1323,9 +1323,11 @@ void Parser::Parse_Num_Factor (EXPRESS Express,int *Terms)
                           {
 							Expectation_Error("Compound Object");
                           }
+						  EXIT
 						END_CASE
+
 						OTHERWISE
-							Expectation_Error("spline or array");
+							Expectation_Error("Compound Object");
 							END_CASE
 						END_EXPECT
 					GET(RIGHT_PAREN_TOKEN)
