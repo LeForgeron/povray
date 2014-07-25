@@ -1313,21 +1313,21 @@ void Parser::Parse_Num_Factor (EXPRESS Express,int *Terms)
 					GET(LEFT_PAREN_TOKEN)
 					EXPECT
 						CASE(OBJECT_ID_TOKEN)
-                          Object = (ObjectPtr)Token.Data;
-                          compoundObject = dynamic_cast<CompoundObject*>(Object);
+                          Object = reinterpret_cast<ObjectPtr>(Token.Data);// Safe due to CASE above
+                          compoundObject = dynamic_cast<CompoundObject*>(Object);// try to specialise it
                           if (compoundObject)
                           {
                              Val = compoundObject->children.size();
                           }
                           else
                           {
-							Expectation_Error("Compound Object");
+							Val = -1;// Not an error, allow to detect leaf in complex compounds, without stopping parsing
                           }
 						  EXIT
 						END_CASE
 
 						OTHERWISE
-							Expectation_Error("Compound Object");
+							Expectation_Error("Object");
 							END_CASE
 						END_EXPECT
 					GET(RIGHT_PAREN_TOKEN)
