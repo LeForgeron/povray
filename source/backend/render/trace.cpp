@@ -570,7 +570,6 @@ void Trace::ComputeTextureColour(Intersection& isect, Colour& colour, const Ray&
 					sx += i->weight*x;
 					sy += i->weight*y;
 					break;
-					break;
 				case CI_HSL:
 					ConvertRGB2HSL(c1.red(),c1.green(),c1.blue(),&h,&s,&l);
 					sl += i->weight*l;
