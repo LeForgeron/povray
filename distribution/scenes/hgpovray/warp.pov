@@ -2,7 +2,7 @@
  *  -Iwarp.pov -H120 -W160 +A0.01 +FJ +KI0 +KF1 +KFI0 +KFF200 +KC
  *
  * Imagemagick:
- * convert -delay 5 -loop 0 warp*.jpg  warp.gif
+ * convert -delay 4 -loop 0 -layers optimize warp*.jpg  warp.gif
  *
  */
 #version 3.7;
