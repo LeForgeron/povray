@@ -636,6 +636,50 @@ namespace pov
 		 fclose(filep);
 		 POV_FREE(edge);                                                         
 	 }
+	 void Parser::Stl_Save_Object(char *filename, STLInfo *info)
+	 {
+		 Mesh *meshobj = (Mesh*)info->object;
+		 uint_least32_t number_of_face;
+		 uint_least32_t cursor;
+		 long first,second;  
+		 long third;
+		 FILE *filep;
+         STL_Entry entry;
+         float of[3];
+         
+		 int found1,found2,found3;
+
+		 number_of_face = meshobj->Data->Number_Of_Triangles;
+		 if ((filep = fopen(filename,"w") ) == NULL
+				)
+		 {
+			 Error("Error opening STL file.\n");
+			 return;
+		 }
+         fprintf(filep,"POVRAY %-73.73s",filename);
+         fwrite(&number_of_face, sizeof(number_of_face),1,filep);
+         memset(&entry,0,sizeof(entry));
+         of[0] = meshobj->Data->Tree->BBox.GetMinX();
+         of[1] = meshobj->Data->Tree->BBox.GetMinY();
+         of[2] = meshobj->Data->Tree->BBox.GetMinZ();
+		 for(cursor = 0;cursor < number_of_face; cursor++)
+		 {
+			 first = meshobj->Data->Triangles[cursor].P1;
+			 second = meshobj->Data->Triangles[cursor].P2;
+			 third = meshobj->Data->Triangles[cursor].P3;
+             entry.vertex1[0] = (meshobj->Data->Vertices[first][X])-of[0];
+             entry.vertex1[1] = (meshobj->Data->Vertices[first][Y])-of[1];
+             entry.vertex1[2] = (meshobj->Data->Vertices[first][Z])-of[2];
+             entry.vertex2[0] = (meshobj->Data->Vertices[second][X])-of[0];
+             entry.vertex2[1] = (meshobj->Data->Vertices[second][Y])-of[1];
+             entry.vertex2[2] = (meshobj->Data->Vertices[second][Z])-of[2];
+             entry.vertex3[0] = (meshobj->Data->Vertices[third][X])-of[0];
+             entry.vertex3[1] = (meshobj->Data->Vertices[third][Y])-of[1];
+             entry.vertex3[2] = (meshobj->Data->Vertices[third][Z])-of[2];
+             fwrite(&entry, 4*3*4+2,1,filep);
+		 }
+		 fclose(filep);
+	 }
 	/*----------------------------------------------------------------------
 		Tesselation routine
 		----------------------------------------------------------------------*/
@@ -1901,6 +1945,22 @@ namespace pov
 		info.object = Parse_Object();
 
 		Gts_Save_Object(filename, &info,&das); 
+
+		Destroy_Object(info.object);
+		POV_FREE(filename);
+		Parse_End();
+	}
+	void Parser::Parse_Stl_Save (void)
+	{
+		char * filename; 
+		STLInfo info;
+		Parse_Begin();
+
+		filename = Parse_C_String();
+		Parse_Comma();
+		info.object = Parse_Object();
+
+		Stl_Save_Object(filename, &info); 
 
 		Destroy_Object(info.object);
 		POV_FREE(filename);

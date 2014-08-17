@@ -521,6 +521,7 @@ class Parser : public Task
 				int* n_tri,int* n_tex,int* n_vert,int* n_norm);
 
 		void Parse_Gts_Save(void);
+		void Parse_Stl_Save(void);
 		ObjectPtr Parse_Gts_Load(void);
 
 		void Parse_Load_In_Mesh(Mesh* m, MESH_TRIANGLE** trs, TEXTURE*** textu,
@@ -847,6 +848,18 @@ class Parser : public Task
 			ObjectPtr  object;
 			char reverse; /* inverse right hand and left hand */
 		} GTSInfo;
+        typedef struct
+        {
+            ObjectPtr  object;
+        } STLInfo;
+        typedef struct
+        {
+          float normal[3];
+          float vertex1[3];
+          float vertex2[3];
+          float vertex3[3];
+          uint_least16_t attribute;
+        } STL_Entry;
 		typedef struct
 		{
 			unsigned int first;
@@ -937,6 +950,7 @@ class Parser : public Task
 		void DoneAddingTriangles(UNDERCONSTRUCTION *das);
 		ObjectPtr  Gts_Load_Object(char *filename, GTSInfo *info,
 				UNDERCONSTRUCTION *das);
+		void Stl_Save_Object(char *filename, STLInfo *info);
 		void Gts_Save_Object(char *filename, GTSInfo *info,
 				UNDERCONSTRUCTION *das);
 		void AssignTCoord(TetraCoordInfo* info, int cInd, DBL xc, DBL yc, DBL zc);
