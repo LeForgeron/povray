@@ -7567,6 +7567,10 @@ void Parser::Parse_Frame ()
                 Parse_Gts_Save();
             END_CASE
 
+            CASE (STL_SAVE_TOKEN)
+                Parse_Stl_Save();
+            END_CASE
+
 			OTHERWISE
 				UNGET
 				Object = Parse_Object();

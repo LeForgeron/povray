@@ -613,6 +613,7 @@ const RESERVED_WORD Reserved_Words[LAST_TOKEN] = {
 	{STATISTICS_TOKEN, "statistics"},
 	{STEPS_TOKEN,"steps"},
 	{STEREO_TOKEN,"stereo"},
+	{STL_SAVE_TOKEN,"stl_save"},
 	{STRCMP_TOKEN, "strcmp"},
 	{STRENGTH_TOKEN, "strength"},
 	{STRING_ID_TOKEN, "string identifier"},
