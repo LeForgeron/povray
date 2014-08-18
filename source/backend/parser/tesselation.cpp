@@ -636,10 +636,40 @@ namespace pov
 		 fclose(filep);
 		 POV_FREE(edge);                                                         
 	 }
+/* STL is in little endian 
+ * alas, hton* and ntoh* are not usable, as they do nothing on big endian
+ * and invert bytes in little endian... we need the opposite
+ *
+ * Note: PDP and other fancy ordering is not handled.
+ * 
+ * Also unchecked & assumed : float are 4 bytes long and in same order as int32
+ */
+#define TES_LITTLE_ENDIAN 0x41424344UL 
+#define TES_BIG_ENDIAN    0x44434241UL
+#define TES_PDP_ENDIAN    0x42414443UL
+#define TES_ENDIAN_ORDER  ('ABCD') 
+#if TES_ENDIAN_ORDER == TES_BIG_ENDIAN
+#define SWAP_2(x) ( (((x) & 0xff) << 8) | ((unsigned short)(x) >> 8) )
+#define SWAP_4(x) ( ((x) << 24) | \
+         (((x) << 8) & 0x00ff0000) | \
+         (((x) >> 8) & 0x0000ff00) | \
+         ((x) >> 24) )
+#define FIX_SHORT(x) (*(unsigned short *)&(x) = SWAP_2(*(unsigned short *)&(x)))
+#define FIX_INT(x)   (*(unsigned int *)&(x)   = SWAP_4(*(unsigned int *)&(x)))
+#define FIX_FLOAT(x) FIX_INT(x)
+#elif TES_ENDIAN_ORDER == TES_LITTLE_ENDIAN
+#define FIX_FLOAT(x)
+#define FIX_SHORT(x)
+#define FIX_INT(x)
+#define SWAP_2(x)
+#define SWAP_4(x)
+#else
+#error "Not supported, yet ?"
+#endif
 	 void Parser::Stl_Save_Object(char *filename, STLInfo *info)
 	 {
 		 Mesh *meshobj = (Mesh*)info->object;
-		 uint_least32_t number_of_face;
+		 uint_least32_t number_of_face,write_nf;
 		 uint_least32_t cursor;
 		 long first,second;  
 		 long third;
@@ -657,13 +687,22 @@ namespace pov
 			 return;
 		 }
          fprintf(filep,"POVRAY %-73.73s",filename);
-         fwrite(&number_of_face, sizeof(number_of_face),1,filep);
+         write_nf = number_of_face;
+         FIX_INT(write_nf);
+         fwrite(&write_nf, 4,1,filep);
          memset(&entry,0,sizeof(entry));
          of[0] = meshobj->Data->Tree->BBox.GetMinX();
          of[1] = meshobj->Data->Tree->BBox.GetMinY();
          of[2] = meshobj->Data->Tree->BBox.GetMinZ();
 		 for(cursor = 0;cursor < number_of_face; cursor++)
 		 {
+             /* let normal be recomputed by loader, otherwise we need unit vector to outside */
+             entry.normal[0] = 0;
+             entry.normal[1] = 0;
+             entry.normal[2] = 0;
+             /* no choice, no color, between both variants of STL */
+             entry.attribute = 0;
+             /* get actual data */
 			 first = meshobj->Data->Triangles[cursor].P1;
 			 second = meshobj->Data->Triangles[cursor].P2;
 			 third = meshobj->Data->Triangles[cursor].P3;
@@ -676,10 +715,32 @@ namespace pov
              entry.vertex3[0] = (meshobj->Data->Vertices[third][X])-of[0];
              entry.vertex3[1] = (meshobj->Data->Vertices[third][Y])-of[1];
              entry.vertex3[2] = (meshobj->Data->Vertices[third][Z])-of[2];
+             FIX_FLOAT(entry.normal[0]);
+             FIX_FLOAT(entry.normal[1]);
+             FIX_FLOAT(entry.normal[2]);
+             FIX_FLOAT(entry.vertex1[0]);
+             FIX_FLOAT(entry.vertex1[1]);
+             FIX_FLOAT(entry.vertex1[2]);
+             FIX_FLOAT(entry.vertex2[0]);
+             FIX_FLOAT(entry.vertex2[1]);
+             FIX_FLOAT(entry.vertex2[2]);
+             FIX_FLOAT(entry.vertex3[0]);
+             FIX_FLOAT(entry.vertex3[1]);
+             FIX_FLOAT(entry.vertex3[2]);
+             FIX_SHORT(entry.attribute);
              fwrite(&entry, 4*3*4+2,1,filep);
 		 }
 		 fclose(filep);
 	 }
+#undef FIX_SHORT
+#undef FIX_FLOAT
+#undef FIX_INT
+#undef SWAP_4
+#undef SWAP_2
+#undef TES_LITTLE_ENDIAN
+#undef TES_BIG_ENDIAN
+#undef TES_PDP_ENDIAN
+#undef TES_ENDIAN_ORDER
 	/*----------------------------------------------------------------------
 		Tesselation routine
 		----------------------------------------------------------------------*/
