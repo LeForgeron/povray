@@ -1429,8 +1429,9 @@ void SphereSweep::Compute()
 	int     msph;
 	int     last_sph;
 	int     last_seg;
-  DBL length=0.0;
-  Vector3d tmpSeg;
+	DBL length=0.0;
+    DBL tmplength=0.0;
+	Vector3d tmpSeg;
 
 	switch(Interpolation)
 	{
@@ -1625,8 +1626,8 @@ void SphereSweep::Compute()
 		tmpSeg = Segment[i].Closing_Sphere[1].Center - Segment[i].Closing_Sphere[0].Center;
 
 		Segment[i].Uvalue[0]=length;
-		Segment[i].Uvalue[1] = tmpSeg.length();
-    Segment[i].Uvalue[1]+= fabs(Segment[i].Radius_Deriv[1]);
+		Segment[i].Uvalue[1] = tmplength = tmpSeg.length();
+		Segment[i].Uvalue[1]+= fabs(Segment[i].Radius_Deriv[1]);
 		length+= Segment[i].Uvalue[1];
 
     if (i)
@@ -1634,7 +1635,15 @@ void SphereSweep::Compute()
 			// Inspired from Reorient_Trans in transform.inc
        Vector3d oldSeg( dot(Segment[i-1].Vbase[0], Segment[i-1].Vbase[1]) );
        oldSeg.normalize();
-       tmpSeg.normalize();
+       // catch identical points (null segments) in else part
+       if (tmplength)
+       {
+		   tmpSeg.normalize();
+       }
+       else
+       {
+           tmpSeg = oldSeg;// keep the same direction from previous segment
+       }
        Vector3d foo( cross(oldSeg, tmpSeg) );
        DBL lenfoo = foo.length();
        if (lenfoo > 0)
@@ -1707,11 +1716,26 @@ void SphereSweep::Compute()
       Vector3d foo(1.0,0.0,0.0);
       Vector3d bar(0.0,1.0,0.0);
       DBL lenv0;
-      Segment[i].Vbase[0] = cross(tmpSeg, foo);
-      lenv0 = Segment[i].Vbase[0].length();
-      if (!(lenv0 > EPSILON))
+      if (tmplength>0.0)
+	  {
+          
+		Segment[i].Vbase[0] = cross(tmpSeg, foo);
+		lenv0 = Segment[i].Vbase[0].length();
+		if (!(lenv0 > 0.0))
+		{
+		  Segment[i].Vbase[0] = cross(tmpSeg, bar);
+		  lenv0 = Segment[i].Vbase[0].length();
+          if (!(lenv0 > 0.0))
+          {
+			Segment[i].Vbase[0] = foo;
+            tmpSeg = bar;
+          }
+		}
+	  }
+      else
       {
-				Segment[i].Vbase[0] = cross(tmpSeg, bar);
+		Segment[i].Vbase[0] = foo;
+		tmpSeg = bar;
       }
     }
     // easy now: [1] orthogonal to dir & [0]
