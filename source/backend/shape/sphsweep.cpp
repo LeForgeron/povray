@@ -1501,8 +1501,9 @@ void SphereSweep::Compute()
 	int     msph;
 	int     last_sph;
 	int     last_seg;
-  DBL length=0.0;
-  VECTOR tmpSeg;
+	DBL length=0.0;
+	DBL tmplength=0.0;
+	VECTOR tmpSeg;
 
 	switch(Interpolation)
 	{
@@ -1523,19 +1524,19 @@ void SphereSweep::Compute()
 
 				// Coefficients for u^1
 				VSub(Segment[i].Center_Coef[1],
-				     Modeling_Sphere[i + 1].Center,
-				     Modeling_Sphere[i].Center);
+						Modeling_Sphere[i + 1].Center,
+						Modeling_Sphere[i].Center);
 
 				Segment[i].Radius_Coef[1] =
-				     Modeling_Sphere[i + 1].Radius -
-				     Modeling_Sphere[i].Radius;
+					Modeling_Sphere[i + 1].Radius -
+					Modeling_Sphere[i].Radius;
 
 				// Coefficients for u^0
 				Assign_Vector(Segment[i].Center_Coef[0],
-				     Modeling_Sphere[i].Center);
+						Modeling_Sphere[i].Center);
 
 				Segment[i].Radius_Coef[0] =
-				     Modeling_Sphere[i].Radius;
+					Modeling_Sphere[i].Radius;
 			}
 			break;
 		case CATMULL_ROM_SPLINE_SPHERE_SWEEP:
@@ -1558,25 +1559,25 @@ void SphereSweep::Compute()
 				{
 					// Center
 					VScale(Segment[i].Center_Coef[coef],
-					       Modeling_Sphere[i].Center,
-					       Catmull_Rom_Matrix[coef][0]);
+							Modeling_Sphere[i].Center,
+							Catmull_Rom_Matrix[coef][0]);
 
 					// Radius
 					Segment[i].Radius_Coef[coef] =
-					       Modeling_Sphere[i].Radius *
-					       Catmull_Rom_Matrix[coef][0];
+						Modeling_Sphere[i].Radius *
+						Catmull_Rom_Matrix[coef][0];
 
 					for(msph = 1; msph < 4; msph++)
 					{
 						// Center
 						VAddScaledEq(Segment[i].Center_Coef[coef],
-						             Catmull_Rom_Matrix[coef][msph],
-						             Modeling_Sphere[i + msph].Center);
+								Catmull_Rom_Matrix[coef][msph],
+								Modeling_Sphere[i + msph].Center);
 
 						// Radius
 						Segment[i].Radius_Coef[coef] +=
-						             Catmull_Rom_Matrix[coef][msph] *
-						             Modeling_Sphere[i + msph].Radius;
+							Catmull_Rom_Matrix[coef][msph] *
+							Modeling_Sphere[i + msph].Radius;
 					}
 				}
 			}
@@ -1601,25 +1602,25 @@ void SphereSweep::Compute()
 				{
 					// Center
 					VScale(Segment[i].Center_Coef[coef],
-					       Modeling_Sphere[i].Center,
-					       B_Matrix[coef][0]);
+							Modeling_Sphere[i].Center,
+							B_Matrix[coef][0]);
 
 					// Radius
 					Segment[i].Radius_Coef[coef] =
-					       Modeling_Sphere[i].Radius *
-					       B_Matrix[coef][0];
+						Modeling_Sphere[i].Radius *
+						B_Matrix[coef][0];
 
 					for(msph = 1; msph < 4; msph++)
 					{
 						// Center
 						VAddScaledEq(Segment[i].Center_Coef[coef],
-						             B_Matrix[coef][msph],
-						             Modeling_Sphere[i + msph].Center);
+								B_Matrix[coef][msph],
+								Modeling_Sphere[i + msph].Center);
 
 						// Radius
 						Segment[i].Radius_Coef[coef] +=
-						             B_Matrix[coef][msph] *
-						             Modeling_Sphere[i + msph].Radius;
+							B_Matrix[coef][msph] *
+							Modeling_Sphere[i + msph].Radius;
 					}
 				}
 			}
@@ -1627,7 +1628,6 @@ void SphereSweep::Compute()
 	}
 
 	// Pre-calculate several constants
-
 	for(i = 0; i < Num_Segments; i++)
 	{
 		Segment[i].Uvalue[0]=1.0*i/(Num_Segments+1.0);
@@ -1636,62 +1636,62 @@ void SphereSweep::Compute()
 
 		// Center
 		Assign_Vector(Segment[i].Closing_Sphere[0].Center,
-		              Segment[i].Center_Coef[0]);
+				Segment[i].Center_Coef[0]);
 
 		// Radius
 		Segment[i].Closing_Sphere[0].Radius =
-		              Segment[i].Radius_Coef[0];
+			Segment[i].Radius_Coef[0];
 
 		// Calculate derivatives for u = 0
 
 		// Center
 		Assign_Vector(Segment[i].Center_Deriv[0],
-		              Segment[i].Center_Coef[1]);
+				Segment[i].Center_Coef[1]);
 
 		// Radius
 		Segment[i].Radius_Deriv[0] =
-		              Segment[i].Radius_Coef[1];
+			Segment[i].Radius_Coef[1];
 
 		// Calculate closing sphere for u = 1
 
 		// Center
 		Assign_Vector(Segment[i].Closing_Sphere[1].Center,
-		              Segment[i].Center_Coef[0]);
+				Segment[i].Center_Coef[0]);
 
 		// Radius
 		Segment[i].Closing_Sphere[1].Radius =
-		              Segment[i].Radius_Coef[0];
+			Segment[i].Radius_Coef[0];
 
 		for(coef = 1; coef < Segment[i].Num_Coefs; coef++)
 		{
 			// Center
 			VAddEq(Segment[i].Closing_Sphere[1].Center,
-			       Segment[i].Center_Coef[coef]);
+					Segment[i].Center_Coef[coef]);
 
 			// Radius
 			Segment[i].Closing_Sphere[1].Radius +=
-			       Segment[i].Radius_Coef[coef];
+				Segment[i].Radius_Coef[coef];
 		}
 
 		// Calculate derivatives for u = 1
 
 		// Center
 		Assign_Vector(Segment[i].Center_Deriv[1],
-		              Segment[i].Center_Coef[1]);
+				Segment[i].Center_Coef[1]);
 
 		// Radius
 		Segment[i].Radius_Deriv[1] =
-		              Segment[i].Radius_Coef[1];
+			Segment[i].Radius_Coef[1];
 
 		for(coef = 2; coef < Segment[i].Num_Coefs; coef++)
 		{
 			// Center
 			VAddScaledEq(Segment[i].Center_Deriv[1], coef,
-			             Segment[i].Center_Coef[coef]);
+					Segment[i].Center_Coef[coef]);
 
 			// Radius
 			Segment[i].Radius_Deriv[1] += coef *
-			             Segment[i].Radius_Coef[coef];
+				Segment[i].Radius_Coef[coef];
 		}
 
 		VSub(tmpSeg,
@@ -1699,103 +1699,126 @@ void SphereSweep::Compute()
 				Segment[i].Closing_Sphere[0].Center);
 
 		Segment[i].Uvalue[0]=length;
-		VLength(Segment[i].Uvalue[1], tmpSeg);
-    Segment[i].Uvalue[1]+= fabs(Segment[i].Radius_Deriv[1]);
+		VLength(tmplength , tmpSeg);
+		Segment[i].Uvalue[1]= tmplength;
+		Segment[i].Uvalue[1]+= fabs(Segment[i].Radius_Deriv[1]);
 		length+= Segment[i].Uvalue[1];
 
-    if (i)
-    {
+		if (i)
+		{
 			// Inspired from Reorient_Trans in transform.inc
-       VECTOR oldSeg;
-       VCross(oldSeg, Segment[i-1].Vbase[0], Segment[i-1].Vbase[1]);
-       VNormalizeEq(oldSeg);
-       VNormalizeEq(tmpSeg);
-       VECTOR foo;
-       VCross(foo, oldSeg, tmpSeg);
-       DBL lenfoo;
-       VLength(lenfoo, foo);
-       if (lenfoo > 0)
-       { // fine, there is a plane to evolve from oldSeg into tmpSeg
-         VECTOR z1,z2,x1,x2;
-         VInverseScaleEq(foo,lenfoo); // normalize, but we have already the length
-         VCross(x1, oldSeg, foo);
-         VCross(x2, tmpSeg, foo);
-         VNormalize(z1,x1);
-         VNormalize(z2,x2);
-         MATRIX m1,m2;
-         m1[0][0] = x1[0];
-         m1[1][0] = x1[1];
-         m1[2][0] = x1[2];
-         m1[3][0] = 0;
-         m1[0][1] = foo[0];
-         m1[1][1] = foo[1];
-         m1[2][1] = foo[2];
-         m1[3][1] = 0;
-         m1[0][2] = z1[0];
-         m1[1][2] = z1[1];
-         m1[2][2] = z1[2];
-         m1[3][2] = 0;
-         m1[0][3] = 0;
-         m1[1][3] = 0;
-         m1[2][3] = 0;
-         m1[3][3] = 1;
-         // not the same order as m1
-         m2[0][0] = x2[0];
-         m2[0][1] = x2[1];
-         m2[0][2] = x2[2];
-         m2[0][3] = 0;
-         m2[1][0] = foo[0];
-         m2[1][1] = foo[1];
-         m2[1][2] = foo[2];
-         m2[1][3] = 0;
-         m2[2][0] = z2[0];
-         m2[2][1] = z2[1];
-         m2[2][2] = z2[2];
-         m2[2][3] = 0;
-         m2[3][0] = 0;
-         m2[3][1] = 0;
-         m2[3][2] = 0;
-         m2[3][3] = 1;
-         MTimesA(m1,m2);// we do not need the inverse, and use a simpler version of MTransDirection 
-         for(int idx =0;idx < 3;++idx)
-         {
-         Segment[i].Vbase[0][idx] = 
-					 Segment[i-1].Vbase[0][0]*m1[0][idx] +
-					 Segment[i-1].Vbase[0][1]*m1[1][idx] +
-					 Segment[i-1].Vbase[0][2]*m1[2][idx] ;
-         }
-       }// end of playing with matrixes
-       else
-       { // either same direction or opposite
-         VSub(foo, tmpSeg, oldSeg);
-         if (VSumSqr(foo) < 2.0) // either 0 or 4... with numerical imprecision of computer : test against 2
-         {
-           Assign_Vector(Segment[i].Vbase[0] , Segment[i-1].Vbase[0]);
-         }
-         else
-         { // flip, total U-turn 
-           VScale(Segment[i].Vbase[0] , Segment[i-1].Vbase[0], -1.0);
-         }
-         
-       }
-    }
-    else
-    { // make a random choice... sort of : perpendicular to +x, or +y when going along x
-      VECTOR foo={1.0,0.0,0.0};
-      VECTOR bar={0.0,1.0,0.0};
-      DBL lenv0;
-      VCross(Segment[i].Vbase[0], tmpSeg, foo);
-      VLength(lenv0,Segment[i].Vbase[0]);
-      if (!(lenv0 > EPSILON))
-      {
-				VCross(Segment[i].Vbase[0], tmpSeg, bar);
-      }
-    }
-    // easy now: [1] orthogonal to dir & [0]
-    VCross(Segment[i].Vbase[1], tmpSeg, Segment[i].Vbase[0]);
+			VECTOR oldSeg;
+			VCross(oldSeg, Segment[i-1].Vbase[0], Segment[i-1].Vbase[1]);
+			VNormalizeEq(oldSeg);
+			// catch identical points (null segment) in else part
+			if (tmplength)
+			{
+				VNormalizeEq(tmpSeg);
+			}
+			else
+			{
+				Assign_Vector(tmpSeg , oldSeg);// keep the same direction, from previous segment
+			}
+			VECTOR foo;
+			VCross(foo, oldSeg, tmpSeg);
+			DBL lenfoo;
+			VLength(lenfoo, foo);
+			if (lenfoo > 0)
+			{ // fine, there is a plane to evolve from oldSeg into tmpSeg
+				VECTOR z1,z2,x1,x2;
+				VInverseScaleEq(foo,lenfoo); // normalize, but we have already the length
+				VCross(x1, oldSeg, foo);
+				VCross(x2, tmpSeg, foo);
+				VNormalize(z1,x1);
+				VNormalize(z2,x2);
+				MATRIX m1,m2;
+				m1[0][0] = x1[0];
+				m1[1][0] = x1[1];
+				m1[2][0] = x1[2];
+				m1[3][0] = 0;
+				m1[0][1] = foo[0];
+				m1[1][1] = foo[1];
+				m1[2][1] = foo[2];
+				m1[3][1] = 0;
+				m1[0][2] = z1[0];
+				m1[1][2] = z1[1];
+				m1[2][2] = z1[2];
+				m1[3][2] = 0;
+				m1[0][3] = 0;
+				m1[1][3] = 0;
+				m1[2][3] = 0;
+				m1[3][3] = 1;
+				// not the same order as m1
+				m2[0][0] = x2[0];
+				m2[0][1] = x2[1];
+				m2[0][2] = x2[2];
+				m2[0][3] = 0;
+				m2[1][0] = foo[0];
+				m2[1][1] = foo[1];
+				m2[1][2] = foo[2];
+				m2[1][3] = 0;
+				m2[2][0] = z2[0];
+				m2[2][1] = z2[1];
+				m2[2][2] = z2[2];
+				m2[2][3] = 0;
+				m2[3][0] = 0;
+				m2[3][1] = 0;
+				m2[3][2] = 0;
+				m2[3][3] = 1;
+				MTimesA(m1,m2);// we do not need the inverse, and use a simpler version of MTransDirection 
+				for(int idx =0;idx < 3;++idx)
+				{
+					Segment[i].Vbase[0][idx] = 
+						Segment[i-1].Vbase[0][0]*m1[0][idx] +
+						Segment[i-1].Vbase[0][1]*m1[1][idx] +
+						Segment[i-1].Vbase[0][2]*m1[2][idx] ;
+				}
+			}// end of playing with matrixes
+			else
+			{ // either same direction or opposite
+				VSub(foo, tmpSeg, oldSeg);
+				if (VSumSqr(foo) < 2.0) // either 0 or 4... with numerical imprecision of computer : test against 2
+				{
+					Assign_Vector(Segment[i].Vbase[0] , Segment[i-1].Vbase[0]);
+				}
+				else
+				{ // flip, total U-turn 
+					VScale(Segment[i].Vbase[0] , Segment[i-1].Vbase[0], -1.0);
+				}
+
+			}
+		}
+		else
+		{ // make a random choice... sort of : perpendicular to +x, or +y when going along x
+			VECTOR foo={1.0,0.0,0.0};
+			VECTOR bar={0.0,1.0,0.0};
+			DBL lenv0;
+			if (tmplength>0.0)
+			{
+				VCross(Segment[i].Vbase[0], tmpSeg, foo);
+				VLength(lenv0,Segment[i].Vbase[0]);
+				if (!(lenv0 > 0.0))
+				{
+					VCross(Segment[i].Vbase[0], tmpSeg, bar);
+					VLength(lenv0,Segment[i].Vbase[0]);
+					if (!(lenv0 > 0.0))
+					{
+						Assign_Vector(Segment[i].Vbase[0], foo);
+						Assign_Vector(tmpSeg, bar);
+					}
+				}
+			}
+			else
+			{
+				Assign_Vector(Segment[i].Vbase[0], foo);
+				Assign_Vector(tmpSeg, bar);
+			}
+		}
+		// easy now: [1] orthogonal to dir & [0]
+		VCross(Segment[i].Vbase[1], tmpSeg, Segment[i].Vbase[0]);
 		// [1] & [0] must have same length for atan2 of dot products to work
-    VNormalizeEq(Segment[i].Vbase[1]);
-    VNormalizeEq(Segment[i].Vbase[0]); 
+		VNormalizeEq(Segment[i].Vbase[1]);
+		VNormalizeEq(Segment[i].Vbase[0]); 
 	}
 
 	// Calculate single spheres
@@ -1809,46 +1832,45 @@ void SphereSweep::Compute()
 	}
 
 	// Calculate first sphere of every segment
-
 	for(i = 0; i < Num_Segments; i++)
 	{
 		// Center
 		Assign_Vector(Sphere[i].Center,
-		              Segment[i].Center_Coef[0]);
+				Segment[i].Center_Coef[0]);
 
 		// Radius
 		Sphere[i].Radius =
-		              Segment[i].Radius_Coef[0];
+			Segment[i].Radius_Coef[0];
 
-    // and adjust U to 0..1 range
-    Segment[i].Uvalue[0] /= length;
-    Segment[i].Uvalue[1] /= length;
+		// and adjust U to 0..1 range
+		Segment[i].Uvalue[0] /= length;
+		Segment[i].Uvalue[1] /= length;
 		Sphere[i].Uvalue= Segment[i].Uvalue[0]; 
 	}
-  // for Vbase, each sphere is mid-way from the two segments
-  for(i = 1; i< Num_Segments; i++)
-  {
-    NormalVectorInterpolation(Sphere[i].Vbase[0], Segment[i-1].Vbase[0], 0.5, Segment[i].Vbase[0]);
-    NormalVectorInterpolation(Sphere[i].Vbase[1], Segment[i-1].Vbase[1], 0.5, Segment[i].Vbase[1]);
-  }
+	// for Vbase, each sphere is mid-way from the two segments
+	for(i = 1; i< Num_Segments; i++)
+	{
+		NormalVectorInterpolation(Sphere[i].Vbase[0], Segment[i-1].Vbase[0], 0.5, Segment[i].Vbase[0]);
+		NormalVectorInterpolation(Sphere[i].Vbase[1], Segment[i-1].Vbase[1], 0.5, Segment[i].Vbase[1]);
+	}
 	// Calculate last sphere of last segment
 
 	last_sph = Num_Spheres - 1;
 	last_seg = Num_Segments - 1;
-  // first sphere & last sphere are special for Vbase
-  Assign_Vector(Sphere[0].Vbase[0], Segment[0].Vbase[0]);
-  Assign_Vector(Sphere[0].Vbase[1], Segment[0].Vbase[1]);
+	// first sphere & last sphere are special for Vbase
+	Assign_Vector(Sphere[0].Vbase[0], Segment[0].Vbase[0]);
+	Assign_Vector(Sphere[0].Vbase[1], Segment[0].Vbase[1]);
 	Assign_Vector(Sphere[last_sph].Vbase[0], Segment[last_seg].Vbase[0]);
 	Assign_Vector(Sphere[last_sph].Vbase[1], Segment[last_seg].Vbase[1]);
 
 	// Center
 	Assign_Vector(Sphere[last_sph].Center,
-	              Segment[last_seg].Center_Coef[0]);
+			Segment[last_seg].Center_Coef[0]);
 	// Radius
 	Sphere[last_sph].Radius =
-	              Segment[last_seg].Radius_Coef[0];
+		Segment[last_seg].Radius_Coef[0];
 	Sphere[last_sph].Uvalue=1.0;
-  // Copy Vbase from last segment 
+	// Copy Vbase from last segment 
 	Assign_Vector(Segment[last_seg].Vbase[2], Segment[last_seg].Vbase[0]);
 	Assign_Vector(Segment[last_seg].Vbase[3], Segment[last_seg].Vbase[1]);
 
@@ -1856,14 +1878,14 @@ void SphereSweep::Compute()
 	{
 		// Center
 		VAddEq(Sphere[last_sph].Center,
-		       Segment[last_seg].Center_Coef[coef]);
+				Segment[last_seg].Center_Coef[coef]);
 
 		// Radius
 		Sphere[last_sph].Radius +=
-		       Segment[last_seg].Radius_Coef[coef];
+			Segment[last_seg].Radius_Coef[coef];
 	}
-  // use the Vbase of the spheres at each end on each segment
-  for(i = 0; i < Num_Segments; i++)
+	// use the Vbase of the spheres at each end on each segment
+	for(i = 0; i < Num_Segments; i++)
 	{
 		Assign_Vector(Segment[i].Vbase[0], Sphere[i].Vbase[0]);
 		Assign_Vector(Segment[i].Vbase[1], Sphere[i].Vbase[1]);
