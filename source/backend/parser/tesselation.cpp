@@ -13,6 +13,7 @@
 #include "backend/math/matrices.h"
 #include "backend/texture/texture.h"
 
+#include <set>
 namespace pov
 {
 	 void Parser::StartAddingTriangles(UNDERCONSTRUCTION *das)
@@ -461,18 +462,17 @@ namespace pov
 		 unsigned int number_of_face;
 		 unsigned int cursor;
 		 unsigned int ind;
-		 long first,second;  
-		 long third,swappe;
-		 GTS_Edge * edge;
+		 unsigned int first,second;  
+		 unsigned int third,swappe;
 		 FILE *filep;
 		 int found1,found2,found3;
 
 		 number_of_point = meshobj->Data->Number_Of_Vertices;
 		 number_of_face = meshobj->Data->Number_Of_Triangles;
 		 number_of_edge = 0;
-		 max_edge = 16;
-		 edge = (GTS_Edge *)POV_MALLOC(max_edge*sizeof(GTS_Edge),
-				 "temporary edge data for GTS");
+         typedef std::set<GTS_Edge> EdgeSet;// most std::set implementations would use a binary tree, far better than a home-made linear search
+		 EdgeSet edge;
+         // generate the list of edges (something not in the mesh object)
 		 for(cursor = 0;cursor < number_of_face;cursor++)
 		 {
 			 first = meshobj->Data->Triangles[cursor].P1;
@@ -496,84 +496,23 @@ namespace pov
 				 second = first;
 				 first = swappe;
 			 }
-			 found1 = found2 = found3 = 0;
-			 for(ind= 0;ind<number_of_edge;ind++)
-			 {
-				 if ((edge[ind].first == first)
-						 &&(edge[ind].second == second)
-						)
-				 {
-					 found1 = 1;
-				 }
-				 if ((edge[ind].first == first)
-						 &&(edge[ind].second == third)
-						)
-				 {
-					 found2 = 1;
-				 }
-				 if ((edge[ind].first == second)
-						 &&(edge[ind].second == third)
-						)
-				 {
-					 found3 = 1;
-				 }
-			 }
-			 if (!found1)
-			 {
-				 if (number_of_edge == max_edge)
-				 {
-					 if (max_edge >= INT_MAX/2)
-					 {
-						 Error("Too many edge in mesh.\n");
-					 }
-					 max_edge *= 2;
-					 edge = (GTS_Edge *)POV_REALLOC(edge,(max_edge)*sizeof(GTS_Edge),
-							 "temporary edge data for GTS");
-				 }
-				 edge[number_of_edge].first = first;
-				 edge[number_of_edge].second = second;
-				 number_of_edge++;
-			 }
-			 if (!found2)
-			 {
-				 if (number_of_edge == max_edge)
-				 {
-					 if (max_edge >= INT_MAX/2)
-					 {
-						 Error("Too many edge in mesh.\n");
-					 }
-					 max_edge *= 2;
-					 edge = (GTS_Edge *)POV_REALLOC(edge,(max_edge)*sizeof(GTS_Edge),
-							 "temporary edge data for GTS");
-				 }
-				 edge[number_of_edge].first = first;
-				 edge[number_of_edge].second = third;
-				 number_of_edge++;
-			 }
-			 if (!found3)
-			 {
-				 if (number_of_edge == max_edge)
-				 {
-					 if (max_edge >= INT_MAX/2)
-					 {
-						 Error("Too many edge in mesh.\n");
-					 }
-					 max_edge *= 2;
-					 edge = (GTS_Edge *)POV_REALLOC(edge,(max_edge)*sizeof(GTS_Edge),
-							 "temporary edge data for GTS");
-				 }
-				 edge[number_of_edge].first = second;
-				 edge[number_of_edge].second = third;
-				 number_of_edge++;
-			 }
+             /*
+              * order is now: first < second < third
+              *
+              * expected : duplicated edge (already in set) are not inserted.
+              */
+             edge.insert(GTS_Edge(first,second));
+             edge.insert(GTS_Edge(first,third));
+             edge.insert(GTS_Edge(second,third));
 		 }
+         
 		 if ((filep = fopen(filename,"w") ) == NULL
 				)
 		 {
 			 Error("Error opening GTS file.\n");
 			 return;
 		 }
-		 fprintf(filep,"%u %u %u\n",number_of_point,number_of_edge,number_of_face);
+		 fprintf(filep,"%u %u %u\n",number_of_point,edge.size(),number_of_face);
 		 for(cursor =0; cursor < number_of_point; cursor++)
 		 {
 			 fprintf(filep,"%.10g %.10g %.10g\n",
@@ -581,10 +520,18 @@ namespace pov
 					 meshobj->Data->Vertices[cursor][Y],
 					 meshobj->Data->Vertices[cursor][Z]);
 		 }
-		 for(cursor=0;cursor <number_of_edge; cursor++)
+         /* Avoid O(N*N) cost (looking at the index of each edge for each triangle) by generating the
+          * index as the attribute of a map (so the final cost is O(N*log(N)) )
+          */
+         typedef std::map<GTS_Edge, size_t> EdgeMap;
+         EdgeMap edgemap;
+         size_t counter=0;
+		 for(EdgeSet::iterator ed= edge.begin();ed != edge.end();++ed)
 		 {
-			 fprintf(filep,"%u %u\n",edge[cursor].first+1,edge[cursor].second+1);
+			 fprintf(filep,"%u %u\n",ed->first+1,ed->second+1);
+             edgemap[*ed]=counter++;
 		 }
+         edge.clear();// a bit late to reclaim memory, but let's do it now that we can forget about that set.
 		 for(cursor = 0;cursor < number_of_face; cursor++)
 		 {
 			 first = meshobj->Data->Triangles[cursor].P1;
@@ -608,33 +555,13 @@ namespace pov
 				 second = first;
 				 first = swappe;
 			 }
-			 found1 = found2 = found3 = -1;
-			 for(ind= 0;((found1 <0)||(found2<0)||(found3<0))&&(ind<number_of_edge);
-					 ind++)
-			 {
-				 if ((edge[ind].first == first)
-						 &&(edge[ind].second == second)
-						)
-				 {
-					 found1 = ind;
-				 }
-				 if ((edge[ind].first == first)
-						 &&(edge[ind].second == third)
-						)
-				 {
-					 found2 = ind;
-				 }
-				 if ((edge[ind].first == second)
-						 &&(edge[ind].second == third)
-						)
-				 {
-					 found3 = ind;
-				 }
-			 }
+             // once again, first < second < third
+             found1 = edgemap.at( GTS_Edge(first,second));
+             found2 = edgemap.at( GTS_Edge(first,third));
+             found3 = edgemap.at( GTS_Edge(second,third));
 			 fprintf(filep,"%i %i %i\n",found1+1,found2+1,found3+1);
 		 }
 		 fclose(filep);
-		 POV_FREE(edge);                                                         
 	 }
 /* STL is in little endian 
  * alas, hton* and ntoh* are not usable, as they do nothing on big endian

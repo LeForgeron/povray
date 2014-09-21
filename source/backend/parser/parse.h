@@ -860,11 +860,16 @@ class Parser : public Task
           float vertex3[3];
           uint_least16_t attribute;
         } STL_Entry;
-		typedef struct
+	    struct GTS_Edge
 		{
 			unsigned int first;
 			unsigned int second;
-		} GTS_Edge;
+            bool operator<(const GTS_Edge& o) const
+            {
+              return (first<o.first)||((first == o.first)&&(second<o.second));
+            }
+            GTS_Edge(const unsigned int a, const unsigned int b):first(a),second(b){}
+		};
 		typedef struct
 		{
 			ObjectPtr Object;
