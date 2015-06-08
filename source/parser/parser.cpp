@@ -6150,6 +6150,13 @@ ObjectPtr Parser::Parse_TrueType ()
                       "in POV-Ray 3.5 and later.");
     }
 
+    if((sceneData->EffectiveLanguageVersion() < 350) && (sceneData->stringEncoding == 0))
+    {
+        PossibleError("Text may not be displayed as expected.\n"
+                      "Please refer to the user manual regarding changes\n"
+                      "in POV-Ray 3.5 and later.");
+    }
+
     Parse_Begin ();
 
     if ( (Object = reinterpret_cast<ObjectPtr>(Parse_Object_Id())) != NULL)
