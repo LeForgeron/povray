@@ -729,7 +729,12 @@ void Parser::Parse_Spline_Call(EXPRESS Express, int *Terms)
 		OTHERWISE
 		  Release_Spline_Reference(spline);
 			UNGET
-			Expectation_Error ("( or [");
+			/* Allow Spline's identifier in macro call */
+                        if (!Allow_Identifier_In_Call)
+                        {
+	                	Expectation_Error ("( or [");
+                        }
+			EXIT
 		END_CASE
 	END_EXPECT
 
