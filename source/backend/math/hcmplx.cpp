@@ -939,7 +939,7 @@ int Iteration_HCompl_Func(const VECTOR IPoint, const Fractal *HCompl, DBL **Iter
 
 	x = IterStack[X][0] = IPoint[X];
 	y = IterStack[Y][0] = IPoint[Y];
-	z = IterStack[Z][0] = IPoint[Y];
+	z = IterStack[Z][0] = IPoint[Z];
 	w = IterStack[W][0] = (HCompl->SliceDist
 	                     - HCompl->Slice[X]*x
 	                     - HCompl->Slice[Y]*y
