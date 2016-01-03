@@ -582,6 +582,15 @@ UCS2 *Parser::Parse_CameraType(bool pathname)
 		case FISHEYE_CAMERA:
 			textual = Get_Token_String(FISHEYE_TOKEN);
 			break;
+		case FISHEYE_ORTHOGRAPHIC_CAMERA:
+			textual = Get_Token_String(FISHEYE_ORTHOGRAPHIC_TOKEN);
+			break;
+		case FISHEYE_EQUISOLIDANGLE_CAMERA:
+			textual = Get_Token_String(FISHEYE_EQUISOLIDANGLE_TOKEN);
+			break;
+		case FISHEYE_STEREOGRAPHIC_CAMERA:
+			textual = Get_Token_String(FISHEYE_STEREOGRAPHIC_TOKEN);
+			break;
 		case ULTRA_WIDE_ANGLE_CAMERA:
 			textual = Get_Token_String(ULTRA_WIDE_ANGLE_TOKEN);
 			break;

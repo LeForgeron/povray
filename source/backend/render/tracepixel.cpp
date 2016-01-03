@@ -225,6 +225,9 @@ void TracePixel::SetupCamera(const Camera& cam)
 			break;
 		case OMNIMAX_CAMERA:
 		case FISHEYE_CAMERA:
+		case FISHEYE_ORTHOGRAPHIC_CAMERA:
+		case FISHEYE_EQUISOLIDANGLE_CAMERA:
+		case FISHEYE_STEREOGRAPHIC_CAMERA:
 			aspectRatio = cameraLengthRight / cameraLengthUp;
 			normalise = true;
 			break;
@@ -425,6 +428,146 @@ bool TracePixel::CreateCameraRay(Ray& ray, DBL x, DBL y, DBL width, DBL height, 
 
 			// Set vertical angle to half viewing angle.
 			y0 = rad * camera.Angle * M_PI_360;
+
+			// Create primary ray.
+			cx = cos(x0);  sx = sin(x0);
+			cy = cos(y0);  sy = sin(y0);
+
+			VLinComb3(ray.Direction, cx * sy, *cameraRight, sx * sy, *cameraUp, cy, *cameraDirection);
+
+			if(useFocalBlur)
+				JitterCameraRay(ray, x, y, ray_number);
+
+			InitRayContainerState(ray);
+			break;
+
+		// Fisheye camera. equidistant r = F.sin(theta)
+		case FISHEYE_ORTHOGRAPHIC_CAMERA:
+			// Convert the x coordinate to be a DBL from -1.0 to 1.0.
+			x0 = 2.0 * x / width - 1.0;
+
+			// Convert the y coordinate to be a DBL from -1.0 to 1.0.
+			y0 = 2.0 * ((height - 1) - y) / height - 1.0;
+
+			// This code would do what Warp wants
+			x0 *= cameraLengthRight;
+			y0 *= cameraLengthUp;
+
+			rad = sqrt(x0 * x0 + y0 * y0);
+
+			// If the pixel lies outside the unit circle no ray is traced.
+
+			if(rad > 1.0)
+				return false;
+
+			if(rad == 0.0)
+				phi = 0.0;
+			else if(x0 < 0.0)
+				phi = M_PI - asin(y0 / rad);
+			else
+				phi = asin(y0 / rad);
+
+			// Get spherical coordinates.
+			x0 = phi;
+
+			// Set vertical angle to half viewing angle.
+      // from book: r = F.sin(theta) (aka F.sin(y0))
+      // so y0 = asin( rad );
+      // for max 180° angle 
+			y0 = asin(rad) * camera.Angle / 180.0;
+
+			// Create primary ray.
+			cx = cos(x0);  sx = sin(x0);
+			cy = cos(y0);  sy = sin(y0);
+
+			VLinComb3(ray.Direction, cx * sy, *cameraRight, sx * sy, *cameraUp, cy, *cameraDirection);
+
+			if(useFocalBlur)
+				JitterCameraRay(ray, x, y, ray_number);
+
+			InitRayContainerState(ray);
+			break;
+
+		// Fisheye camera, equisolid angle r = F.2.sin(theta/2)
+		case FISHEYE_EQUISOLIDANGLE_CAMERA:
+			// Convert the x coordinate to be a DBL from -1.0 to 1.0.
+			x0 = 2.0 * x / width - 1.0;
+
+			// Convert the y coordinate to be a DBL from -1.0 to 1.0.
+			y0 = 2.0 * ((height - 1) - y) / height - 1.0;
+
+			// This code would do what Warp wants
+			x0 *= cameraLengthRight;
+			y0 *= cameraLengthUp;
+
+			rad = sqrt(x0 * x0 + y0 * y0);
+
+			// If the pixel lies outside the unit circle no ray is traced.
+
+			if(rad > 1.0)
+				return false;
+
+			if(rad == 0.0)
+				phi = 0.0;
+			else if(x0 < 0.0)
+				phi = M_PI - asin(y0 / rad);
+			else
+				phi = asin(y0 / rad);
+
+			// Get spherical coordinates.
+			x0 = phi;
+
+      // from book: r = F.2.sin(theta/2) 
+      // for max 180° angle , just inverse the previous function
+      // but adjust the range 0-1 to 0-sqrt(2) first
+			y0 = 2.0*asin(.5*rad*sqrt(2)) * camera.Angle / 180.0;
+
+			// Create primary ray.
+			cx = cos(x0);  sx = sin(x0);
+			cy = cos(y0);  sy = sin(y0);
+
+			VLinComb3(ray.Direction, cx * sy, *cameraRight, sx * sy, *cameraUp, cy, *cameraDirection);
+
+			if(useFocalBlur)
+				JitterCameraRay(ray, x, y, ray_number);
+
+			InitRayContainerState(ray);
+			break;
+
+		// Fisheye camera. stereographic, r = F.2.tan(theta/2)
+		case FISHEYE_STEREOGRAPHIC_CAMERA:
+			// Convert the x coordinate to be a DBL from -1.0 to 1.0.
+			x0 = 2.0 * x / width - 1.0;
+
+			// Convert the y coordinate to be a DBL from -1.0 to 1.0.
+			y0 = 2.0 * ((height - 1) - y) / height - 1.0;
+
+			// This code would do what Warp wants
+			x0 *= cameraLengthRight;
+			y0 *= cameraLengthUp;
+
+			rad = sqrt(x0 * x0 + y0 * y0);
+
+			// If the pixel lies outside the unit circle no ray is traced.
+
+			if(rad > 1.0)
+				return false;
+
+			if(rad == 0.0)
+				phi = 0.0;
+			else if(x0 < 0.0)
+				phi = M_PI - asin(y0 / rad);
+			else
+				phi = asin(y0 / rad);
+
+			// Get spherical coordinates.
+			x0 = phi;
+
+      // from book: r = F.2.tan(theta/2) 
+      // for max 180° angle , just inverse the previous function
+      // but adjust the range 0-1 to 0-2 first, then simplify 0.5*2*rad to rad
+      // (adjustment due to rad=1 for theta = pi/2, so r = 2Ftan(pi/4) = 2F )
+			y0 = 2.0*atan(rad) * camera.Angle / 180.0;
 
 			// Create primary ray.
 			cx = cos(x0);  sx = sin(x0);

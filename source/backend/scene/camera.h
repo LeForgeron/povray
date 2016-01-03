@@ -77,6 +77,9 @@ namespace pov
 #define PROJ_ECKERT6_CAMERA              32
 #define PROJ_MILLER_CAMERA               33
 #define STEREOSCOPIC_CAMERA         34
+#define FISHEYE_ORTHOGRAPHIC_CAMERA		35
+#define FISHEYE_EQUISOLIDANGLE_CAMERA		36
+#define FISHEYE_STEREOGRAPHIC_CAMERA	  37
 
 /*****************************************************************************
 * Global typedefs
