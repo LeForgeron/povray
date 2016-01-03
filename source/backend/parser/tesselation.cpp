@@ -593,6 +593,67 @@ namespace pov
 #else
 #error "Not supported, yet ?"
 #endif
+// read a binary STL file
+	 ObjectPtr Parser::Stl_Load_Object(char * filename, STLInfo *info, UNDERCONSTRUCTION *das)
+	 {
+		 uint_least32_t numberFace;
+		 STL_Entry entry;
+		 IStream *filep;
+		 VECTOR v1,v2,v3;
+		 UCS2String ign;
+
+		 if ((filep = 
+					 Locate_File(this,sceneData,ASCIItoUCS2String(filename).c_str(),POV_File_Data_STL,ign,true)
+				 ) == NULL
+				)
+		 {
+			 Error("Error opening STL file.\n");
+			 return NULL;
+		 }
+		 filep->ignore(80);// ignore header, no magic to check the file type
+		 filep->read( &numberFace, 4 );
+		 FIX_INT(numberFace);
+		 for(size_t i=0;i<numberFace;++i)
+		 {
+			 if (!filep->eof())
+			 {
+				 filep->read(&entry, 50);
+				 FIX_FLOAT(entry.normal[0]);
+				 FIX_FLOAT(entry.normal[1]);
+				 FIX_FLOAT(entry.normal[2]);
+				 FIX_FLOAT(entry.vertex1[0]);
+				 FIX_FLOAT(entry.vertex1[1]);
+				 FIX_FLOAT(entry.vertex1[2]);
+				 FIX_FLOAT(entry.vertex2[0]);
+				 FIX_FLOAT(entry.vertex2[1]);
+				 FIX_FLOAT(entry.vertex2[2]);
+				 FIX_FLOAT(entry.vertex3[0]);
+				 FIX_FLOAT(entry.vertex3[1]);
+				 FIX_FLOAT(entry.vertex3[2]);
+				 FIX_SHORT(entry.attribute);
+				 if (info->reverse)
+				 {
+					 entry.vertex1[0]*=-1.0;
+					 entry.vertex2[0]*=-1.0;
+					 entry.vertex3[0]*=-1.0;
+				 }
+				 Make_Vector(v1, entry.vertex1[0], entry.vertex1[1], entry.vertex1[2]);
+				 Make_Vector(v2, entry.vertex2[0], entry.vertex2[1], entry.vertex2[2]);
+				 Make_Vector(v3, entry.vertex3[0], entry.vertex3[1], entry.vertex3[2]);
+				 AddTriangle(v1, v2, v3, NULL,NULL,NULL, das);
+				 // Caveat: AddTriangle will slow down due to the lookup for duplicated vectors as mesh grows
+				 if ((!(i%100))||(i+1==numberFace))
+				 {
+					 printf("Read %6.2f %% of %u faces \r",((i+1.0)/numberFace)*100.0,numberFace);
+					 Cooperate();
+				 }
+			 }
+		 }
+		 printf("\n");
+		 delete filep;
+		 return (ObjectPtr )das->tesselationMesh;
+
+	 }
 	 void Parser::Stl_Save_Object(char *filename, STLInfo *info)
 	 {
 		 Mesh *meshobj = (Mesh*)info->object;
@@ -655,7 +716,7 @@ namespace pov
              FIX_FLOAT(entry.vertex3[1]);
              FIX_FLOAT(entry.vertex3[2]);
              FIX_SHORT(entry.attribute);
-             fwrite(&entry, 4*3*4+2,1,filep);
+             fwrite(&entry, 50,1,filep);
 		 }
 		 fclose(filep);
 	 }
@@ -1898,11 +1959,11 @@ namespace pov
 		das.Default_Texture = NULL;
 		Parse_Begin();
 
-		info.reverse=0;
+		info.reverse=false;
 		filename = Parse_C_String();
 		EXPECT
 			CASE(RIGHT_TOKEN)
-			info.reverse=1;
+			info.reverse=true;
 		END_CASE 
 			OTHERWISE
 			UNGET
@@ -1927,7 +1988,7 @@ namespace pov
 		das.Default_Texture = NULL;
 		Parse_Begin();
 
-		info.reverse=0;
+		info.reverse=false;
 		filename = Parse_C_String();
 		Parse_Comma();
 		info.object = Parse_Object();
@@ -1942,6 +2003,7 @@ namespace pov
 	{
 		char * filename; 
 		STLInfo info;
+                info.reverse = false;
 		Parse_Begin();
 
 		filename = Parse_C_String();
@@ -1953,6 +2015,36 @@ namespace pov
 		Destroy_Object(info.object);
 		POV_FREE(filename);
 		Parse_End();
+	}
+	ObjectPtr Parser::Parse_Stl_Load (void)
+	{
+		char * filename; 
+		STLInfo info;
+		ObjectPtr Res;
+		UNDERCONSTRUCTION das;
+		das.albinos = 0;
+		das.Default_Texture = NULL;
+		Parse_Begin();
+
+		info.reverse=false;
+		filename = Parse_C_String();
+		EXPECT
+			CASE(RIGHT_TOKEN)
+			info.reverse=true;
+		END_CASE 
+			OTHERWISE
+			UNGET
+			EXIT
+			END_CASE
+			END_EXPECT
+
+			StartAddingTriangles(&das);
+		Res = Stl_Load_Object(filename, &info,&das); 
+
+		DoneAddingTriangles(&das);
+
+		POV_FREE(filename);
+		return Res;
 	}
 	/*
 		 ================================================================================
@@ -6646,11 +6738,11 @@ namespace pov
 			das.Default_Texture = NULL;
 			Parse_Begin();
 
-			info.reverse=0;
+			info.reverse=false;
 			filename = Parse_C_String();
 			EXPECT
 				CASE(RIGHT_TOKEN)
-				info.reverse=1;
+				info.reverse=true;
 			END_CASE 
 				CASE(TEXTURE_TOKEN)
 				Parse_Begin();

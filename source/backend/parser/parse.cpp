@@ -7166,6 +7166,11 @@ ObjectPtr Parser::Parse_Object ()
        EXIT
      END_CASE
 
+     CASE (STL_LOAD_TOKEN)
+       Object = Parse_Stl_Load();
+       EXIT
+     END_CASE
+
      CASE (KEEP_TOKEN)
        Object = Parse_Select();
        EXIT

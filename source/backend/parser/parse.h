@@ -523,6 +523,7 @@ class Parser : public Task
 		void Parse_Gts_Save(void);
 		void Parse_Stl_Save(void);
 		ObjectPtr Parse_Gts_Load(void);
+		ObjectPtr Parse_Stl_Load(void);
 
 		void Parse_Load_In_Mesh(Mesh* m, MESH_TRIANGLE** trs, TEXTURE*** textu,
 				SNGL_VECT** verts, SNGL_VECT** norms, int *full,
@@ -846,11 +847,12 @@ class Parser : public Task
 		typedef struct 
 		{
 			ObjectPtr  object;
-			char reverse; /* inverse right hand and left hand */
+			bool reverse; /* inverse right hand and left hand */
 		} GTSInfo;
         typedef struct
         {
             ObjectPtr  object;
+            bool reverse;/* inverse right hand and left hand */
         } STLInfo;
         typedef struct
         {
@@ -954,6 +956,8 @@ class Parser : public Task
 				VECTOR N1, VECTOR N2, VECTOR N3, UNDERCONSTRUCTION *das);
 		void DoneAddingTriangles(UNDERCONSTRUCTION *das);
 		ObjectPtr  Gts_Load_Object(char *filename, GTSInfo *info,
+				UNDERCONSTRUCTION *das);
+		ObjectPtr  Stl_Load_Object(char *filename, STLInfo *info,
 				UNDERCONSTRUCTION *das);
 		void Stl_Save_Object(char *filename, STLInfo *info);
 		void Gts_Save_Object(char *filename, GTSInfo *info,

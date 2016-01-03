@@ -127,6 +127,7 @@ POV_File_Extensions gPOV_File_Extensions[POV_File_Count] = // TODO FIXME - belon
 	{{ ".bak",  ".BAK",  "",      ""      }}, // POV_File_Data_Backup
 	{{ ".ttf",  ".TTF",  "",      ""      }}, // POV_File_Font_TTF
 	{{ ".gts",  ".GTS",  "",      ""      }}, // POV_File_Data_GTS
+	{{ ".stl",  ".STL",  "",      ""      }}, // POV_File_Data_STL
 };
 
 const int gFile_Type_To_Mask [POV_File_Count] = // TODO FIXME - belongs in backend
@@ -155,7 +156,8 @@ const int gFile_Type_To_Mask [POV_File_Count] = // TODO FIXME - belongs in backe
 	NO_FILE,   // POV_File_Data_LOG
 	NO_FILE,   // POV_File_Data_Backup
 	NO_FILE,   // POV_File_Font_TTF
-	NO_FILE    // POV_File_Data_GTS
+	NO_FILE,   // POV_File_Data_GTS
+	NO_FILE    // POV_File_Data_STL
 };
 
 int InferFileTypeFromExt(const UCS2String& ext) // TODO FIXME - belongs in backend

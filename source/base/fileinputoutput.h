@@ -84,6 +84,7 @@ enum
 	POV_File_Data_Backup,
 	POV_File_Font_TTF,
 	POV_File_Data_GTS,
+	POV_File_Data_STL,
 	POV_File_Count
 };
 
