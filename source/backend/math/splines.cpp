@@ -671,6 +671,7 @@ void Insert_Spline_Entry(GenericSpline * sp, DBL p, const EXPRESS& v)
         if (sp->SplineEntries[i-1].par == p)
         {
           replace = true;
+          --i;// get back inbound
         }
       }
       else
