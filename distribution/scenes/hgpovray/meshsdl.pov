@@ -69,6 +69,7 @@ object { Mesh texture { pigment { color rgb <0.8, 0.8, 0.2> } }
 "\n#triangles : ",str(get_triangle_count(Mesh),3,0),
 "\n\nFourth Triangle\nindex of vertex #",vstr(3,get_vertex_indices(Mesh,3),", #",1,0),
 "\nindex of normal #",vstr(3,get_normal_indices(Mesh,3),", #",2,0),
+"\nsmooth (0 for no) : ",str(is_smooth_triangle(Mesh,3),3,0),
 "\n\nTenth vertex  = <",vstr(3,get_vertex(Mesh,9),",",2,3),
 ">\n\nTenth normal  = <",vstr(3,get_normal(Mesh,9),",",2,3),
 ">\n");

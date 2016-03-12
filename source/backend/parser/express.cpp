@@ -1264,6 +1264,24 @@ void Parser::Parse_Num_Factor (EXPRESS Express,int *Terms)
 					GET(RIGHT_PAREN_TOKEN)
 					break;
 
+				case IS_SMOOTH_TRIANGLE_TOKEN:
+					GET(LEFT_PAREN_TOKEN)
+					GET(OBJECT_ID_TOKEN)
+					Object = (ObjectPtr)Token.Data;
+					Parse_Comma();
+					i = (int)Parse_Float();
+					if ((localmesh = dynamic_cast<Mesh*>(Object))
+							&& (i>=0)
+							&&(localmesh->Data->Number_Of_Triangles > i))
+					{
+            Val = localmesh->Data->Triangles[i].Smooth;
+					}
+					else
+					{
+					  Val = 0;
+					}
+          GET(RIGHT_PAREN_TOKEN)
+					break;
 				case GET_NORMALS_AMOUNT_TOKEN:
 					GET(LEFT_PAREN_TOKEN)
 					GET(OBJECT_ID_TOKEN)
