@@ -1297,6 +1297,21 @@ void Parser::Parse_Num_Factor (EXPRESS Express,int *Terms)
 					GET(RIGHT_PAREN_TOKEN)
 					break;
 
+				case GET_UVS_AMOUNT_TOKEN:
+					GET(LEFT_PAREN_TOKEN)
+					GET(OBJECT_ID_TOKEN)
+					Object = (ObjectPtr)Token.Data;
+					if (localmesh=dynamic_cast<Mesh*>(Object))
+					{
+             Val = localmesh->Data->Number_Of_UVCoords;
+					}
+					else
+					{
+						Val = 0;
+					}
+					GET(RIGHT_PAREN_TOKEN)
+					break;
+
 				case DIMENSIONS_TOKEN:
 					GET(LEFT_PAREN_TOKEN)
 					GET(ARRAY_ID_TOKEN)
@@ -1559,6 +1574,27 @@ void Parser::Parse_Num_Factor (EXPRESS Express,int *Terms)
 					}
           GET(RIGHT_PAREN_TOKEN)
 					break;
+				case GET_UV_INDICES_TOKEN:
+					GET(LEFT_PAREN_TOKEN)
+					GET(OBJECT_ID_TOKEN)
+					Object = (ObjectPtr)Token.Data;
+					Parse_Comma();
+					i = (int)Parse_Float();
+					if ((localmesh = dynamic_cast<Mesh*>(Object))
+							&& (i>=0)
+							&&(localmesh->Data->Number_Of_Triangles > i))
+					{
+						Make_Vector(Vect,
+								localmesh->Data->Triangles[i].UV1,
+								localmesh->Data->Triangles[i].UV2,
+								localmesh->Data->Triangles[i].UV3);
+					}
+					else
+					{
+					  Make_Vector(Vect,-1.0,-1.0,-1.0);
+					}
+          GET(RIGHT_PAREN_TOKEN)
+					break;
 				case GET_VERTEX_TOKEN:
 					GET(LEFT_PAREN_TOKEN)
 					GET(OBJECT_ID_TOKEN)
@@ -1592,6 +1628,26 @@ void Parser::Parse_Num_Factor (EXPRESS Express,int *Terms)
 						Vect[0]=localmesh->Data->Normals[i][0];
 						Vect[1]=localmesh->Data->Normals[i][1];
 						Vect[2]=localmesh->Data->Normals[i][2];
+					}
+					else
+					{
+					  Make_Vector(Vect,0.0,0.0,0.0);
+					}
+          GET(RIGHT_PAREN_TOKEN)
+					break;
+				case GET_UV_TOKEN:
+					GET(LEFT_PAREN_TOKEN)
+					GET(OBJECT_ID_TOKEN)
+					Object = (ObjectPtr)Token.Data;
+					Parse_Comma();
+					i = (int)Parse_Float();
+					if ((localmesh = dynamic_cast<Mesh*>(Object))
+							&& (i>=0)
+							&&(localmesh->Data->Number_Of_Normals > i))
+					{
+						Vect[0]=localmesh->Data->UVCoords[i][0];
+						Vect[1]=localmesh->Data->UVCoords[i][1];
+						Vect[2]=0.0;
 					}
 					else
 					{
