@@ -76,10 +76,11 @@ namespace pov
 #define PROJ_ECKERT4_CAMERA              31
 #define PROJ_ECKERT6_CAMERA              32
 #define PROJ_MILLER_CAMERA               33
-#define STEREOSCOPIC_CAMERA         34
-#define FISHEYE_ORTHOGRAPHIC_CAMERA		35
-#define FISHEYE_EQUISOLIDANGLE_CAMERA		36
-#define FISHEYE_STEREOGRAPHIC_CAMERA	  37
+#define STEREOSCOPIC_CAMERA              34
+#define FISHEYE_ORTHOGRAPHIC_CAMERA      35
+#define FISHEYE_EQUISOLIDANGLE_CAMERA    36
+#define FISHEYE_STEREOGRAPHIC_CAMERA     37
+#define OMNI_DIRECTIONAL_STEREO_CAMERA   38
 
 /*****************************************************************************
 * Global typedefs
@@ -88,50 +89,50 @@ namespace pov
 class Camera
 {
 public:
-	VECTOR Location;
-	VECTOR Direction;
-	VECTOR Up;
-	VECTOR Right;
-	VECTOR Sky;
-	VECTOR Look_At;                 // Used only to record the user's preference
-	VECTOR Focal_Point;             // Used only to record the user's preference
-	DBL Focal_Distance, Aperture;   // ARE 9/92 for focal blur.
-	int Blur_Samples;               // ARE 9/92 for focal blur.
-	int Blur_Samples_Min;           // Minimum number of blur samples to take regardless of confidence settings.
-	DBL Confidence;                 // Probability for confidence test.
-	DBL Variance;                   // Max. variance for confidence test.
-	int Type;                       // Camera type.
-	DBL Angle;                      // Viewing angle.
-	DBL H_Angle;                    // Spherical horizontal viewing angle
-	DBL V_Angle;                    // Spherical verticle viewing angle
-	TNORMAL *Tnormal;               // Primary ray pertubation.
-	TRANSFORM *Trans;               // Used only to record the user's input
-	PIGMENT *Bokeh;                 // Pigment to use for the bokeh
+  VECTOR Location;
+  VECTOR Direction;
+  VECTOR Up;
+  VECTOR Right;
+  VECTOR Sky;
+  VECTOR Look_At;                 // Used only to record the user's preference
+  VECTOR Focal_Point;             // Used only to record the user's preference
+  DBL Focal_Distance, Aperture;   // ARE 9/92 for focal blur.
+  int Blur_Samples;               // ARE 9/92 for focal blur.
+  int Blur_Samples_Min;           // Minimum number of blur samples to take regardless of confidence settings.
+  DBL Confidence;                 // Probability for confidence test.
+  DBL Variance;                   // Max. variance for confidence test.
+  int Type;                       // Camera type.
+  DBL Angle;                      // Viewing angle.
+  DBL H_Angle;                    // Spherical horizontal viewing angle
+  DBL V_Angle;                    // Spherical verticle viewing angle
+  TNORMAL *Tnormal;               // Primary ray pertubation.
+  TRANSFORM *Trans;               // Used only to record the user's input
+  PIGMENT *Bokeh;                 // Pigment to use for the bokeh
     DBL Eye_Distance;               // Stereoscopic camera
     DBL Parallaxe;                  // Stereoscopic camera
 
-	// the following declarations are used for the mesh camera
-	unsigned int Face_Distribution_Method;  // how to associate a pixel to a face within a mesh
-	unsigned int Rays_Per_Pixel;            // cast this many rays per pixel; never less than 1
-	bool Smooth;                            // if true, interpolate normals for dist #3
-	vector<ObjectPtr> Meshes;               // list of the meshes to be used as the camera
-	vector<unsigned int> Mesh_Index;        // used with distribution #1 to keep track of accumulated meshes
-	vector<unsigned int> U_Xref[10];        // used to speed up location of a matching face for distribution #3
-	vector<unsigned int> V_Xref[10];        // used to speed up location of a matching face for distribution #3
-	DBL Max_Ray_Distance;					// if not 0.0, then maximum distance to look along the ray for an intersection
-	// end of mesh camera declarations
+  // the following declarations are used for the mesh camera
+  unsigned int Face_Distribution_Method;  // how to associate a pixel to a face within a mesh
+  unsigned int Rays_Per_Pixel;            // cast this many rays per pixel; never less than 1
+  bool Smooth;                            // if true, interpolate normals for dist #3
+  vector<ObjectPtr> Meshes;               // list of the meshes to be used as the camera
+  vector<unsigned int> Mesh_Index;        // used with distribution #1 to keep track of accumulated meshes
+  vector<unsigned int> U_Xref[10];        // used to speed up location of a matching face for distribution #3
+  vector<unsigned int> V_Xref[10];        // used to speed up location of a matching face for distribution #3
+  DBL Max_Ray_Distance;          // if not 0.0, then maximum distance to look along the ray for an intersection
+  // end of mesh camera declarations
 
-	Camera();
-	Camera(const Camera& src);
-	~Camera();
-	Camera& operator=(const Camera& rhs);
-	void Transform(const TRANSFORM *Trans);
-	void Scale(const VECTOR Vector);
-	void Rotate(const VECTOR Vector);
-	void Translate(const VECTOR Vector);
+  Camera();
+  Camera(const Camera& src);
+  ~Camera();
+  Camera& operator=(const Camera& rhs);
+  void Transform(const TRANSFORM *Trans);
+  void Scale(const VECTOR Vector);
+  void Rotate(const VECTOR Vector);
+  void Translate(const VECTOR Vector);
 
 private:
-	void Init();
+  void Init();
 };
 
 }
