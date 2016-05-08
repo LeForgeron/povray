@@ -694,6 +694,7 @@ enum
 	kPOVList_Stat_OvusTest,
 	kPOVList_Stat_GSDIntermergeTest,
 	kPOVList_Stat_GSDInterunionTest,
+	kPOVList_Stat_LemonTest,
 	kPOVList_Stat_Last
 };
 

@@ -939,6 +939,11 @@ void Ovus::CalcUV(const VECTOR IPoint, UV_VECT Result) const
 	// bottom center is <0,0,0>
 	// top center is <0,BottomRadius,0>
 	// TODO FIXME - comment doesn't seem to match the following code
+        //
+        // [JG] no need to fix, but the commented y = can be simplified to the 
+        // used formula. It's just a weighted interpolation between <0,0,0> and
+        // <0, BottomRadius, 0>, and <x,y,z> are the reinterpretation of the point
+        // within the relocated origin for uv mapping
 	x = P[X];
 //	y = P[Y] - BottomRadius*(TopRadius/(2.0*BottomRadius));
 	y = P[Y] - (TopRadius/2.0);

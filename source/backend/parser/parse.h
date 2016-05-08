@@ -664,6 +664,7 @@ class Parser : public Task
 		ObjectPtr Parse_Light_Source();
 		ObjectPtr Parse_Object_Id();
 		ObjectPtr Parse_Ovus();
+		ObjectPtr Parse_Lemon();
 		ObjectPtr Parse_Plane();
 		ObjectPtr Parse_Poly(int order);
 		ObjectPtr Parse_Polynom();

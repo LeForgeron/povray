@@ -67,6 +67,7 @@
 #include "backend/shape/hfield.h"
 #include "backend/shape/isosurf.h"
 #include "backend/shape/lathe.h"
+#include "backend/shape/lemon.h"
 #include "backend/shape/ovus.h"
 #include "backend/shape/mesh.h"
 #include "backend/shape/planes.h"
@@ -2753,6 +2754,71 @@ ObjectPtr Parser::Parse_Cone ()
 
 	/* Compute run-time values for the cone */
 	Object->Compute_Cone_Data();
+
+	Object->Compute_BBox();
+
+	Parse_Object_Mods(reinterpret_cast<ObjectPtr>(Object));
+
+	return (reinterpret_cast<ObjectPtr>(Object));
+}
+
+/*****************************************************************************
+*
+* FUNCTION
+*
+* INPUT
+*   
+* OUTPUT
+*   
+* RETURNS
+*   
+* AUTHOR
+*   
+* DESCRIPTION
+*
+* CHANGES
+*
+******************************************************************************/
+
+ObjectPtr Parser::Parse_Lemon ()
+{
+	Lemon *Object;
+
+	Parse_Begin ();
+
+	if ( (Object = reinterpret_cast<Lemon *>(Parse_Object_Id())) != NULL)
+		return (reinterpret_cast<ObjectPtr>(Object));
+
+	Object = new Lemon();
+
+	Parse_Vector(Object->apex);  Parse_Comma ();
+	Object->apex_radius = Parse_Float();  Parse_Comma ();
+
+	Parse_Vector(Object->base);  Parse_Comma ();
+	Object->base_radius = Parse_Float();
+
+        Parse_Comma ();
+
+        Object->inner_radius = Parse_Float();
+	if ((Object->apex_radius < 0)||(Object->base_radius < 0)||(Object->inner_radius < 0))
+	{
+		Error("All radii must be positive");
+	}
+
+	EXPECT
+		CASE(OPEN_TOKEN)
+			Clear_Flag(Object, CLOSED_FLAG);
+			EXIT
+		END_CASE
+
+		OTHERWISE
+			UNGET
+			EXIT
+		END_CASE
+	END_EXPECT
+
+	/* Compute run-time values for the cone */
+	Object->Compute_Lemon_Data();
 
 	Object->Compute_BBox();
 
@@ -7152,6 +7218,11 @@ ObjectPtr Parser::Parse_Object ()
 
 		CASE (OVUS_TOKEN)
 			Object = Parse_Ovus();
+			EXIT
+		END_CASE
+
+		CASE (LEMON_TOKEN)
+			Object = Parse_Lemon();
 			EXIT
 		END_CASE
 
