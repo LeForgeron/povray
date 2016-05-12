@@ -2783,6 +2783,7 @@ ObjectPtr Parser::Parse_Cone ()
 ObjectPtr Parser::Parse_Lemon ()
 {
 	Lemon *Object;
+    ObjectPtr ptr;
 
 	Parse_Begin ();
 
@@ -2817,14 +2818,40 @@ ObjectPtr Parser::Parse_Lemon ()
 		END_CASE
 	END_EXPECT
 
-	/* Compute run-time values for the cone */
+	/* Compute run-time values for the lemon */
 	Object->Compute_Lemon_Data();
 
-	Object->Compute_BBox();
+    if (Object->HorizontalPosition >0.0)
+    {
+       std::stringstream o;
+        
+       if (Object->HorizontalPosition <1.5)
+       {
+         o << "Inner (last) radius of lemon is too small. Minimal would be "<< Object->inner_radius<< " .";
+       }
+       else
+       {
+         o << "Degenerated lemon (same apex & base, no direction).";
+       }
+       o << "Subtituing a sphere to lemon";
+       PossibleError(o.str().c_str());
+       Sphere * Replacement;
+       Replacement = new Sphere();
+       VLinComb2( Replacement->Center, 0.5, Object->apex, 0.5, Object->base);
+       Replacement->Radius = Object->inner_radius/2;
+       delete Object;
+       Replacement->Compute_BBox();
+       ptr = reinterpret_cast<ObjectPtr>(Replacement);
+    }
+    else
+    {
+       Object->Compute_BBox();
+       ptr = reinterpret_cast<ObjectPtr>(Object);
+    }
 
-	Parse_Object_Mods(reinterpret_cast<ObjectPtr>(Object));
+	Parse_Object_Mods(ptr);
 
-	return (reinterpret_cast<ObjectPtr>(Object));
+	return (ptr);
 }
 
 

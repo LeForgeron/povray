@@ -635,7 +635,9 @@ void Lemon::Compute_Lemon_Data()
 
     if (len < EPSILON)
     {
-        throw POV_EXCEPTION_STRING("Degenerate lemon.");
+        HorizontalPosition = 2.0; // flag for possible error, degenerated lemon
+        inner_radius = (apex_radius+base_radius)/2;
+        return;
     }
     else
     {
@@ -671,21 +673,19 @@ void Lemon::Compute_Lemon_Data()
     DBL low = sqrt(base_radius*base_radius*base_radius*base_radius - 2*base_radius*base_radius*(apex_radius*apex_radius-1.0)+(apex_radius*apex_radius+1.0)*(apex_radius*apex_radius+1.0))/2.0; 
     if (inner_radius < low )
     {
-        std::stringstream o;
-
-        o << "Inner (last) radius of lemon is too small. Minimal would be "<< (len*low);
-        throw POV_EXCEPTION_STRING(o.str());
+        HorizontalPosition = 1.0; // flag for possible error
+        inner_radius = low*len;// give hint about the minimal value
     }
-    DBL f = sqrt(-(base_radius*base_radius-2.0*base_radius*apex_radius+apex_radius*apex_radius-4.0*inner_radius*inner_radius+1.0)/(base_radius*base_radius-2.0*base_radius*apex_radius+apex_radius*apex_radius+1.0));
-    /*
-     * Attention: HorizontalPosition is negative, always (or null)
-     * It is of particular importance when using with torus evaluation and normal computation
-     */
-    HorizontalPosition = (base_radius+apex_radius-f)/2.0;
-    VerticalPosition = ((apex_radius-base_radius)*f+1.0)/2.0;
-    /* Recalculate the bounds */
-
-    Compute_BBox();
+    else
+    {
+      DBL f = sqrt(-(base_radius*base_radius-2.0*base_radius*apex_radius+apex_radius*apex_radius-4.0*inner_radius*inner_radius+1.0)/(base_radius*base_radius-2.0*base_radius*apex_radius+apex_radius*apex_radius+1.0));
+      /*
+       * Attention: valid HorizontalPosition is negative, always (or null)
+       * It is of particular importance when using with torus evaluation and normal computation
+       */
+      HorizontalPosition = (base_radius+apex_radius-f)/2.0;
+      VerticalPosition = ((apex_radius-base_radius)*f+1.0)/2.0;
+    }
 }
 
 
@@ -850,25 +850,25 @@ void Lemon::CalcUV(const VECTOR IPoint, UV_VECT Result) const
 
     if ((P[Z]>EPSILON)&&(P[Z]<(1.0-EPSILON)))
     {
-    // when not on a face, the range 0.2 to 0.8 is used (just plain magic 20% for face, no other reason)
-        phi = 0.2+0.6*P[Z];
+    // when not on a face, the range 0.25 to 0.75 is used (just plain magic 25% for face, no other reason, but it makes C-Lipka happy)
+        phi = 0.25+0.5*P[Z];
     }
     else if (P[Z]>EPSILON)
     {
-    // aka P[Z] is 1, use the apex_radius, from 80% to 100% (at the very center)
+    // aka P[Z] is 1, use the apex_radius, from 75% to 100% (at the very center)
         phi = 1.0;
         if (apex_radius)
         {
-            phi = 1.0-(sqrt(len)/(apex_radius*5));
+            phi = 1.0-(sqrt(len)/(apex_radius*4));
         }
     }
     else
     {
-    // aka P[Z] is 0, use the base_radius, from 0% (at the very center) to 20%
+    // aka P[Z] is 0, use the base_radius, from 0% (at the very center) to 25%
        phi = 0;
        if (base_radius)
        {
-           phi = sqrt(len)/(base_radius*5);
+           phi = sqrt(len)/(base_radius*4);
        }
     }
 
