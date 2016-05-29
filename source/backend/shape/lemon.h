@@ -34,6 +34,10 @@
 #ifndef LEMON_H
 #define LEMON_H
 
+#include "backend/control/messagefactory.h"
+#include "base/textstream.h"
+
+
 namespace pov
 {
 
@@ -82,7 +86,7 @@ class Lemon : public ObjectBase
         virtual void Invert();
         virtual void Compute_BBox();
 
-        void Compute_Lemon_Data();
+        void Compute_Lemon_Data( MessageFactory & messageFactory, pov_base::ITextStream *FileHandle, pov_base::ITextStream::FilePos & Token_File_Pos, int Token_Col_No );
     protected:
         int Intersect(const VECTOR & P, const VECTOR & D, LEMON_INT *Intersection, TraceThreadData *Thread) const;
         void CalcUV(const VECTOR IPoint, UV_VECT Result) const;

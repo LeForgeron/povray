@@ -2782,76 +2782,54 @@ ObjectPtr Parser::Parse_Cone ()
 
 ObjectPtr Parser::Parse_Lemon ()
 {
-	Lemon *Object;
+    Lemon *Object;
     ObjectPtr ptr;
 
-	Parse_Begin ();
+    Parse_Begin ();
 
-	if ( (Object = reinterpret_cast<Lemon *>(Parse_Object_Id())) != NULL)
-		return (reinterpret_cast<ObjectPtr>(Object));
+    if ( (Object = reinterpret_cast<Lemon *>(Parse_Object_Id())) != NULL)
+        return (reinterpret_cast<ObjectPtr>(Object));
 
-	Object = new Lemon();
+    Object = new Lemon();
 
-	Parse_Vector(Object->apex);  Parse_Comma ();
-	Object->apex_radius = Parse_Float();  Parse_Comma ();
+    Parse_Vector(Object->apex);  Parse_Comma ();
+    Object->apex_radius = Parse_Float();  Parse_Comma ();
 
-	Parse_Vector(Object->base);  Parse_Comma ();
-	Object->base_radius = Parse_Float();
+    Parse_Vector(Object->base);  Parse_Comma ();
+    Object->base_radius = Parse_Float();
 
-        Parse_Comma ();
+    Parse_Comma ();
 
-        Object->inner_radius = Parse_Float();
-	if ((Object->apex_radius < 0)||(Object->base_radius < 0)||(Object->inner_radius < 0))
-	{
-		Error("All radii must be positive");
-	}
+    Object->inner_radius = Parse_Float();
 
-	EXPECT
-		CASE(OPEN_TOKEN)
-			Clear_Flag(Object, CLOSED_FLAG);
-			EXIT
-		END_CASE
-
-		OTHERWISE
-			UNGET
-			EXIT
-		END_CASE
-	END_EXPECT
-
-	/* Compute run-time values for the lemon */
-	Object->Compute_Lemon_Data();
-
-    if (Object->HorizontalPosition >0.0)
+    if ((Object->apex_radius < 0)||(Object->base_radius < 0)||(Object->inner_radius < 0))
     {
-       std::stringstream o;
-        
-       if (Object->HorizontalPosition <1.5)
-       {
-         o << "Inner (last) radius of lemon is too small. Minimal would be "<< Object->inner_radius<< " .";
-       }
-       else
-       {
-         o << "Degenerated lemon (same apex & base, no direction).";
-       }
-       o << "Subtituing a sphere to lemon";
-       PossibleError(o.str().c_str());
-       Sphere * Replacement;
-       Replacement = new Sphere();
-       VLinComb2( Replacement->Center, 0.5, Object->apex, 0.5, Object->base);
-       Replacement->Radius = Object->inner_radius/2;
-       delete Object;
-       Replacement->Compute_BBox();
-       ptr = reinterpret_cast<ObjectPtr>(Replacement);
-    }
-    else
-    {
-       Object->Compute_BBox();
-       ptr = reinterpret_cast<ObjectPtr>(Object);
+        Error("All radii must be positive");
     }
 
-	Parse_Object_Mods(ptr);
+    EXPECT
+        CASE(OPEN_TOKEN)
+            Clear_Flag(Object, CLOSED_FLAG);
+            EXIT
+        END_CASE
 
-	return (ptr);
+        OTHERWISE
+            UNGET
+            EXIT
+        END_CASE
+    END_EXPECT
+
+    /* Compute run-time values for the lemon */
+    Object->Compute_Lemon_Data( messageFactory, Token.FileHandle, Token.Token_File_Pos, Token.Token_Col_No );
+
+    
+    Object->Compute_BBox();
+    ptr = reinterpret_cast<ObjectPtr>(Object);
+
+
+    Parse_Object_Mods(ptr);
+
+    return (ptr);
 }
 
 

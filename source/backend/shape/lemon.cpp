@@ -52,7 +52,9 @@ namespace pov
 * Local preprocessor defines
 ******************************************************************************/
 
-const DBL Lemon_Tolerance = 1.0e-9;
+// Tolerance used for degenerated torus detection and intersection of flat extremities
+// as it is used only with low power, precision can be high
+const DBL Lemon_Tolerance = 1.0e-10;
 
 // Tolerance used for order reduction during root finding.
 // TODO FIXME - can we use EPSILON or a similar more generic constant instead?
@@ -166,56 +168,112 @@ int Lemon::Intersect(const VECTOR & P, const VECTOR & D, LEMON_INT *Intersection
     VECTOR Padj, Second_Center,Ipoint, INormal;
 
     Make_Vector(Second_Center, 0, 0, VerticalPosition);
-    VSub(Padj, P, Second_Center);
-    R2 = Sqr(HorizontalPosition);
     r2 = Sqr(inner_radius);
 
-    Pz2 = Padj[Z] * Padj[Z];
-    Dz2 = D[Z] * D[Z];
-    PDz2 = Padj[Z] * D[Z];
+    if (HorizontalPosition < -Lemon_Tolerance )
+    { // use a torus
+        VSub(Padj, P, Second_Center);
+        R2 = Sqr(HorizontalPosition);
 
-    k1 = Padj[X] * Padj[X] + Padj[Y] * Padj[Y] + Pz2 - R2 - r2;
-    k2 = Padj[X] * D[X] + Padj[Y] * D[Y] + PDz2;
-    // this is just like a big torus
-    c[0] = 1.0;
+        Pz2 = Padj[Z] * Padj[Z];
+        Dz2 = D[Z] * D[Z];
+        PDz2 = Padj[Z] * D[Z];
 
-    c[1] = 4.0 * k2;
+        k1 = Padj[X] * Padj[X] + Padj[Y] * Padj[Y] + Pz2 - R2 - r2;
+        k2 = Padj[X] * D[X] + Padj[Y] * D[Y] + PDz2;
+        // this is just like a big torus
+        c[0] = 1.0;
 
-    c[2] = 2.0 * (k1 + 2.0 * (k2 * k2 + R2 * Dz2));
+        c[1] = 4.0 * k2;
 
-    c[3] = 4.0 * (k2 * k1 + 2.0 * R2 * PDz2);
+        c[2] = 2.0 * (k1 + 2.0 * (k2 * k2 + R2 * Dz2));
 
-    c[4] = k1 * k1 + 4.0 * R2 * (Pz2 - r2);
+        c[3] = 4.0 * (k2 * k1 + 2.0 * R2 * PDz2);
 
-    n = Solve_Polynomial(4, c, r, Test_Flag(this, STURM_FLAG), ROOT_TOLERANCE, Thread);
-    while (n--)
-    {
-        // here we only keep the 'lemon' inside the torus
-        // and dismiss the 'apple'
-        // If you find a solution to resolve the rotation of
-        //   (x + r)^2 + z^2 = R^2 around z (so replacing x by sqrt(x^2+y^2))
-        // with something which is faster than a 4th degree polynome,
-        // please feel welcome to update and share...
+        c[4] = k1 * k1 + 4.0 * R2 * (Pz2 - r2);
 
-        VEvaluateRay(Ipoint, P, r[n], D);
-
-        vertical = Ipoint[Z];
-        if ((vertical >= 0.0) && (vertical <= 1.0))
+        n = Solve_Polynomial(4, c, r, Test_Flag(this, STURM_FLAG), ROOT_TOLERANCE, Thread);
+        while (n--)
         {
-            horizontal = sqrt(Sqr(Ipoint[X]) + Sqr(Ipoint[Y]));
-            OCSquared = Sqr((horizontal - HorizontalPosition)) + Sqr((vertical - VerticalPosition));
-            if (fabs(OCSquared - r2 ) < ROOT_TOLERANCE)
+            // here we only keep the 'lemon' inside the torus
+            // and dismiss the 'apple'
+            // If you find a solution to resolve the rotation of
+            //   (x + r)^2 + z^2 = R^2 around z (so replacing x by sqrt(x^2+y^2))
+            // with something which is faster than a 4th degree polynome,
+            // please feel welcome to update and share...
+
+            VEvaluateRay(Ipoint, P, r[n], D);
+
+            vertical = Ipoint[Z];
+            if ((vertical >= 0.0) && (vertical <= 1.0))
             {
-                Intersection[i].d   = r[n];
-                Assign_Vector(INormal, Ipoint);
-                INormal[Z] -= VerticalPosition;
-                INormal[X] -= (INormal[X] * HorizontalPosition / horizontal);
-                INormal[Y] -= (INormal[Y] * HorizontalPosition / horizontal);
-                VNormalizeEq(INormal);
-                Assign_Vector( Intersection[i].n, INormal);
-                ++i;
+                horizontal = sqrt(Sqr(Ipoint[X]) + Sqr(Ipoint[Y]));
+                OCSquared = Sqr((horizontal - HorizontalPosition)) + Sqr((vertical - VerticalPosition));
+                if (fabs(OCSquared - r2 ) < ROOT_TOLERANCE)
+                {
+                    Intersection[i].d   = r[n];
+                    Assign_Vector(INormal, Ipoint);
+                    INormal[Z] -= VerticalPosition;
+                    INormal[X] -= (INormal[X] * HorizontalPosition / horizontal);
+                    INormal[Y] -= (INormal[Y] * HorizontalPosition / horizontal);
+                    VNormalizeEq(INormal);
+                    Assign_Vector( Intersection[i].n, INormal);
+                    ++i;
+                }
             }
         }
+    }
+    else
+    {
+        // use a sphere, as the center is on the axis
+        // keeping a torus would trigger a problem of self-coincidence surface
+        DBL OCSquared, t_Closest_Approach, Half_Chord, t_Half_Chord_Squared;
+        DBL Depth;
+        VECTOR Origin_To_Center;
+
+        VSub(Origin_To_Center, Second_Center, P);
+
+        VDot(OCSquared, Origin_To_Center, Origin_To_Center);
+
+        VDot(t_Closest_Approach, Origin_To_Center, D);
+
+        if (!((OCSquared >= r2) && (t_Closest_Approach < EPSILON)))
+        {
+
+            t_Half_Chord_Squared = r2 - OCSquared + Sqr(t_Closest_Approach);
+
+            if (t_Half_Chord_Squared > EPSILON)
+            {
+                Half_Chord = sqrt(t_Half_Chord_Squared);
+                // first intersection
+                Depth = t_Closest_Approach - Half_Chord;
+                VEvaluateRay(Ipoint, P, Depth, D);
+                vertical = Ipoint[Z];
+                if ((vertical >= 0.0) && (vertical <= 1.0))
+                {
+                    Intersection[i].d = Depth;
+                    Assign_Vector(INormal, Ipoint);
+                    INormal[Z] -= VerticalPosition;
+                    VNormalizeEq(INormal);
+                    Assign_Vector( Intersection[i].n, INormal);
+                    ++i;
+                }
+                // second intersection
+                Depth = t_Closest_Approach + Half_Chord;
+                VEvaluateRay(Ipoint, P, Depth, D);
+                vertical = Ipoint[Z];
+                if ((vertical >= 0.0) && (vertical <= 1.0))
+                {
+                    Intersection[i].d = Depth;
+                    Assign_Vector(INormal, Ipoint);
+                    INormal[Z] -= VerticalPosition;
+                    VNormalizeEq(INormal);
+                    Assign_Vector( Intersection[i].n, INormal);
+                    ++i;
+                }
+            }
+        }
+
     }
 
 // intersection with apex and base disc
@@ -620,7 +678,7 @@ ObjectPtr Lemon::Copy()
 *
 ******************************************************************************/
 
-void Lemon::Compute_Lemon_Data()
+void Lemon::Compute_Lemon_Data(MessageFactory & messageFactory, pov_base::ITextStream *FileHandle, pov_base::ITextStream::FilePos & Token_File_Pos, int Token_Col_No )
 {
     DBL len;
     VECTOR axis;
@@ -635,9 +693,7 @@ void Lemon::Compute_Lemon_Data()
 
     if (len < EPSILON)
     {
-        HorizontalPosition = 2.0; // flag for possible error, degenerated lemon
-        inner_radius = (apex_radius+base_radius)/2;
-        return;
+        throw POV_EXCEPTION_STRING("Degenerate lemon.");
     }
     else
     {
@@ -673,19 +729,19 @@ void Lemon::Compute_Lemon_Data()
     DBL low = sqrt(base_radius*base_radius*base_radius*base_radius - 2*base_radius*base_radius*(apex_radius*apex_radius-1.0)+(apex_radius*apex_radius+1.0)*(apex_radius*apex_radius+1.0))/2.0; 
     if (inner_radius < low )
     {
-        HorizontalPosition = 1.0; // flag for possible error
-        inner_radius = low*len;// give hint about the minimal value
+        std::stringstream o;
+        inner_radius = low;
+        o << "Inner (last) radius of lemon is too small. Minimal would be "<< (inner_radius*len) << ". Value has been adjusted.";
+        messageFactory.PossibleErrorAt(FileHandle->name(), Token_File_Pos.lineno, Token_Col_No, FileHandle->tellg().offset,"%s",o.str().c_str());
     }
-    else
-    {
-      DBL f = sqrt(-(base_radius*base_radius-2.0*base_radius*apex_radius+apex_radius*apex_radius-4.0*inner_radius*inner_radius+1.0)/(base_radius*base_radius-2.0*base_radius*apex_radius+apex_radius*apex_radius+1.0));
-      /*
-       * Attention: valid HorizontalPosition is negative, always (or null)
-       * It is of particular importance when using with torus evaluation and normal computation
-       */
-      HorizontalPosition = (base_radius+apex_radius-f)/2.0;
-      VerticalPosition = ((apex_radius-base_radius)*f+1.0)/2.0;
-    }
+
+    DBL f = sqrt(-(base_radius*base_radius-2.0*base_radius*apex_radius+apex_radius*apex_radius-4.0*inner_radius*inner_radius+1.0)/(base_radius*base_radius-2.0*base_radius*apex_radius+apex_radius*apex_radius+1.0));
+    /*
+     * Attention: valid HorizontalPosition is negative, always (or null)
+     * It is of particular importance when using with torus evaluation and normal computation
+     */
+    HorizontalPosition = (base_radius+apex_radius-f)/2.0;
+    VerticalPosition = ((apex_radius-base_radius)*f+1.0)/2.0;
 }
 
 
