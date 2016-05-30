@@ -55,6 +55,8 @@ namespace pov
 // Tolerance used for degenerated torus detection and intersection of flat extremities
 // as it is used only with low power, precision can be high
 const DBL Lemon_Tolerance = 1.0e-10;
+// from spheres.cpp, otherwise noisy sphere, used with square and root, so less precision
+const DBL DEPTH_TOLERANCE = 1.0e-6;
 
 // Tolerance used for order reduction during root finding.
 // TODO FIXME - can we use EPSILON or a similar more generic constant instead?
@@ -237,7 +239,7 @@ int Lemon::Intersect(const VECTOR & P, const VECTOR & D, LEMON_INT *Intersection
 
         VDot(t_Closest_Approach, Origin_To_Center, D);
 
-        if (!((OCSquared >= r2) && (t_Closest_Approach < EPSILON)))
+        if (!((OCSquared >= r2) && (t_Closest_Approach < EPSILON )))
         {
 
             t_Half_Chord_Squared = r2 - OCSquared + Sqr(t_Closest_Approach);
@@ -247,29 +249,36 @@ int Lemon::Intersect(const VECTOR & P, const VECTOR & D, LEMON_INT *Intersection
                 Half_Chord = sqrt(t_Half_Chord_Squared);
                 // first intersection
                 Depth = t_Closest_Approach - Half_Chord;
-                VEvaluateRay(Ipoint, P, Depth, D);
-                vertical = Ipoint[Z];
-                if ((vertical >= 0.0) && (vertical <= 1.0))
+                if((Depth > DEPTH_TOLERANCE) && (Depth < MAX_DISTANCE))
                 {
-                    Intersection[i].d = Depth;
-                    Assign_Vector(INormal, Ipoint);
-                    INormal[Z] -= VerticalPosition;
-                    VNormalizeEq(INormal);
-                    Assign_Vector( Intersection[i].n, INormal);
-                    ++i;
+
+                    VEvaluateRay(Ipoint, P, Depth, D);
+                    vertical = Ipoint[Z];
+                    if ((vertical >= 0.0) && (vertical <= 1.0))
+                    {
+                        Intersection[i].d = Depth;
+                        Assign_Vector(INormal, Ipoint);
+                        INormal[Z] -= VerticalPosition;
+                        VNormalizeEq(INormal);
+                        Assign_Vector( Intersection[i].n, INormal);
+                        ++i;
+                    }
                 }
                 // second intersection
                 Depth = t_Closest_Approach + Half_Chord;
-                VEvaluateRay(Ipoint, P, Depth, D);
-                vertical = Ipoint[Z];
-                if ((vertical >= 0.0) && (vertical <= 1.0))
+                if((Depth > DEPTH_TOLERANCE) && (Depth < MAX_DISTANCE))
                 {
-                    Intersection[i].d = Depth;
-                    Assign_Vector(INormal, Ipoint);
-                    INormal[Z] -= VerticalPosition;
-                    VNormalizeEq(INormal);
-                    Assign_Vector( Intersection[i].n, INormal);
-                    ++i;
+                    VEvaluateRay(Ipoint, P, Depth, D);
+                    vertical = Ipoint[Z];
+                    if ((vertical >= 0.0) && (vertical <= 1.0))
+                    {
+                        Intersection[i].d = Depth;
+                        Assign_Vector(INormal, Ipoint);
+                        INormal[Z] -= VerticalPosition;
+                        VNormalizeEq(INormal);
+                        Assign_Vector( Intersection[i].n, INormal);
+                        ++i;
+                    }
                 }
             }
         }
