@@ -3107,7 +3107,7 @@ bool TrueType::GlyphIntersect(const VECTOR P, const VECTOR D, const GlyphStruct*
 		{
 			Make_Vector(N, 0.0, 0.0, -1.0);
 			MTransNormal(N, N, Trans);
-			VNormalize(N, N);
+			VNormalizeEq(N);
 			Depth_Stack->push(Intersection(Depth, IPoint, N, this));
 			Flag = true;
 		}
@@ -3123,7 +3123,7 @@ bool TrueType::GlyphIntersect(const VECTOR P, const VECTOR D, const GlyphStruct*
 		{
 			Make_Vector(N, 0.0, 0.0, 1.0);
 			MTransNormal(N, N, Trans);
-			VNormalize(N, N);
+			VNormalizeEq(N);
 			Depth_Stack->push(Intersection(Depth, IPoint, N, this));
 			Flag = true;
 		}
@@ -3209,9 +3209,9 @@ bool TrueType::GlyphIntersect(const VECTOR P, const VECTOR D, const GlyphStruct*
 
 					if (Clip.empty() || Point_In_Clip(IPoint, Clip, Thread))
 					{
-						Make_Vector(N, d1, -d0, 0.0);
+						Make_Vector(N, -d1, d0, 0.0);
 						MTransNormal(N, N, Trans);
-						VNormalize(N, N);
+						VNormalizeEq(N);
 						Depth_Stack->push(Intersection(Depth, IPoint, N, this));
 						Flag = true;
 					}
@@ -3283,9 +3283,9 @@ bool TrueType::GlyphIntersect(const VECTOR P, const VECTOR D, const GlyphStruct*
 
 						if (Clip.empty() || Point_In_Clip(IPoint, Clip, Thread))
 						{
-							Make_Vector(N, 2.0 * yt2 * S[l] + yt1, -2.0 * xt2 * S[l] - xt1, 0.0);
+							Make_Vector(N, -2.0 * yt2 * S[l] - yt1, 2.0 * xt2 * S[l] + xt1, 0.0);
 							MTransNormal(N, N, Trans);
-							VNormalize(N, N);
+							VNormalizeEq(N);
 							Depth_Stack->push(Intersection(Depth, IPoint, N, this));
 							Flag = true;
 						}
