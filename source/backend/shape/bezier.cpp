@@ -945,7 +945,7 @@ DBL BicubicPatch::point_plane_distance(const VECTOR p, const VECTOR n, DBL d)
 *
 ******************************************************************************/
 
-int BicubicPatch::bezier_subpatch_intersect(const Ray &ray, const VECTOR (*Patch)[4][4], DBL u0, DBL  u1, DBL  v0, DBL  v1, IStack& Depth_Stack)
+int BicubicPatch::bezier_subpatch_intersect(const Ray &ray, const VECTOR (*Patch)[4][4], DBL u0, DBL  u1, DBL  v0, DBL  v1, IStack& Depth_Stack, TraceThreadData *Thread)
 {
 	int cnt = 0;
 	VECTOR V1[3];
@@ -964,6 +964,8 @@ int BicubicPatch::bezier_subpatch_intersect(const Ray &ray, const VECTOR (*Patch
 
 	if (intersect_subpatch(ray, V1, uu, vv, &Depth, P, N, &u, &v))
 	{
+      if (Clip.empty() || Point_In_Clip(P, Clip, Thread))
+      {
 		/* transform current point from uv space to texture space */
 		uv_point[0] = v;
 		uv_point[1] = u;
@@ -974,6 +976,7 @@ int BicubicPatch::bezier_subpatch_intersect(const Ray &ray, const VECTOR (*Patch
 		Depth_Stack->push(Intersection(Depth, P, N, UV, this));
 
 		cnt++;
+	  }
 	}
 
 	Assign_Vector(V1[1], V1[2]);
@@ -984,6 +987,8 @@ int BicubicPatch::bezier_subpatch_intersect(const Ray &ray, const VECTOR (*Patch
 
 	if (intersect_subpatch(ray, V1, uu, vv, &Depth, P, N, &u, &v))
 	{
+      if (Clip.empty() || Point_In_Clip(P, Clip, Thread))
+      {
 		/* transform current point from uv space to texture space */
 		uv_point[0] = v;
 		uv_point[1] = u;
@@ -994,6 +999,7 @@ int BicubicPatch::bezier_subpatch_intersect(const Ray &ray, const VECTOR (*Patch
 		Depth_Stack->push(Intersection(Depth, P, N, UV, this));
 
 		cnt++;
+	  }
 	}
 
 	return (cnt);
@@ -1357,7 +1363,7 @@ bool BicubicPatch::flat_enough(const VECTOR (*Patch)[4][4]) const
 *
 ******************************************************************************/
 
-int BicubicPatch::bezier_subdivider(const Ray &ray, const VECTOR (*Patch)[4][4], DBL u0, DBL  u1, DBL  v0, DBL  v1, int recursion_depth, IStack& Depth_Stack)
+int BicubicPatch::bezier_subdivider(const Ray &ray, const VECTOR (*Patch)[4][4], DBL u0, DBL  u1, DBL  v0, DBL  v1, int recursion_depth, IStack& Depth_Stack, TraceThreadData * Thread)
 {
 	int cnt = 0;
 	DBL ut, vt, radius;
@@ -1383,13 +1389,13 @@ int BicubicPatch::bezier_subdivider(const Ray &ray, const VECTOR (*Patch)[4][4],
 	 */
 
 	if (flat_enough(Patch))
-		return bezier_subpatch_intersect(ray, Patch, u0, u1, v0, v1, Depth_Stack);
+		return bezier_subpatch_intersect(ray, Patch, u0, u1, v0, v1, Depth_Stack, Thread);
 
 	if (recursion_depth >= U_Steps)
 	{
 		if (recursion_depth >= V_Steps)
 		{
-			return bezier_subpatch_intersect(ray, Patch, u0, u1, v0, v1, Depth_Stack);
+			return bezier_subpatch_intersect(ray, Patch, u0, u1, v0, v1, Depth_Stack, Thread);
 		}
 		else
 		{
@@ -1397,8 +1403,8 @@ int BicubicPatch::bezier_subdivider(const Ray &ray, const VECTOR (*Patch)[4][4],
 
 			vt = (v1 + v0) / 2.0;
 
-			cnt += bezier_subdivider(ray, &Lower_Left, u0, u1, v0, vt, recursion_depth + 1, Depth_Stack);
-			cnt += bezier_subdivider(ray, &Upper_Left, u0, u1, vt, v1, recursion_depth + 1, Depth_Stack);
+			cnt += bezier_subdivider(ray, &Lower_Left, u0, u1, v0, vt, recursion_depth + 1, Depth_Stack, Thread);
+			cnt += bezier_subdivider(ray, &Upper_Left, u0, u1, vt, v1, recursion_depth + 1, Depth_Stack, Thread);
 		}
 	}
 	else
@@ -1409,8 +1415,8 @@ int BicubicPatch::bezier_subdivider(const Ray &ray, const VECTOR (*Patch)[4][4],
 
 			ut = (u1 + u0) / 2.0;
 
-			cnt += bezier_subdivider(ray, &Lower_Left, u0, ut, v0, v1, recursion_depth + 1, Depth_Stack);
-			cnt += bezier_subdivider(ray, &Lower_Right, ut, u1, v0, v1, recursion_depth + 1, Depth_Stack);
+			cnt += bezier_subdivider(ray, &Lower_Left, u0, ut, v0, v1, recursion_depth + 1, Depth_Stack, Thread);
+			cnt += bezier_subdivider(ray, &Lower_Right, ut, u1, v0, v1, recursion_depth + 1, Depth_Stack, Thread);
 		}
 		else
 		{
@@ -1421,10 +1427,10 @@ int BicubicPatch::bezier_subdivider(const Ray &ray, const VECTOR (*Patch)[4][4],
 			bezier_split_up_down(&Lower_Left, &Lower_Left, &Upper_Left) ;
 			bezier_split_up_down(&Lower_Right, &Lower_Right, &Upper_Right);
 
-			cnt += bezier_subdivider(ray, &Lower_Left, u0, ut, v0, vt, recursion_depth + 1, Depth_Stack);
-			cnt += bezier_subdivider(ray, &Upper_Left, u0, ut, vt, v1, recursion_depth + 1, Depth_Stack);
-			cnt += bezier_subdivider(ray, &Lower_Right, ut, u1, v0, vt, recursion_depth + 1, Depth_Stack);
-			cnt += bezier_subdivider(ray, &Upper_Right, ut, u1, vt, v1, recursion_depth + 1, Depth_Stack);
+			cnt += bezier_subdivider(ray, &Lower_Left, u0, ut, v0, vt, recursion_depth + 1, Depth_Stack, Thread);
+			cnt += bezier_subdivider(ray, &Upper_Left, u0, ut, vt, v1, recursion_depth + 1, Depth_Stack, Thread);
+			cnt += bezier_subdivider(ray, &Lower_Right, ut, u1, v0, vt, recursion_depth + 1, Depth_Stack, Thread);
+			cnt += bezier_subdivider(ray, &Upper_Right, ut, u1, vt, v1, recursion_depth + 1, Depth_Stack, Thread);
 		}
 	}
 
@@ -1520,7 +1526,7 @@ void BicubicPatch::bezier_tree_deleter(BEZIER_NODE *Node)
 *
 ******************************************************************************/
 
-int BicubicPatch::bezier_tree_walker(const Ray &ray, const BEZIER_NODE *Node, IStack& Depth_Stack)
+int BicubicPatch::bezier_tree_walker(const Ray &ray, const BEZIER_NODE *Node, IStack& Depth_Stack, TraceThreadData * Thread)
 {
 	int i, cnt = 0;
 	DBL Depth, u, v;
@@ -1553,7 +1559,7 @@ int BicubicPatch::bezier_tree_walker(const Ray &ray, const BEZIER_NODE *Node, IS
 
 		for (i = 0; i < Node->Count; i++)
 		{
-			cnt += bezier_tree_walker(ray, Children->Children[i], Depth_Stack);
+			cnt += bezier_tree_walker(ray, Children->Children[i], Depth_Stack, Thread);
 		}
 	}
 	else if (Node->Node_Type == BEZIER_LEAF_NODE)
@@ -1578,6 +1584,8 @@ int BicubicPatch::bezier_tree_walker(const Ray &ray, const BEZIER_NODE *Node, IS
 
 		if (intersect_subpatch( ray, V1, uu, vv, &Depth, P, N, &u, &v))
 		{
+          if (Clip.empty() || Point_In_Clip(P, Clip, Thread))
+          {
 			/* transform current point from uv space to texture space */
 			uv_point[0] = v;
 			uv_point[1] = u;
@@ -1588,6 +1596,7 @@ int BicubicPatch::bezier_tree_walker(const Ray &ray, const BEZIER_NODE *Node, IS
 			Depth_Stack->push(Intersection(Depth, P, N, UV, this));
 
 			cnt++;
+          }
 		}
 
 		Assign_Vector(V1[1], V1[2]);
@@ -1598,6 +1607,8 @@ int BicubicPatch::bezier_tree_walker(const Ray &ray, const BEZIER_NODE *Node, IS
 
 		if (intersect_subpatch(ray, V1, uu, vv, &Depth, P, N, &u, &v))
 		{
+          if (Clip.empty() || Point_In_Clip(P, Clip, Thread))
+          {
 			/* transform current point from object space to texture space */
 			uv_point[0] = v;
 			uv_point[1] = u;
@@ -1608,6 +1619,7 @@ int BicubicPatch::bezier_tree_walker(const Ray &ray, const BEZIER_NODE *Node, IS
 			Depth_Stack->push(Intersection(Depth, P, N, UV, this));
 
 			cnt++;
+		  }
 		}
 	}
 	else
@@ -1646,11 +1658,11 @@ int BicubicPatch::bezier_tree_walker(const Ray &ray, const BEZIER_NODE *Node, IS
 *
 ******************************************************************************/
 
-int BicubicPatch::intersect_bicubic_patch0(const Ray &ray, IStack& Depth_Stack)
+int BicubicPatch::intersect_bicubic_patch0(const Ray &ray, IStack& Depth_Stack, TraceThreadData *Thread)
 {
 	const VECTOR(*Patch)[4][4] = &Control_Points;
 
-	return (bezier_subdivider(ray, Patch, 0.0, 1.0, 0.0, 1.0, 0, Depth_Stack));
+	return (bezier_subdivider(ray, Patch, 0.0, 1.0, 0.0, 1.0, 0, Depth_Stack, Thread));
 }
 
 
@@ -1693,13 +1705,13 @@ bool BicubicPatch::All_Intersections(const Ray& ray, IStack& Depth_Stack, TraceT
 	{
 		case 0:
 
-			cnt = intersect_bicubic_patch0(ray, Depth_Stack);
+			cnt = intersect_bicubic_patch0(ray, Depth_Stack, Thread);
 
 			break;
 
 		case 1:
 
-			cnt = bezier_tree_walker(ray, Node_Tree, Depth_Stack);
+			cnt = bezier_tree_walker(ray, Node_Tree, Depth_Stack, Thread);
 
 			break;
 
