@@ -80,10 +80,6 @@ namespace pov
 * Local preprocessor defines
 ******************************************************************************/
 
-// Minimal depth for a valid intersection.
-// TODO FIXME - can we use EPSILON or a similar more generic constant instead?
-const DBL DEPTH_TOLERANCE = 1.0e-4;
-
 // Tolerance used for order reduction during root finding.
 // TODO FIXME - can we use EPSILON or a similar more generic constant instead?
 const DBL ROOT_TOLERANCE = 1.0e-4;
@@ -108,6 +104,7 @@ void Ovus::Intersect_Ovus_Spheres(const VECTOR &P, const VECTOR &D,
 	*Depth1 = *Depth2 = *Depth3 = *Depth4 = *Depth5 = *Depth6 = -100; // TODO FIXME - magic value
 	// no hit unless...
 
+  // compute intersection with bottom sphere
 	VScale(Padj, P, -1);
 	Rad1 = Sqr(BottomRadius);
 	Rad2 = Sqr(TopRadius);
@@ -138,8 +135,10 @@ void Ovus::Intersect_Ovus_Spheres(const VECTOR &P, const VECTOR &D,
 			}
 		}
 	}
+  // shape can only have a maximum of 2 intersections, if we have them already, return
 	if (lcount > 1) return;
-	Make_Vector(Second_Center, 0, BottomRadius, 0);
+  // compute intersection with top sphere
+	Make_Vector(Second_Center, 0, VerticalSpherePosition, 0);
 	VSub(Padj, Second_Center, P);
 
 	VDot(OCSquared, Padj, Padj);
@@ -170,7 +169,9 @@ void Ovus::Intersect_Ovus_Spheres(const VECTOR &P, const VECTOR &D,
 
 		}
 	}
+  // shape can only have a maximum of 2 intersections, if we have them already, return
 	if (lcount > 1) return;
+  // need to evaluate the spindle of the torus, because intersions are not yet all found
 	Make_Vector(Second_Center, 0, VerticalPosition, 0);
 	VSub(Padj, P, Second_Center);
 	R2 = Sqr(HorizontalPosition);
@@ -322,7 +323,7 @@ bool Ovus::All_Intersections(const Ray& ray, IStack& Depth_Stack, SceneThreadDat
 			if (Clip.empty()||(Point_In_Clip(Real_Pt, Clip, Thread)))
 			{
 				Assign_Vector(INormal, IPoint);
-				INormal[Y] -= BottomRadius;
+				INormal[Y] -= VerticalSpherePosition;
 				VInverseScaleEq(INormal, TopRadius);
 				MTransNormal(Real_Normal, INormal, Trans);
 				VNormalizeEq(Real_Normal);
@@ -341,7 +342,7 @@ bool Ovus::All_Intersections(const Ray& ray, IStack& Depth_Stack, SceneThreadDat
 			if (Clip.empty()||(Point_In_Clip(Real_Pt, Clip, Thread)))
 			{
 				Assign_Vector(INormal, IPoint);
-				INormal[Y] -= BottomRadius;
+				INormal[Y] -= VerticalSpherePosition;
 				VInverseScaleEq(INormal, TopRadius);
 				MTransNormal(Real_Normal, INormal, Trans);
 				VNormalizeEq(Real_Normal);
@@ -435,7 +436,7 @@ bool Ovus::Inside(const VECTOR IPoint, TraceThreadData *Thread) const
 	DBL horizontal, vertical;
 	bool INSide = false;
 	VECTOR Origin, New_Point, Other;
-	Make_Vector(Origin, 0, BottomRadius, 0);
+	Make_Vector(Origin, 0, VerticalSpherePosition, 0);
 	MInvTransPoint(New_Point, IPoint, Trans);
 	VDot(OCSquared, New_Point, New_Point);
 	if (OCSquared < Sqr(BottomRadius))
@@ -734,6 +735,7 @@ Ovus::Ovus() : ObjectBase(OVUS_OBJECT)
 	BottomVertical = 0.0;
 	TopVertical = 0.0;
 	ConnectingRadius = 0.0;
+  VerticalSpherePosition = 0.0;
 }
 
 
@@ -849,7 +851,11 @@ void Ovus::Compute_BBox()
 {
 	// Compute the biggest vertical cylinder radius
 	DBL biggest;
+  DBL bottom;
+  DBL length;
 	biggest = ConnectingRadius - HorizontalPosition;
+  bottom = -BottomRadius;
+  length = BottomRadius + VerticalSpherePosition + TopRadius;
 	if (biggest < BottomRadius)
 	{
 		biggest = BottomRadius;
@@ -858,9 +864,15 @@ void Ovus::Compute_BBox()
 	{
 		biggest = TopRadius;
 	}
+  // handle degenerated ovus in sphere
+  if (!BottomRadius)
+  {
+    bottom = VerticalSpherePosition-TopRadius;
+    length = 2*TopRadius;
+  }
 
-	Make_BBox(BBox, -biggest, -BottomRadius, -biggest,
-	          2.0 * biggest, 2.0 * BottomRadius + TopRadius, 2.0 * biggest);
+	Make_BBox(BBox, -biggest, bottom, -biggest,
+	          2.0 * biggest, length, 2.0 * biggest);
 
 	Recompute_BBox(&BBox, Trans);
 }
@@ -932,21 +944,16 @@ void Ovus::CalcUV(const VECTOR IPoint, UV_VECT Result) const
 	// Transform the ray into the ovus space.
 	MInvTransPoint(P, IPoint, Trans);
 
-	// the center of UV coordinate is the bottom center when top radius ->0
-	// and it is the top center when top radius -> 2.0* bottom radius
 	// when top radius == bottom radius, it is half-way between both center
 	//
 	// bottom center is <0,0,0>
-	// top center is <0,BottomRadius,0>
-	// TODO FIXME - comment doesn't seem to match the following code
-        //
-        // [JG] no need to fix, but the commented y = can be simplified to the 
-        // used formula. It's just a weighted interpolation between <0,0,0> and
-        // <0, BottomRadius, 0>, and <x,y,z> are the reinterpretation of the point
-        // within the relocated origin for uv mapping
+	// top center is <0,VerticalSpherePosition,0>
 	x = P[X];
-//	y = P[Y] - BottomRadius*(TopRadius/(2.0*BottomRadius));
-	y = P[Y] - (TopRadius/2.0);
+        // it's just a weighted interpolation between <0,0,0> and
+        // <0, VerticalSpherePosition, 0>, and <x,y,z> are the reinterpretation of the point
+        // within the relocated origin for uv mapping
+        // the weight being the BottomRadius for the <0,0,0> and TopRadius for the other point
+  y = P[Y] - VerticalSpherePosition*TopRadius/(TopRadius+BottomRadius);
 	z = P[Z];
 
 	// now assume it's just a sphere, for UV mapping/projection
