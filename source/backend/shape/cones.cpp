@@ -955,10 +955,6 @@ Cone::~Cone()
 
 void Cone::Compute_BBox()
 {
-std::cout << "Cone Dist: " << dist << std::endl;
-std::cout << "Base : " << base_radius << std::endl;
-std::cout << "Apex : " << apex_radius << std::endl;
-
 	Make_BBox(BBox, -1.0, -1.0, dist, 2.0, 2.0, 1.0-dist);
 
 	Recompute_BBox(&BBox, Trans);
@@ -1035,7 +1031,7 @@ void Cone::CalcUV(const VECTOR IPoint, UV_VECT Result) const
     // Determine its angle from the point (1, 0, 0) in the x-y plane.
     len = x * x + y * y;
 
-    if ((P[Z]>(dist+10000*EPSILON))&&(P[Z]<(1.0-10000*EPSILON)))
+    if ((P[Z]>(dist+EPSILON))&&(P[Z]<(1.0-EPSILON)))
     {
     // when not on a face, the range 0.25 to 0.75 is used (just plain magic 25% for face, no other reason, but it makes C-Lipka happy)
         phi = 0.25+0.5*(P[Z]-dist)/(1.0-dist);

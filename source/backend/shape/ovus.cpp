@@ -41,16 +41,18 @@
 *
 *  ovus
 *  {
-*     bottom_radius,top_radius
+*     bottom_radius,top_radius [distance d] [radius r]
 *  }
 *
 *  The so long awaited 'Egg' forms.
 *
 *  Normally, the bottom_radius is bigger than the top_radius
-*  the center of the top sphere is at the zenith of the bottom sphere
+*  the center of the top sphere is at the zenith of the bottom sphere, unless
+*    a greater distance d is specified with "distance"
 *  and the bottom sphere is centered at 0.0
 *  The radius of the connecting surface is the double of the biggest radius
 *   (yes, the biggest diameter is used as the curvature of the connection)
+*   unless overriden with "radius"
 *
 *  The hard part was just to find where the connection starts and ends.
 *
@@ -911,7 +913,7 @@ void Ovus::Compute_BBox()
 
 void Ovus::UVCoord(UV_VECT Result, const Intersection *Inter, TraceThreadData *Thread) const
 {
-	CalcUV(Inter->INormal, Result);
+	CalcUV(Inter->IPoint, Result);
 }
 
 
@@ -937,69 +939,81 @@ void Ovus::UVCoord(UV_VECT Result, const Intersection *Inter, TraceThreadData *T
 *
 * CHANGES
 *
+* due to the addition of distance, the mapping is changed to something similar
+* to lemon, cone & cylinder
+*
 ******************************************************************************/
 
 void Ovus::CalcUV(const VECTOR IPoint, UV_VECT Result) const
 {
-	DBL len, x, y, z;
+	DBL len, x, z, t;
 	DBL phi, theta;
 	VECTOR P;
 
-	// Transform the normal back into the ovus space.
-	MInvTransNormal(P, IPoint, Trans);
+	// Transform the point back into the ovus space.
+	MInvTransPoint(P, IPoint, Trans);
+    // the center of UV coordinate is the <0,0> point
+    x = P[X];
+    z = P[Z];
 
-	// when top radius == bottom radius, it is half-way between both center
-	//
-	// bottom center is <0,0,0>
-	// top center is <0,VerticalSpherePosition,0>
-	x = P[X];
-        // it's just a weighted interpolation between <0,0,0> and
-        // <0, VerticalSpherePosition, 0>, and <x,y,z> are the reinterpretation of the point
-        // within the relocated origin for uv mapping
-        // the weight being the BottomRadius for the <0,0,0> and TopRadius for the other point
-  y = P[Y];// - VerticalSpherePosition*TopRadius/(TopRadius+BottomRadius);
-	z = P[Z];
+    // Determine its angle from the point (0, 0, 0) in the x-z plane.
+    len = x * x + z * z;
 
-	// now assume it's just a sphere, for UV mapping/projection
-	len = sqrt(x * x + y * y + z * z);
+    if ((P[Y]>EPSILON)&&(P[Y]<(VerticalSpherePosition-EPSILON)))
+    {
+    // when not on a face, the range 0.25 to 0.75 is used (just plain magic 25% for face, no other reason, but it makes C-Lipka happy)
+        phi = 0.25+0.5*(P[Y])/(VerticalSpherePosition);
+    }
+    else if (P[Y]>EPSILON)
+    {
+    // aka P[Y] is above VerticalSpherePositon, use TopRadius, from 75% to 100%
+       phi = 1.0;
+       if (TopRadius)
+       {
+			t = ((P[Y]-VerticalSpherePosition)/(TopRadius));
+			phi = 1.0-(sin(sqrt(1-t)*M_PI_2)/(4.0));
+       }
+    }
+    else
+    {
+    // aka P[Y] is below origin (<0), use BottomRadius, from 0% to 25%
+       phi = 0.0;
+       if (BottomRadius)
+       {
+          t = ((BottomRadius+P[Y])/(BottomRadius));
+          phi = sin(sqrt(t)*M_PI_2)/(4.0);
+       }
+       else if (TopRadius)
+       {
+        // degenerate ovus in sphere
+          t = ((TopRadius-VerticalSpherePosition+P[Y])/(TopRadius));
+          phi = sin(sqrt(t)*M_PI_2)/(4.0);
+       }
+    }
 
-	if (len == 0.0)
-		return;
-	else
-	{
-		x /= len;
-		y /= len;
-		z /= len;
-	}
 
-	// Determine its angle from the x-z plane.
-	phi = 0.5 + asin(y) / M_PI; // This will be from 0 to 1
+    if (len > EPSILON)
+    {
+        len = sqrt(len);
+        if (z == 0.0)
+        {
+            if (x > 0)
+                theta = 0.0;
+            else
+                theta = M_PI;
+        }
+        else
+        {
+            theta = acos(x / len);
+            if (z < 0.0)
+                theta = TWO_M_PI - theta;
+        }
 
-	// Determine its angle from the point (1, 0, 0) in the x-z plane.
-	len = x * x + z * z;
-
-	if (len > EPSILON)
-	{
-		len = sqrt(len);
-		if (z == 0.0)
-		{
-			if (x > 0)
-				theta = 0.0;
-			else
-				theta = M_PI;
-		}
-		else
-		{
-			theta = acos(x / len);
-			if (z < 0.0)
-				theta = TWO_M_PI - theta;
-		}
-
-		theta /= TWO_M_PI; // This will be from 0 to 1
-	}
-	else
-		// This point is at one of the poles. Any value of xcoord will be ok...
-		theta = 0;
+        theta /= TWO_M_PI; // This will be from 0 to 1
+    }
+    else
+        // This point is at one of the poles. Any value of xcoord will be ok...
+        theta = 0;
 
 	Result[U] = theta;
 	Result[V] = phi;
