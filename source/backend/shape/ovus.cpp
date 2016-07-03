@@ -911,7 +911,7 @@ void Ovus::Compute_BBox()
 
 void Ovus::UVCoord(UV_VECT Result, const Intersection *Inter, TraceThreadData *Thread) const
 {
-	CalcUV(Inter->IPoint, Result);
+	CalcUV(Inter->INormal, Result);
 }
 
 
@@ -945,8 +945,8 @@ void Ovus::CalcUV(const VECTOR IPoint, UV_VECT Result) const
 	DBL phi, theta;
 	VECTOR P;
 
-	// Transform the ray into the ovus space.
-	MInvTransPoint(P, IPoint, Trans);
+	// Transform the normal back into the ovus space.
+	MInvTransNormal(P, IPoint, Trans);
 
 	// when top radius == bottom radius, it is half-way between both center
 	//
@@ -957,7 +957,7 @@ void Ovus::CalcUV(const VECTOR IPoint, UV_VECT Result) const
         // <0, VerticalSpherePosition, 0>, and <x,y,z> are the reinterpretation of the point
         // within the relocated origin for uv mapping
         // the weight being the BottomRadius for the <0,0,0> and TopRadius for the other point
-  y = P[Y] - VerticalSpherePosition*TopRadius/(TopRadius+BottomRadius);
+  y = P[Y];// - VerticalSpherePosition*TopRadius/(TopRadius+BottomRadius);
 	z = P[Z];
 
 	// now assume it's just a sphere, for UV mapping/projection

@@ -73,7 +73,7 @@ class Cone : public ObjectBase
 		virtual bool All_Intersections(const Ray&, IStack&, TraceThreadData *);
 		virtual bool Inside(const VECTOR, TraceThreadData *) const;
 		virtual void Normal(VECTOR, Intersection *, TraceThreadData *) const;
-		// virtual void UVCoord(UV_VECT, const Intersection *, TraceThreadData *) const; // TODO FIXME - why is there no UV-mapping for this simple object?
+		virtual void UVCoord(UV_VECT, const Intersection *, TraceThreadData *) const;
 		virtual void Translate(const VECTOR, const TRANSFORM *);
 		virtual void Rotate(const VECTOR, const TRANSFORM *);
 		virtual void Scale(const VECTOR, const TRANSFORM *);
@@ -85,6 +85,8 @@ class Cone : public ObjectBase
 		void Compute_Cylinder_Data();
 	protected:
 		int Intersect(const Ray& ray, CONE_INT *Intersection, TraceThreadData *Thread) const;
+		void CalcUV(const VECTOR IPoint, UV_VECT Result) const;
+
 };
 
 }
