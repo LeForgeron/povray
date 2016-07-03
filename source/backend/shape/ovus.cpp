@@ -82,7 +82,8 @@ namespace pov
 
 // Tolerance used for order reduction during root finding.
 // TODO FIXME - can we use EPSILON or a similar more generic constant instead?
-const DBL ROOT_TOLERANCE = 1.0e-4;
+const DBL ROOT_TOLERANCE = 1.0e-3;
+// 1.0e-4 give noise for ovus { 3, 1.25 distance 14 radius 7000 sturm }
 
 
 
