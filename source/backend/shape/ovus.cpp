@@ -82,8 +82,11 @@ namespace pov
 
 // Tolerance used for order reduction during root finding.
 // TODO FIXME - can we use EPSILON or a similar more generic constant instead?
-const DBL ROOT_TOLERANCE = 1.0e-3;
+const DBL ROOT_TOLERANCE = 1.0e-7;
 // 1.0e-4 give noise for ovus { 3, 1.25 distance 14 radius 7000 sturm }
+// 1.0-e3 give good result for radius 7000, yet amplify a line of illuminated interior surface 
+// and 1.0e-10 gives grainy / transparent spindle part for ovus { 1.5, 0.5 radius 4 distance 2.5 sturm }
+// Compromise to 1.0e-7 : no grainy nor line for ovus { 1.5, 0.5 ..., and ok with ovus { 3, 1.25 distance 14 radius 700 sturm } (yep, the difference between radius 700 and 7000 is quasi invisible for an object of size 14)
 
 
 
