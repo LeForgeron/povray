@@ -962,32 +962,32 @@ void Ovus::CalcUV(const VECTOR IPoint, UV_VECT Result) const
     if ((P[Y]>EPSILON)&&(P[Y]<(VerticalSpherePosition-EPSILON)))
     {
     // when not on a face, the range 0.25 to 0.75 is used (just plain magic 25% for face, no other reason, but it makes C-Lipka happy)
-        phi = 0.25+0.5*(P[Y])/(VerticalSpherePosition);
+        phi = 0.75-0.5*(P[Y])/(VerticalSpherePosition);
     }
     else if (P[Y]>EPSILON)
     {
-    // aka P[Y] is above VerticalSpherePositon, use TopRadius, from 75% to 100%
-       phi = 1.0;
+    // aka P[Y] is above VerticalSpherePositon, use TopRadius, from 0% to 25%
+       phi = 0.0;
        if (TopRadius)
        {
 			t = ((P[Y]-VerticalSpherePosition)/(TopRadius));
-			phi = 1.0-(sin(sqrt(1-t)*M_PI_2)/(4.0));
+			phi = (sin(sqrt(1-t)*M_PI_2)/(4.0));
        }
     }
     else
     {
-    // aka P[Y] is below origin (<0), use BottomRadius, from 0% to 25%
-       phi = 0.0;
+    // aka P[Y] is below origin (<0), use BottomRadius, from 75% to 100%
+       phi = 1.0;
        if (BottomRadius)
        {
           t = ((BottomRadius+P[Y])/(BottomRadius));
-          phi = sin(sqrt(t)*M_PI_2)/(4.0);
+          phi = 1.0-sin(sqrt(t)*M_PI_2)/(4.0);
        }
        else if (TopRadius)
        {
         // degenerate ovus in sphere
           t = ((TopRadius-VerticalSpherePosition+P[Y])/(TopRadius));
-          phi = sin(sqrt(t)*M_PI_2)/(4.0);
+          phi = 1.0-sin(sqrt(t)*M_PI_2)/(4.0);
        }
     }
 

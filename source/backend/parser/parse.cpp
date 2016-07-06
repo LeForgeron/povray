@@ -5434,9 +5434,46 @@ ObjectPtr Parser::Parse_Ovus()
    * remaining code expect x >= 0
    */
 
-  Object->HorizontalPosition = sqrt(-(Sqr(Object->BottomRadius-Object->TopRadius)-Sqr(Object->VerticalSpherePosition))*(Sqr(Object->BottomRadius)-4*Object->BottomRadius*Object->ConnectingRadius+2*Object->BottomRadius*Object->TopRadius+4*Sqr(Object->ConnectingRadius)-4*Object->ConnectingRadius*Object->TopRadius+Sqr(Object->TopRadius) -Sqr(Object->VerticalSpherePosition)))/(Object->VerticalSpherePosition*2.0);
+  Object->HorizontalPosition = sqrt(
+          -(Sqr(Object->BottomRadius)-2.0*Object->BottomRadius*Object->TopRadius+Sqr(Object->TopRadius)-Sqr(Object->VerticalSpherePosition))
+          *(Sqr(Object->BottomRadius)-4.0*Object->BottomRadius*Object->ConnectingRadius+2.0*Object->BottomRadius*Object->TopRadius+4.0*Sqr(Object->ConnectingRadius)-4.0*Object->ConnectingRadius*Object->TopRadius+Sqr(Object->TopRadius) -Sqr(Object->VerticalSpherePosition))
+                                   )
+     /(Object->VerticalSpherePosition*2.0);
 
-  Object->VerticalPosition = Object->VerticalSpherePosition-sqrt(Sqr(Object->ConnectingRadius-Object->TopRadius)-Sqr(Object->HorizontalPosition));
+  /*
+   * for t=b+v and r> (b²-t²-v²)/(2(b-t))
+   *
+   * y = sqrt( r²-2rt+t²-x²) 
+   *
+   *
+   * for t>b+v and r = (b+v+t)/2 
+   * for b<t<b+v and r> (b²-t²-v²)/(2(b-t)) 
+   * for t=b+v and r> (b²-t²-v²)/(2(b-t))
+   *
+   * y = sqrt( r²-2rt+t²-x²) +v
+   *
+   *
+   * else
+   *
+   * y = v- sqrt( r²-2rt+t²-x²) 
+   */
+  if ((Object->TopRadius == (Object->BottomRadius+Object->VerticalSpherePosition))&&(Object->ConnectingRadius > ((Sqr(Object->BottomRadius)-Sqr(Object->TopRadius)-Sqr(Object->VerticalSpherePosition))/(2.0*Object->VerticalSpherePosition))))
+  {
+     Object->VerticalPosition = sqrt(Sqr(Object->ConnectingRadius-Object->TopRadius)-Sqr(Object->HorizontalPosition));
+  }
+  else if
+     (
+      (( Object->TopRadius > (Object->BottomRadius + Object->VerticalSpherePosition ) ) && ( Object->ConnectingRadius == ((Object->BottomRadius+Object->TopRadius+Object->VerticalSpherePosition)/2.0)))
+      ||((Object->BottomRadius < Object->TopRadius) && (Object->TopRadius < (Object->BottomRadius+Object->VerticalSpherePosition))&&(Object->ConnectingRadius > ((Sqr(Object->BottomRadius)-Sqr(Object->TopRadius)-Sqr(Object->VerticalSpherePosition))/(2.0*Object->VerticalSpherePosition))))
+      ||( (Object->TopRadius == (Object->BottomRadius+Object->VerticalSpherePosition))&&(Object->ConnectingRadius > ((Sqr(Object->BottomRadius)-Sqr(Object->TopRadius)-Sqr(Object->VerticalSpherePosition))/(2.0*Object->VerticalSpherePosition))))
+     )
+  {
+     Object->VerticalPosition = Object->VerticalSpherePosition+sqrt(Sqr(Object->ConnectingRadius-Object->TopRadius)-Sqr(Object->HorizontalPosition));
+  }
+  else
+  {
+     Object->VerticalPosition = Object->VerticalSpherePosition-sqrt(Sqr(Object->ConnectingRadius-Object->TopRadius)-Sqr(Object->HorizontalPosition));
+  }
   // if not a degenerated sphere
   if (Object->HorizontalPosition)
   {
