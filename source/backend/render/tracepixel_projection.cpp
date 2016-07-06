@@ -25,7 +25,7 @@ namespace pov
 #define SQRT2       1.4142135623730950488016887242097   ///< sqrt(2)
 #define SQRT2_2     0.70710678118654752440084436210485  ///< sqrt(2)/2
 #define SQRT3_2     0.86602540378443864676372317075294 ///< sqrt(3)/2
-	bool TracePixel::ProjectionPlateCarreeCameraRay(Ray &ray, DBL x, DBL y)
+	bool TracePixelCameraData::ProjectionPlateCarreeCameraRay(Ray &ray, DBL x, DBL y)
 	{
 		Vector3d cam_pos;
 		Vector3d V1;
@@ -46,7 +46,7 @@ namespace pov
 		Assign_Vector(ray.Direction,*V2);
     return true;
 	}
-	bool TracePixel::ProjectionEqualAreaCameraRay(Ray &ray, DBL x, DBL y, DBL cx)
+	bool TracePixelCameraData::ProjectionEqualAreaCameraRay(Ray &ray, DBL x, DBL y, DBL cx)
 	{
 		Vector3d cam_pos;
 		Vector3d V1;
@@ -67,7 +67,7 @@ namespace pov
 		Assign_Vector(ray.Direction,*V2);
     return true;
 	}
-	bool TracePixel::ProjectionMollweideCameraRay(Ray &ray, DBL x, DBL y)
+	bool TracePixelCameraData::ProjectionMollweideCameraRay(Ray &ray, DBL x, DBL y)
 	{
 		Vector3d cam_pos;
 		Vector3d V1;
@@ -106,7 +106,7 @@ namespace pov
 		Assign_Vector(ray.Direction,*V2);
     return true;
 	}
-	bool TracePixel::ProjectionAitoffHammerCameraRay(Ray &ray, DBL x, DBL y)
+	bool TracePixelCameraData::ProjectionAitoffHammerCameraRay(Ray &ray, DBL x, DBL y)
 	{
 		Vector3d cam_pos;
 		Vector3d V1;
@@ -138,7 +138,7 @@ namespace pov
 		Assign_Vector(ray.Direction,*V2);
     return true;
 	}
-	bool TracePixel::ProjectionVanDerGrintenCameraRay(Ray &ray, DBL x, DBL y)
+	bool TracePixelCameraData::ProjectionVanDerGrintenCameraRay(Ray &ray, DBL x, DBL y)
 	{
 		Vector3d cam_pos;
 		Vector3d V1;
@@ -240,7 +240,7 @@ namespace pov
 	/* ECK4_YC / ECK4_XC == pi */
 #define ECK4_XC .4222382003157712014929445259585221076624
 #define ECK4_YC 1.3265004281770023222060941830274718740086
-	bool TracePixel::ProjectionEckert4CameraRay(Ray &ray, DBL x, DBL y)
+	bool TracePixelCameraData::ProjectionEckert4CameraRay(Ray &ray, DBL x, DBL y)
 	{
 		Vector3d cam_pos;
 		Vector3d V1;
@@ -275,7 +275,7 @@ namespace pov
 	}
 	/* ECK6_ADJ := pi * 2 / sqrt(2+pi) */
 #define ECK6_ADJ 2.7709649675782468540085734337823276068619
-	bool TracePixel::ProjectionEckert6CameraRay(Ray &ray, DBL x, DBL y)
+	bool TracePixelCameraData::ProjectionEckert6CameraRay(Ray &ray, DBL x, DBL y)
 	{
 		Vector3d cam_pos;
 		Vector3d V1;
@@ -306,7 +306,7 @@ namespace pov
 		Assign_Vector(ray.Direction,*V2);
     return true;
 	}
-	bool TracePixel::ProjectionMillerCameraRay(Ray &ray, DBL x, DBL y)
+	bool TracePixelCameraData::ProjectionMillerCameraRay(Ray &ray, DBL x, DBL y)
 	{
 		Vector3d cam_pos;
 		Vector3d V1;
@@ -333,7 +333,7 @@ namespace pov
 		Assign_Vector(ray.Direction,*V2);
     return true;
 	}
-	bool TracePixel::ProjectionMercatorCameraRay(Ray &ray, DBL x, DBL y)
+	bool TracePixelCameraData::ProjectionMercatorCameraRay(Ray &ray, DBL x, DBL y)
 	{
 		Vector3d cam_pos;
 		Vector3d V1;
@@ -354,7 +354,7 @@ namespace pov
 		Assign_Vector(ray.Direction,*V2);
     return true;
 	}
-	bool TracePixel::ProjectionLambertAzimuthalCameraRay(Ray &ray, DBL x, DBL y)
+	bool TracePixelCameraData::ProjectionLambertAzimuthalCameraRay(Ray &ray, DBL x, DBL y)
 	{
 		Vector3d cam_pos;
 		Vector3d V1;
@@ -590,7 +590,7 @@ namespace pov
   };
 #endif
    /* For equilateral triangle */
-   void TracePixel::weight_in_triangle(Ray &ray, const DBL x, const DBL y,
+   void TracePixelCameraData::weight_in_triangle(Ray &ray, const DBL x, const DBL y,
             const Vector2d a,
             const Vector2d b,
             const Vector2d c,
@@ -718,7 +718,7 @@ namespace pov
     * and the radius of the third point is 1/sqrt(3) whereas the radius of the
     * two other vertices is 1
     */
-   void TracePixel::weight_in_rectriangle(Ray &ray, const DBL x, const DBL y,
+   void TracePixelCameraData::weight_in_rectriangle(Ray &ray, const DBL x, const DBL y,
             const Vector2d a,
             const Vector2d b,
             const Vector2d c,
@@ -804,7 +804,7 @@ namespace pov
       return ((r*s >  0) &&(s*t >  0) &&(r*t >  0));
    }
 
-	bool TracePixel::ProjectionTetraCameraRay(Ray &ray, DBL x, DBL y)
+	bool TracePixelCameraData::ProjectionTetraCameraRay(Ray &ray, DBL x, DBL y)
 	{
 		/* adjust x,y */
 		x *= 2.5;
@@ -830,7 +830,7 @@ namespace pov
 		}         
 		return false;
 	}
-	bool TracePixel::ProjectionCubeCameraRay(Ray &ray, DBL x, DBL y)
+	bool TracePixelCameraData::ProjectionCubeCameraRay(Ray &ray, DBL x, DBL y)
 	{
 		/* adjust x,y */
 		x *= 5;
@@ -864,7 +864,7 @@ namespace pov
 		}         
 		return false;
 	}
-	bool TracePixel::ProjectionOctaCameraRay(Ray &ray, DBL x, DBL y)
+	bool TracePixelCameraData::ProjectionOctaCameraRay(Ray &ray, DBL x, DBL y)
 	{
 		/* adjust x,y */
 		x *= 4*SQRT3_2;
@@ -890,7 +890,7 @@ namespace pov
 		}         
 		return false;
 	}
-	bool TracePixel::ProjectionIcosaCameraRay(Ray &ray, DBL x, DBL y)
+	bool TracePixelCameraData::ProjectionIcosaCameraRay(Ray &ray, DBL x, DBL y)
 	{
 		/* adjust x,y */
 		x *= 5.5;

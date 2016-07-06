@@ -34,8 +34,10 @@
 #ifndef CAMERA_H
 #define CAMERA_H
 
+
 namespace pov
 {
+class TracePixelCameraData;
 
 /*****************************************************************************
 * Global preprocessor defines
@@ -81,6 +83,7 @@ namespace pov
 #define FISHEYE_EQUISOLIDANGLE_CAMERA    36
 #define FISHEYE_STEREOGRAPHIC_CAMERA     37
 #define OMNI_DIRECTIONAL_STEREO_CAMERA   38
+#define GRID_CAMERA                      39
 
 /*****************************************************************************
 * Global typedefs
@@ -121,6 +124,11 @@ public:
   vector<unsigned int> V_Xref[10];        // used to speed up location of a matching face for distribution #3
   DBL Max_Ray_Distance;          // if not 0.0, then maximum distance to look along the ray for an intersection
   // end of mesh camera declarations
+  // the following declarations are used for the grid camera
+  vector<Camera> Cameras; // list of camera as sub-part
+  mutable vector<TracePixelCameraData> TracePixels; // list of camera as sub-part
+  unsigned int Grid_Size;// division of picture in part
+  //
 
   Camera();
   Camera(const Camera& src);

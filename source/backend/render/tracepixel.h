@@ -199,16 +199,11 @@ struct ContainingInteriorsPointObjectCondition : public PointObjectCondition
 	RayInteriorVector &containingInteriors;
 };
 
-class TracePixel : public Trace
+class TracePixel;
+class TracePixelCameraData
 {
-	public:
-		TracePixel(ViewData *vd, TraceThreadData *td, unsigned int mtl, DBL adcb, unsigned int qf,
-		           CooperateFunctor& cf, MediaFunctor& mf, RadiosityFunctor& af, bool pt = false);
-		virtual ~TracePixel();
-		void SetupCamera(const Camera& cam);
-
-		void operator()(DBL x, DBL y, DBL width, DBL height, Colour& colour);
-	private:
+public:
+      TracePixelCameraData(TraceThreadData *td, bool pt):focalBlurData(NULL),threadDataC(td),pretrace(pt){}
 		// Focal blur data
 		class FocalBlurData
 		{
@@ -234,9 +229,6 @@ class TracePixel : public Trace
 		bool useFocalBlur;
 		FocalBlurData *focalBlurData;
 
-		bool precomputeContainingInteriors;
-		RayInteriorVector containingInteriors;
-
 		Vector3d cameraDirection;
 		Vector3d cameraRight;
 		Vector3d cameraUp;
@@ -249,26 +241,14 @@ class TracePixel : public Trace
 		DBL cameraLengthDirection;
 		/// aspect ratio for current camera
 		DBL aspectRatio;
+		/// thread data
+		TraceThreadData *threadDataC;
 		/// camera
 		Camera camera;
-		/// scene data
-		shared_ptr<SceneData> sceneData;
-		/// thread data
-		TraceThreadData *threadData;
-
-		/// maximum trace recursion level allowed
-		unsigned int maxTraceLevel;
-		/// adc bailout
-		DBL adcBailout;
 		/// whether this is just a pretrace, allowing some computations to be skipped
 		bool pretrace;
-
-		bool CreateCameraRay(Ray& ray, DBL x, DBL y, DBL width, DBL height, size_t ray_number);
-
-		void InitRayContainerState(Ray& ray, bool compute = false);
-		void InitRayContainerStateTree(Ray& ray, BBOX_TREE *node);
-
-		void TraceRayWithFocalBlur(Colour& colour, DBL x, DBL y, DBL width, DBL height);
+		void SetupCamera(const Camera& cam);
+		bool CreateCameraRay(Ray& ray, DBL x, DBL y, DBL width, DBL height, size_t ray_number, TracePixel& p);
 		void JitterCameraRay(Ray& ray, DBL x, DBL y, size_t ray_number);
 
 		// Additional map projection camera in tracepixel_*.cpp
@@ -288,6 +268,45 @@ class TracePixel : public Trace
 		bool ProjectionEckert4CameraRay(Ray& ray, DBL x,DBL y);
 		bool ProjectionEckert6CameraRay(Ray& ray, DBL x,DBL y);
 		bool ProjectionMillerCameraRay(Ray& ray, DBL x,DBL y);
+		void weight_in_triangle(Ray& ray, const DBL x,const DBL y,
+                    const Vector2d a,
+                    const Vector2d b,
+                    const Vector2d c,
+                    const Vector2d na,
+                    const Vector2d nb,
+                    const Vector2d nc);
+		void weight_in_rectriangle(Ray& ray, const DBL x,const DBL y,
+                    const Vector2d a,
+                    const Vector2d b,
+                    const Vector2d c,
+                    const Vector2d na,
+                    const Vector2d nb,
+                    const Vector2d nc);
+};
+
+class TracePixel : public Trace, public TracePixelCameraData
+{
+	public:
+		TracePixel(ViewData *vd, TraceThreadData *td, unsigned int mtl, DBL adcb, unsigned int qf,
+		           CooperateFunctor& cf, MediaFunctor& mf, RadiosityFunctor& af, bool pt = false);
+		virtual ~TracePixel();
+
+		void operator()(DBL x, DBL y, DBL width, DBL height, Colour& colour);
+		void InitRayContainerState(Ray& ray, bool compute = false);
+	private:
+		bool precomputeContainingInteriors;
+		RayInteriorVector containingInteriors;
+		/// scene data
+		shared_ptr<SceneData> sceneData;
+		/// maximum trace recursion level allowed
+		unsigned int maxTraceLevel;
+		/// adc bailout
+		DBL adcBailout;
+
+
+		void InitRayContainerStateTree(Ray& ray, BBOX_TREE *node);
+
+		void TraceRayWithFocalBlur(Colour& colour, DBL x, DBL y, DBL width, DBL height);
 		void weight_in_triangle(Ray& ray, const DBL x,const DBL y,
                     const Vector2d a,
                     const Vector2d b,

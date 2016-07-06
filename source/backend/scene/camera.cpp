@@ -39,6 +39,7 @@
 #include "backend/texture/pigment.h"
 #include "backend/math/vector.h"
 #include "backend/math/matrices.h"
+#include "backend/render/tracepixel.h"
 
 // this must be the last file included
 #include "base/povdebug.h"
@@ -252,6 +253,7 @@ void Camera::Init()
 	Face_Distribution_Method = 0;
 	Smooth = false;
 	Max_Ray_Distance = 0.0;
+   Grid_Size = 1;
 }
 
 /*****************************************************************************
@@ -363,6 +365,8 @@ Camera& Camera::operator=(const Camera& src)
 		V_Xref[i] = src.V_Xref[i];
 	}
 	Smooth = src.Smooth;
+   Cameras = src.Cameras;
+   Grid_Size = src.Grid_Size;
 
 	return *this;
 }

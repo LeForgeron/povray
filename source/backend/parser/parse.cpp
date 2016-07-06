@@ -1314,6 +1314,7 @@ void Parser::Parse_Camera (Camera& Cam)
 	MATRIX Local_Matrix;
 	TRANSFORM Local_Trans;
 	bool only_mods = false;
+   bool Early_exit = false;
 
 	Parse_Begin ();
 
@@ -1325,12 +1326,44 @@ void Parser::Parse_Camera (Camera& Cam)
 			EXIT
 		END_CASE
 
+		CASE (GRID_TOKEN)
+         Cam.Type = GRID_CAMERA;
+         Cam.Grid_Size = (unsigned int)Parse_Float();
+         if (Cam.Grid_Size == 0)
+         {
+           Error("Grid size of camera may not be 0");
+         }
+         Cam.Cameras.reserve(Cam.Grid_Size*Cam.Grid_Size);
+         for(size_t c=0;c<(Cam.Grid_Size*Cam.Grid_Size);++c)
+         {
+            EXPECT
+               CASE (CAMERA_ID_TOKEN)
+               Cam.Cameras.push_back( *reinterpret_cast<Camera *>(Token.Data));
+                  EXIT
+               END_CASE
+
+               OTHERWISE
+                  Error("Expected camera identifier");
+                  EXIT
+               END_CASE
+            END_EXPECT
+         }
+         Early_exit = true;
+			EXIT
+		END_CASE
+         
+         
 		OTHERWISE
 			UNGET
 			EXIT
 		END_CASE
 	END_EXPECT
 
+   if(Early_exit)
+   {
+      Parse_End ();
+      return;
+   }
 	Camera& New = Cam;
 
 	if ((sceneData->languageVersion >= 350) && (only_mods == true))

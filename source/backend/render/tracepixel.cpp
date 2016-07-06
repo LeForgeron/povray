@@ -176,12 +176,11 @@ inline int PseudoRandom(int v)
 TracePixel::TracePixel(ViewData *vd, TraceThreadData *td, unsigned int mtl, DBL adcb, unsigned int qf,
                        CooperateFunctor& cf, MediaFunctor& mf, RadiosityFunctor& af, bool pt) :
                        Trace(vd->GetSceneData(), td, qf, cf, mf, af),
+                       TracePixelCameraData(td,pt),
                        sceneData(vd->GetSceneData()),
-                       threadData(td),
-                       focalBlurData(NULL),
                        maxTraceLevel(mtl),
                        adcBailout(adcb),
-                       pretrace(pt)
+                       precomputeContainingInteriors ( true)
 {
   SetupCamera(vd->GetCamera());
 }
@@ -192,12 +191,11 @@ TracePixel::~TracePixel()
     delete focalBlurData;
 }
 
-void TracePixel::SetupCamera(const Camera& cam)
+void TracePixelCameraData::SetupCamera(const Camera& cam)
 {
   bool normalise = false;
   camera = cam;
   useFocalBlur = false;
-  precomputeContainingInteriors = true;
   cameraDirection = Vector3d(camera.Direction);
   cameraRight = Vector3d(camera.Right);
   cameraUp =  Vector3d(camera.Up);
@@ -209,6 +207,14 @@ void TracePixel::SetupCamera(const Camera& cam)
 
   switch(camera.Type)
   {
+    case GRID_CAMERA:
+      camera.TracePixels.reserve( camera.Grid_Size*camera.Grid_Size );
+      for(size_t c = 0;c<(camera.Grid_Size*camera.Grid_Size);++c)
+      {
+         camera.TracePixels.push_back(*this);
+         camera.TracePixels[c].SetupCamera( camera.Cameras[c] );
+      }
+      break;
     case CYL_1_CAMERA:
     case CYL_3_CAMERA:
       aspectRatio = cameraLengthUp;
@@ -275,7 +281,7 @@ void TracePixel::SetupCamera(const Camera& cam)
   // (Possibly we could store it in the view).
   useFocalBlur = ((camera.Aperture != 0.0) && (camera.Blur_Samples > 0));
   if(useFocalBlur == true)
-    focalBlurData = new FocalBlurData(camera, threadData);
+    focalBlurData = new FocalBlurData(camera, threadDataC);
 }
 
 void TracePixel::operator()(DBL x, DBL y, DBL width, DBL height, Colour& colour)
@@ -288,7 +294,7 @@ void TracePixel::operator()(DBL x, DBL y, DBL width, DBL height, Colour& colour)
     {
       Ray ray;
 
-      if (CreateCameraRay(ray, x, y, width, height, rayno) == true)
+      if (CreateCameraRay(ray, x, y, width, height, rayno, *this) == true)
       {
         Colour col;
 
@@ -307,7 +313,7 @@ void TracePixel::operator()(DBL x, DBL y, DBL width, DBL height, Colour& colour)
     TraceRayWithFocalBlur(colour, x, y, width, height);
 }
 
-bool TracePixel::CreateCameraRay(Ray& ray, DBL x, DBL y, DBL width, DBL height, size_t ray_number)
+bool TracePixelCameraData::CreateCameraRay(Ray& ray, DBL x, DBL y, DBL width, DBL height, size_t ray_number, TracePixel& parent)
 {
   DBL x0 = 0.0, y0 = 0.0;
   DBL cx, sx, cy, sy, ty, rad, phi;
@@ -327,6 +333,27 @@ bool TracePixel::CreateCameraRay(Ray& ray, DBL x, DBL y, DBL width, DBL height, 
 
   switch(camera.Type)
   {
+    case GRID_CAMERA:
+    {
+      x0 = x / width;//from 0 to 1
+      y0 = y / height;//from 0 to 1
+      unsigned int i,j;
+      i = x0*camera.Grid_Size;
+      i = std::min( camera.Grid_Size, i);
+      j = y0*camera.Grid_Size;
+      j = std::min( camera.Grid_Size, j);
+      x0 *= width;
+      y0 *= height;
+      x0 -= 0.5;
+      y0 += 0.5;
+      x0 *= camera.Grid_Size;
+      y0 *= camera.Grid_Size;
+      x0 -= i*width;
+      y0 -= j*height;
+      bool r = camera.TracePixels[i+j*camera.Grid_Size].CreateCameraRay(ray, x0, y0, width, height, ray_number, parent);
+      if (r) VNormalize(ray.Direction, ray.Direction);
+      return r;
+    }
     // Perspective projection (Pinhole camera; POV standard).
     case PERSPECTIVE_CAMERA:
       // Convert the x coordinate to be a DBL from -0.5 to 0.5.
@@ -342,10 +369,10 @@ bool TracePixel::CreateCameraRay(Ray& ray, DBL x, DBL y, DBL width, DBL height, 
       if(useFocalBlur)
       {
         JitterCameraRay(ray, x, y, ray_number);
-        InitRayContainerState(ray, true);
+        parent.InitRayContainerState(ray, true);
       }
       else
-        InitRayContainerState(ray);
+        parent.InitRayContainerState(ray);
       break;
     // Stereoscopic projection: two perspective cameras, one for left, the other for right
     case STEREOSCOPIC_CAMERA:
@@ -374,10 +401,10 @@ bool TracePixel::CreateCameraRay(Ray& ray, DBL x, DBL y, DBL width, DBL height, 
       if(useFocalBlur)
       {
         JitterCameraRay(ray, x, y, ray_number);
-        InitRayContainerState(ray, true);
+        parent.InitRayContainerState(ray, true);
       }
       else
-        InitRayContainerState(ray);
+        parent.InitRayContainerState(ray);
       break;
     // omni directional stereo camera
     case OMNI_DIRECTIONAL_STEREO_CAMERA:
@@ -417,10 +444,10 @@ bool TracePixel::CreateCameraRay(Ray& ray, DBL x, DBL y, DBL width, DBL height, 
       if(useFocalBlur)
       {
         JitterCameraRay(ray, x, y, ray_number);
-        InitRayContainerState(ray, true);
+        parent.InitRayContainerState(ray, true);
       }
       else
-        InitRayContainerState(ray);
+        parent.InitRayContainerState(ray);
       break;
     // Orthographic projection.
     case ORTHOGRAPHIC_CAMERA:
@@ -438,7 +465,7 @@ bool TracePixel::CreateCameraRay(Ray& ray, DBL x, DBL y, DBL width, DBL height, 
       if(useFocalBlur)
         JitterCameraRay(ray, x, y, ray_number);
 
-      InitRayContainerState(ray, true);
+      parent.InitRayContainerState(ray, true);
       break;
 
     // Fisheye camera.
@@ -482,7 +509,7 @@ bool TracePixel::CreateCameraRay(Ray& ray, DBL x, DBL y, DBL width, DBL height, 
       if(useFocalBlur)
         JitterCameraRay(ray, x, y, ray_number);
 
-      InitRayContainerState(ray);
+      parent.InitRayContainerState(ray);
       break;
 
     // Fisheye camera. equidistant r = F.sin(theta)
@@ -529,7 +556,7 @@ bool TracePixel::CreateCameraRay(Ray& ray, DBL x, DBL y, DBL width, DBL height, 
       if(useFocalBlur)
         JitterCameraRay(ray, x, y, ray_number);
 
-      InitRayContainerState(ray);
+      parent.InitRayContainerState(ray);
       break;
 
     // Fisheye camera, equisolid angle r = F.2.sin(theta/2)
@@ -575,7 +602,7 @@ bool TracePixel::CreateCameraRay(Ray& ray, DBL x, DBL y, DBL width, DBL height, 
       if(useFocalBlur)
         JitterCameraRay(ray, x, y, ray_number);
 
-      InitRayContainerState(ray);
+      parent.InitRayContainerState(ray);
       break;
 
     // Fisheye camera. stereographic, r = F.2.tan(theta/2)
@@ -622,7 +649,7 @@ bool TracePixel::CreateCameraRay(Ray& ray, DBL x, DBL y, DBL width, DBL height, 
       if(useFocalBlur)
         JitterCameraRay(ray, x, y, ray_number);
 
-      InitRayContainerState(ray);
+      parent.InitRayContainerState(ray);
       break;
 
     // Omnimax camera.
@@ -678,7 +705,7 @@ bool TracePixel::CreateCameraRay(Ray& ray, DBL x, DBL y, DBL width, DBL height, 
       if(useFocalBlur)
         JitterCameraRay(ray, x, y, ray_number);
 
-      InitRayContainerState(ray);
+      parent.InitRayContainerState(ray);
       break;
 
     // Panoramic camera from Graphic Gems III.
@@ -712,7 +739,7 @@ bool TracePixel::CreateCameraRay(Ray& ray, DBL x, DBL y, DBL width, DBL height, 
       if(useFocalBlur)
         JitterCameraRay(ray, x, y, ray_number);
 
-      InitRayContainerState(ray);
+      parent.InitRayContainerState(ray);
       break;
 
     // Ultra wide angle camera written by Dan Farmer.
@@ -737,7 +764,7 @@ bool TracePixel::CreateCameraRay(Ray& ray, DBL x, DBL y, DBL width, DBL height, 
       if(useFocalBlur)
         JitterCameraRay(ray, x, y, ray_number);
 
-      InitRayContainerState(ray);
+      parent.InitRayContainerState(ray);
       break;
 
     // Cylinder camera 1. Axis in "up" direction
@@ -760,7 +787,7 @@ bool TracePixel::CreateCameraRay(Ray& ray, DBL x, DBL y, DBL width, DBL height, 
       if(useFocalBlur)
         JitterCameraRay(ray, x, y, ray_number);
 
-      InitRayContainerState(ray);
+      parent.InitRayContainerState(ray);
       break;
 
     // Cylinder camera 2. Axis in "right" direction
@@ -782,7 +809,7 @@ bool TracePixel::CreateCameraRay(Ray& ray, DBL x, DBL y, DBL width, DBL height, 
       if(useFocalBlur)
         JitterCameraRay(ray, x, y, ray_number);
 
-      InitRayContainerState(ray);
+      parent.InitRayContainerState(ray);
       break;
 
     // Cylinder camera 3. Axis in "up" direction, orthogonal in "right"
@@ -807,7 +834,7 @@ bool TracePixel::CreateCameraRay(Ray& ray, DBL x, DBL y, DBL width, DBL height, 
       if(useFocalBlur)
         JitterCameraRay(ray, x, y, ray_number);
 
-      InitRayContainerState(ray, true);
+      parent.InitRayContainerState(ray, true);
       break;
 
     // Cylinder camera 4. Axis in "right" direction, orthogonal in "up"
@@ -832,7 +859,7 @@ bool TracePixel::CreateCameraRay(Ray& ray, DBL x, DBL y, DBL width, DBL height, 
       if(useFocalBlur)
         JitterCameraRay(ray, x, y, ray_number);
 
-      InitRayContainerState(ray, true);
+      parent.InitRayContainerState(ray, true);
       break;
 
     // spherical camera: x is horizontal, y vertical, V_Angle - vertical FOV, H_Angle - horizontal FOV
@@ -860,7 +887,7 @@ bool TracePixel::CreateCameraRay(Ray& ray, DBL x, DBL y, DBL width, DBL height, 
       if(useFocalBlur)
         JitterCameraRay(ray, x, y, ray_number);
 
-      InitRayContainerState(ray);
+      parent.InitRayContainerState(ray);
       break;
 
     case MESH_CAMERA:
@@ -914,7 +941,7 @@ bool TracePixel::CreateCameraRay(Ray& ray, DBL x, DBL y, DBL width, DBL height, 
         }
 
         // we're done
-        InitRayContainerState(ray);
+        parent.InitRayContainerState(ray);
       }
       else if (camera.Face_Distribution_Method == 1)
       {
@@ -958,7 +985,7 @@ bool TracePixel::CreateCameraRay(Ray& ray, DBL x, DBL y, DBL width, DBL height, 
               MTransPoint (ray.Origin, ray.Origin, mesh->Trans);
               MTransNormal (ray.Direction, ray.Direction, mesh->Trans);
             }
-            InitRayContainerState(ray);
+            parent.InitRayContainerState(ray);
             break;
           }
         }
@@ -995,7 +1022,7 @@ bool TracePixel::CreateCameraRay(Ray& ray, DBL x, DBL y, DBL width, DBL height, 
           MTransPoint (ray.Origin, ray.Origin, mesh->Trans);
           MTransNormal (ray.Direction, ray.Direction, mesh->Trans);
         }
-        InitRayContainerState(ray);
+        parent.InitRayContainerState(ray);
       }
       else if (camera.Face_Distribution_Method == 3)
       {
@@ -1073,7 +1100,7 @@ bool TracePixel::CreateCameraRay(Ray& ray, DBL x, DBL y, DBL width, DBL height, 
           MTransPoint (ray.Origin, ray.Origin, mesh->Trans);
           MTransNormal (ray.Direction, ray.Direction, mesh->Trans);
         }
-        InitRayContainerState(ray);
+        parent.InitRayContainerState(ray);
       }
       break;
 
@@ -1090,7 +1117,7 @@ bool TracePixel::CreateCameraRay(Ray& ray, DBL x, DBL y, DBL width, DBL height, 
       if(useFocalBlur)
         JitterCameraRay(ray, x, y, ray_number);
 
-      InitRayContainerState(ray);
+      parent.InitRayContainerState(ray);
       break;
 
     case PROJ_CUBE_CAMERA:
@@ -1106,7 +1133,7 @@ bool TracePixel::CreateCameraRay(Ray& ray, DBL x, DBL y, DBL width, DBL height, 
       if(useFocalBlur)
         JitterCameraRay(ray, x, y, ray_number);
 
-      InitRayContainerState(ray);
+      parent.InitRayContainerState(ray);
       break;
 
     case PROJ_OCTA_CAMERA:
@@ -1122,7 +1149,7 @@ bool TracePixel::CreateCameraRay(Ray& ray, DBL x, DBL y, DBL width, DBL height, 
       if(useFocalBlur)
         JitterCameraRay(ray, x, y, ray_number);
 
-      InitRayContainerState(ray);
+      parent.InitRayContainerState(ray);
       break;
 
     case PROJ_ICOSA_CAMERA:
@@ -1138,7 +1165,7 @@ bool TracePixel::CreateCameraRay(Ray& ray, DBL x, DBL y, DBL width, DBL height, 
       if(useFocalBlur)
         JitterCameraRay(ray, x, y, ray_number);
 
-      InitRayContainerState(ray);
+      parent.InitRayContainerState(ray);
       break;
 
     case PROJ_PLATECARREE_CAMERA:
@@ -1154,7 +1181,7 @@ bool TracePixel::CreateCameraRay(Ray& ray, DBL x, DBL y, DBL width, DBL height, 
       if(useFocalBlur)
         JitterCameraRay(ray, x, y, ray_number);
 
-      InitRayContainerState(ray);
+      parent.InitRayContainerState(ray);
       break;
 
     case PROJ_MERCATOR_CAMERA:
@@ -1170,7 +1197,7 @@ bool TracePixel::CreateCameraRay(Ray& ray, DBL x, DBL y, DBL width, DBL height, 
       if(useFocalBlur)
         JitterCameraRay(ray, x, y, ray_number);
 
-      InitRayContainerState(ray);
+      parent.InitRayContainerState(ray);
       break;
 
     case PROJ_LAMBERT_AZI_CAMERA:
@@ -1186,7 +1213,7 @@ bool TracePixel::CreateCameraRay(Ray& ray, DBL x, DBL y, DBL width, DBL height, 
       if(useFocalBlur)
         JitterCameraRay(ray, x, y, ray_number);
 
-      InitRayContainerState(ray);
+      parent.InitRayContainerState(ray);
       break;
 
 
@@ -1204,7 +1231,7 @@ bool TracePixel::CreateCameraRay(Ray& ray, DBL x, DBL y, DBL width, DBL height, 
       if(useFocalBlur)
         JitterCameraRay(ray, x, y, ray_number);
 
-      InitRayContainerState(ray);
+      parent.InitRayContainerState(ray);
       break;
 
     case PROJ_BEHRMANN_CAMERA:
@@ -1221,7 +1248,7 @@ bool TracePixel::CreateCameraRay(Ray& ray, DBL x, DBL y, DBL width, DBL height, 
       if(useFocalBlur)
         JitterCameraRay(ray, x, y, ray_number);
 
-      InitRayContainerState(ray);
+      parent.InitRayContainerState(ray);
       break;
 
     case PROJ_CRASTER_CAMERA: /* 37°04' , 37*60= 2220 */
@@ -1238,7 +1265,7 @@ bool TracePixel::CreateCameraRay(Ray& ray, DBL x, DBL y, DBL width, DBL height, 
       if(useFocalBlur)
         JitterCameraRay(ray, x, y, ray_number);
 
-      InitRayContainerState(ray);
+      parent.InitRayContainerState(ray);
       break;
 
     case PROJ_EDWARDS_CAMERA: /* 37°24' */
@@ -1255,7 +1282,7 @@ bool TracePixel::CreateCameraRay(Ray& ray, DBL x, DBL y, DBL width, DBL height, 
       if(useFocalBlur)
         JitterCameraRay(ray, x, y, ray_number);
 
-      InitRayContainerState(ray);
+      parent.InitRayContainerState(ray);
       break;
 
     case PROJ_HOBO_DYER_CAMERA: /* 37°30' */
@@ -1272,7 +1299,7 @@ bool TracePixel::CreateCameraRay(Ray& ray, DBL x, DBL y, DBL width, DBL height, 
       if(useFocalBlur)
         JitterCameraRay(ray, x, y, ray_number);
 
-      InitRayContainerState(ray);
+      parent.InitRayContainerState(ray);
       break;
 
     case PROJ_PETERS_CAMERA:
@@ -1289,7 +1316,7 @@ bool TracePixel::CreateCameraRay(Ray& ray, DBL x, DBL y, DBL width, DBL height, 
       if(useFocalBlur)
         JitterCameraRay(ray, x, y, ray_number);
 
-      InitRayContainerState(ray);
+      parent.InitRayContainerState(ray);
       break;
 
     case PROJ_GALL_CAMERA:
@@ -1306,7 +1333,7 @@ bool TracePixel::CreateCameraRay(Ray& ray, DBL x, DBL y, DBL width, DBL height, 
       if(useFocalBlur)
         JitterCameraRay(ray, x, y, ray_number);
 
-      InitRayContainerState(ray);
+      parent.InitRayContainerState(ray);
       break;
 
     case PROJ_BALTHASART_CAMERA:
@@ -1323,7 +1350,7 @@ bool TracePixel::CreateCameraRay(Ray& ray, DBL x, DBL y, DBL width, DBL height, 
       if(useFocalBlur)
         JitterCameraRay(ray, x, y, ray_number);
 
-      InitRayContainerState(ray);
+      parent.InitRayContainerState(ray);
       break;
 
 
@@ -1340,7 +1367,7 @@ bool TracePixel::CreateCameraRay(Ray& ray, DBL x, DBL y, DBL width, DBL height, 
       if(useFocalBlur)
         JitterCameraRay(ray, x, y, ray_number);
 
-      InitRayContainerState(ray);
+      parent.InitRayContainerState(ray);
       break;
 
     case PROJ_MOLLWEIDE_CAMERA:
@@ -1356,7 +1383,7 @@ bool TracePixel::CreateCameraRay(Ray& ray, DBL x, DBL y, DBL width, DBL height, 
       if(useFocalBlur)
         JitterCameraRay(ray, x, y, ray_number);
 
-      InitRayContainerState(ray);
+      parent.InitRayContainerState(ray);
       break;
 
     case PROJ_AITOFF_CAMERA:
@@ -1372,7 +1399,7 @@ bool TracePixel::CreateCameraRay(Ray& ray, DBL x, DBL y, DBL width, DBL height, 
       if(useFocalBlur)
         JitterCameraRay(ray, x, y, ray_number);
 
-      InitRayContainerState(ray);
+      parent.InitRayContainerState(ray);
       break;
 
     case PROJ_ECKERT4_CAMERA:
@@ -1388,7 +1415,7 @@ bool TracePixel::CreateCameraRay(Ray& ray, DBL x, DBL y, DBL width, DBL height, 
       if(useFocalBlur)
         JitterCameraRay(ray, x, y, ray_number);
 
-      InitRayContainerState(ray);
+      parent.InitRayContainerState(ray);
       break;
 
     case PROJ_ECKERT6_CAMERA:
@@ -1404,7 +1431,7 @@ bool TracePixel::CreateCameraRay(Ray& ray, DBL x, DBL y, DBL width, DBL height, 
       if(useFocalBlur)
         JitterCameraRay(ray, x, y, ray_number);
 
-      InitRayContainerState(ray);
+      parent.InitRayContainerState(ray);
       break;
 
     case PROJ_MILLER_CAMERA:
@@ -1420,7 +1447,7 @@ bool TracePixel::CreateCameraRay(Ray& ray, DBL x, DBL y, DBL width, DBL height, 
       if(useFocalBlur)
         JitterCameraRay(ray, x, y, ray_number);
 
-      InitRayContainerState(ray);
+      parent.InitRayContainerState(ray);
       break;
 
     default:
@@ -1431,7 +1458,7 @@ bool TracePixel::CreateCameraRay(Ray& ray, DBL x, DBL y, DBL width, DBL height, 
   {
     VNormalize(ray.Direction, ray.Direction);
     Make_Vector(V1, x0, y0, 0.0);
-    Perturb_Normal(ray.Direction, camera.Tnormal, V1, NULL, NULL, threadData);
+    Perturb_Normal(ray.Direction, camera.Tnormal, V1, NULL, NULL, threadDataC);
   }
 
   VNormalize(ray.Direction, ray.Direction);
@@ -1571,7 +1598,7 @@ void TracePixel::TraceRayWithFocalBlur(Colour& colour, DBL x, DBL y, DBL width, 
       ray.ClearInteriors();
 
       // Create and trace ray.
-      if(CreateCameraRay(ray, x + dx, y + dy, width, height, nr))
+      if(CreateCameraRay(ray, x + dx, y + dy, width, height, nr, *this))
       {
         // Increase_Counter(stats[Number_Of_Samples]);
 
@@ -1622,7 +1649,7 @@ void TracePixel::TraceRayWithFocalBlur(Colour& colour, DBL x, DBL y, DBL width, 
   colour /= (DBL)nr;
 }
 
-void TracePixel::JitterCameraRay(Ray& ray, DBL x, DBL y, size_t ray_number)
+void TracePixelCameraData::JitterCameraRay(Ray& ray, DBL x, DBL y, size_t ray_number)
 {
   DBL xjit, yjit, xlen, ylen, r;
   VECTOR temp_xperp, temp_yperp, deflection;
