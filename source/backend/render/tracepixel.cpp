@@ -208,8 +208,8 @@ void TracePixelCameraData::SetupCamera(const Camera& cam)
   switch(camera.Type)
   {
     case GRID_CAMERA:
-      camera.TracePixels.reserve( camera.Grid_Size*camera.Grid_Size );
-      for(size_t c = 0;c<(camera.Grid_Size*camera.Grid_Size);++c)
+      camera.TracePixels.reserve( camera.GridSize[X]*camera.GridSize[Y] );
+      for(size_t c = 0;c<(camera.GridSize[X]*camera.GridSize[Y]);++c)
       {
          camera.TracePixels.push_back(*this);
          camera.TracePixels[c].SetupCamera( camera.Cameras[c] );
@@ -338,19 +338,20 @@ bool TracePixelCameraData::CreateCameraRay(Ray& ray, DBL x, DBL y, DBL width, DB
       x0 = x / width;//from 0 to 1
       y0 = y / height;//from 0 to 1
       unsigned int i,j;
-      i = x0*camera.Grid_Size;
-      i = std::min( camera.Grid_Size, i);
-      j = y0*camera.Grid_Size;
-      j = std::min( camera.Grid_Size, j);
+      i = x0*camera.GridSize[X];
+      i = std::min( camera.GridSize[X]-1, i);// from 0 to X-1
+      j = y0*camera.GridSize[Y];
+      j = std::min( camera.GridSize[Y]-1, j);// from 0 to Y-1
       x0 *= width;
       y0 *= height;
       x0 -= 0.5;
       y0 += 0.5;
-      x0 *= camera.Grid_Size;
-      y0 *= camera.Grid_Size;
+      x0 *= camera.GridSize[X];
+      y0 *= camera.GridSize[Y];
       x0 -= i*width;
       y0 -= j*height;
-      bool r = camera.TracePixels[i+j*camera.Grid_Size].CreateCameraRay(ray, x0, y0, width, height, ray_number, parent);
+      unsigned int w = i+j*camera.GridSize[X];
+      bool r = camera.TracePixels[w].CreateCameraRay(ray, x0, y0, width, height, ray_number, parent);
       if (r) VNormalize(ray.Direction, ray.Direction);
       return r;
     }

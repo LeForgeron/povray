@@ -253,7 +253,8 @@ void Camera::Init()
 	Face_Distribution_Method = 0;
 	Smooth = false;
 	Max_Ray_Distance = 0.0;
-   Grid_Size = 1;
+   GridSize[X] = 1;
+   GridSize[Y] = 1;
 }
 
 /*****************************************************************************
@@ -366,7 +367,8 @@ Camera& Camera::operator=(const Camera& src)
 	}
 	Smooth = src.Smooth;
    Cameras = src.Cameras;
-   Grid_Size = src.Grid_Size;
+   GridSize[X] = src.GridSize[X];
+   GridSize[Y] = src.GridSize[Y];
 
 	return *this;
 }

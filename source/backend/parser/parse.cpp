@@ -1328,13 +1328,15 @@ void Parser::Parse_Camera (Camera& Cam)
 
 		CASE (GRID_TOKEN)
          Cam.Type = GRID_CAMERA;
-         Cam.Grid_Size = (unsigned int)Parse_Float();
-         if (Cam.Grid_Size == 0)
+         Parse_Vector(tempv);
+         Cam.GridSize[X] = tempv[X];
+         Cam.GridSize[Y] = tempv[Y];
+         if ((Cam.GridSize[X] == 0)||(Cam.GridSize[Y] == 0))
          {
            Error("Grid size of camera may not be 0");
          }
-         Cam.Cameras.reserve(Cam.Grid_Size*Cam.Grid_Size);
-         for(size_t c=0;c<(Cam.Grid_Size*Cam.Grid_Size);++c)
+         Cam.Cameras.reserve(Cam.GridSize[X]*Cam.GridSize[Y]);
+         for(size_t c=0;c<(Cam.GridSize[X]*Cam.GridSize[Y]);++c)
          {
             EXPECT
                CASE (CAMERA_ID_TOKEN)

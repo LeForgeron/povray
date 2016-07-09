@@ -127,7 +127,7 @@ public:
   // the following declarations are used for the grid camera
   vector<Camera> Cameras; // list of camera as sub-part
   mutable vector<TracePixelCameraData> TracePixels; // list of camera as sub-part
-  unsigned int Grid_Size;// division of picture in part
+  unsigned int GridSize[2];// division of picture in part
   //
 
   Camera();
