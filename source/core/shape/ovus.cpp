@@ -45,16 +45,18 @@
 *
 *  ovus
 *  {
-*     bottom_radius,top_radius
+*     bottom_radius,top_radius [distance d] [radius r]
 *  }
 *
 *  The so long awaited 'Egg' forms.
 *
 *  Normally, the bottom_radius is bigger than the top_radius
-*  the center of the top sphere is at the zenith of the bottom sphere
+*  the center of the top sphere is at the zenith of the bottom sphere, unless
+*    a greater distance d is specified with "distance"
 *  and the bottom sphere is centered at 0.0
 *  The radius of the connecting surface is the double of the biggest radius
 *   (yes, the biggest diameter is used as the curvature of the connection)
+*   unless overriden with "radius"
 *
 *  The hard part was just to find where the connection starts and ends.
 *
@@ -86,13 +88,13 @@ namespace pov
 * Local preprocessor defines
 ******************************************************************************/
 
-// Minimal depth for a valid intersection.
-// TODO FIXME - can we use EPSILON or a similar more generic constant instead?
-const DBL DEPTH_TOLERANCE = 1.0e-4;
-
 // Tolerance used for order reduction during root finding.
 // TODO FIXME - can we use EPSILON or a similar more generic constant instead?
-const DBL ROOT_TOLERANCE = 1.0e-4;
+const DBL ROOT_TOLERANCE = 1.0e-7;
+// 1.0e-4 give noise for ovus { 3, 1.25 distance 14 radius 7000 sturm }
+// 1.0-e3 give good result for radius 7000, yet amplify a line of illuminated interior surface 
+// and 1.0e-10 gives grainy / transparent spindle part for ovus { 1.5, 0.5 radius 4 distance 2.5 sturm }
+// Compromise to 1.0e-7 : no grainy nor line for ovus { 1.5, 0.5 ..., and ok with ovus { 3, 1.25 distance 14 radius 700 sturm } (yep, the difference between radius 700 and 7000 is quasi invisible for an object of size 14)
 
 
 
@@ -114,6 +116,7 @@ void Ovus::Intersect_Ovus_Spheres(const Vector3d& P, const Vector3d& D,
     *Depth1 = *Depth2 = *Depth3 = *Depth4 = *Depth5 = *Depth6 = -100; // TODO FIXME - magic value
     // no hit unless...
 
+    // compute intersection with bottom sphere
     Padj = -P;
     Rad1 = Sqr(BottomRadius);
     Rad2 = Sqr(TopRadius);
@@ -144,8 +147,10 @@ void Ovus::Intersect_Ovus_Spheres(const Vector3d& P, const Vector3d& D,
             }
         }
     }
+    // shape can only have a maximum of 2 intersections, if we have them already, return
     if (lcount > 1) return;
-    Second_Center = Vector3d(0, BottomRadius, 0);
+    // compute intersection with top sphere
+    Second_Center = Vector3d(0, VerticalSpherePosition, 0);
     Padj = Second_Center - P;
 
     OCSquared = Padj.lengthSqr();
@@ -176,7 +181,9 @@ void Ovus::Intersect_Ovus_Spheres(const Vector3d& P, const Vector3d& D,
 
         }
     }
+    // shape can only have a maximum of 2 intersections, if we have them already, return
     if (lcount > 1) return;
+    // need to evaluate the spindle of the torus, because intersions are not yet all found
     Second_Center = Vector3d(0, VerticalPosition, 0);
     Padj = P - Second_Center;
     R2 = Sqr(HorizontalPosition);
@@ -326,7 +333,7 @@ bool Ovus::All_Intersections(const Ray& ray, IStack& Depth_Stack, SceneThreadDat
             if (Clip.empty()||(Point_In_Clip(Real_Pt, Clip, Thread)))
             {
                 INormal = IPoint;
-                INormal[Y] -= BottomRadius;
+                INormal[Y] -= VerticalSpherePosition;
                 INormal /= TopRadius;
                 MTransNormal(Real_Normal, INormal, Trans);
                 Real_Normal.normalize();
@@ -345,7 +352,7 @@ bool Ovus::All_Intersections(const Ray& ray, IStack& Depth_Stack, SceneThreadDat
             if (Clip.empty()||(Point_In_Clip(Real_Pt, Clip, Thread)))
             {
                 INormal = IPoint;
-                INormal[Y] -= BottomRadius;
+                INormal[Y] -= VerticalSpherePosition;
                 INormal /= TopRadius;
                 MTransNormal(Real_Normal, INormal, Trans);
                 Real_Normal.normalize();
@@ -439,7 +446,7 @@ bool Ovus::Inside(const Vector3d& IPoint, TraceThreadData *Thread) const
     DBL horizontal, vertical;
     bool INSide = false;
     Vector3d Origin, New_Point, Other;
-    Origin = Vector3d(0, BottomRadius, 0);
+    Origin = Vector3d(0, VerticalSpherePosition, 0);
     MInvTransPoint(New_Point, IPoint, Trans);
     OCSquared = New_Point.lengthSqr();
     if (OCSquared < Sqr(BottomRadius))
@@ -702,6 +709,7 @@ Ovus::Ovus() : ObjectBase(OVUS_OBJECT)
     BottomVertical = 0.0;
     TopVertical = 0.0;
     ConnectingRadius = 0.0;
+    VerticalSpherePosition = 0.0;
 }
 
 
@@ -817,7 +825,11 @@ void Ovus::Compute_BBox()
 {
     // Compute the biggest vertical cylinder radius
     DBL biggest;
+    DBL bottom;
+    DBL length;
     biggest = ConnectingRadius - HorizontalPosition;
+    bottom = -BottomRadius;
+    length = BottomRadius + VerticalSpherePosition + TopRadius;
     if (biggest < BottomRadius)
     {
         biggest = BottomRadius;
@@ -826,9 +838,15 @@ void Ovus::Compute_BBox()
     {
         biggest = TopRadius;
     }
+    // handle degenerated ovus in sphere
+    if (!BottomRadius)
+    {
+        bottom = VerticalSpherePosition-TopRadius;
+        length = 2*TopRadius;
+    }
 
-    Make_BBox(BBox, -biggest, -BottomRadius, -biggest,
-              2.0 * biggest, 2.0 * BottomRadius + TopRadius, 2.0 * biggest);
+    Make_BBox(BBox, -biggest, bottom, -biggest,
+            2.0 * biggest, length, 2.0 * biggest);
 
     Recompute_BBox(&BBox, Trans);
 }
@@ -889,46 +907,58 @@ void Ovus::UVCoord(Vector2d& Result, const Intersection *Inter, TraceThreadData 
 *
 * CHANGES
 *
+* due to the addition of distance, the mapping is changed to something similar
+* to lemon, cone & cylinder
+*
 ******************************************************************************/
 
 void Ovus::CalcUV(const Vector3d& IPoint, Vector2d& Result) const
 {
-    DBL len, x, y, z;
+    DBL len, x, z, t;
     DBL phi, theta;
     Vector3d P;
 
-    // Transform the ray into the ovus space.
+    // Transform the point back into the ovus space.
     MInvTransPoint(P, IPoint, Trans);
-
-    // the center of UV coordinate is the bottom center when top radius ->0
-    // and it is the top center when top radius -> 2.0* bottom radius
-    // when top radius == bottom radius, it is half-way between both center
-    //
-    // bottom center is <0,0,0>
-    // top center is <0,BottomRadius,0>
-    // TODO FIXME - comment doesn't seem to match the following code
+    // the center of UV coordinate is the <0,0> point
     x = P[X];
-//  y = P[Y] - BottomRadius*(TopRadius/(2.0*BottomRadius));
-    y = P[Y] - (TopRadius/2.0);
     z = P[Z];
 
-    // now assume it's just a sphere, for UV mapping/projection
-    len = sqrt(x * x + y * y + z * z);
+    // Determine its angle from the point (0, 0, 0) in the x-z plane.
+    len = x * x + z * z;
 
-    if (len == 0.0)
-        return;
+    if ((P[Y]>EPSILON)&&(P[Y]<(VerticalSpherePosition-EPSILON)))
+    {
+    // when not on a face, the range 0.25 to 0.75 is used (just plain magic 25% for face, no other reason, but it makes C-Lipka happy)
+        phi = 0.75-0.5*(P[Y])/(VerticalSpherePosition);
+    }
+    else if (P[Y]>EPSILON)
+    {
+    // aka P[Y] is above VerticalSpherePositon, use TopRadius, from 0% to 25%
+       phi = 0.0;
+       if (TopRadius)
+       {
+            t = ((P[Y]-VerticalSpherePosition)/(TopRadius));
+            phi = (sin(sqrt(1-t)*M_PI_2)/(4.0));
+       }
+    }
     else
     {
-        x /= len;
-        y /= len;
-        z /= len;
+    // aka P[Y] is below origin (<0), use BottomRadius, from 75% to 100%
+       phi = 1.0;
+       if (BottomRadius)
+       {
+          t = ((BottomRadius+P[Y])/(BottomRadius));
+          phi = 1.0-sin(sqrt(t)*M_PI_2)/(4.0);
+       }
+       else if (TopRadius)
+       {
+        // degenerate ovus in sphere
+          t = ((TopRadius-VerticalSpherePosition+P[Y])/(TopRadius));
+          phi = 1.0-sin(sqrt(t)*M_PI_2)/(4.0);
+       }
     }
 
-    // Determine its angle from the x-z plane.
-    phi = 0.5 + asin(y) / M_PI; // This will be from 0 to 1
-
-    // Determine its angle from the point (1, 0, 0) in the x-z plane.
-    len = x * x + z * z;
 
     if (len > EPSILON)
     {
