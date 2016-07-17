@@ -45,7 +45,7 @@
 *
 *  ovus
 *  {
-*     bottom_radius,top_radius [distance d] [radius r]
+*     bottom_radius,top_radius [distance d] [radius r] [precision p]   [sturm]
 *  }
 *
 *  The so long awaited 'Egg' forms.
@@ -87,14 +87,6 @@ namespace pov
 /*****************************************************************************
 * Local preprocessor defines
 ******************************************************************************/
-
-// Tolerance used for order reduction during root finding.
-// TODO FIXME - can we use EPSILON or a similar more generic constant instead?
-const DBL ROOT_TOLERANCE = 1.0e-7;
-// 1.0e-4 give noise for ovus { 3, 1.25 distance 14 radius 7000 sturm }
-// 1.0-e3 give good result for radius 7000, yet amplify a line of illuminated interior surface 
-// and 1.0e-10 gives grainy / transparent spindle part for ovus { 1.5, 0.5 radius 4 distance 2.5 sturm }
-// Compromise to 1.0e-7 : no grainy nor line for ovus { 1.5, 0.5 ..., and ok with ovus { 3, 1.25 distance 14 radius 700 sturm } (yep, the difference between radius 700 and 7000 is quasi invisible for an object of size 14)
 
 
 
@@ -207,7 +199,7 @@ void Ovus::Intersect_Ovus_Spheres(const Vector3d& P, const Vector3d& D,
 
     c[4] = k1 * k1 + 4.0 * R2 * (Py2 - r2);
 
-    n = Solve_Polynomial(4, c, r, Test_Flag(this, STURM_FLAG), ROOT_TOLERANCE, Thread);
+    n = Solve_Polynomial(4, c, r, Test_Flag(this, STURM_FLAG), RootTolerance, Thread);
     while (n--)
     {
         // here we only keep the 'lemon' inside the torus
@@ -224,7 +216,7 @@ void Ovus::Intersect_Ovus_Spheres(const Vector3d& P, const Vector3d& D,
         {
             horizontal = sqrt(Sqr(IPoint[X]) + Sqr(IPoint[Z]));
             OCSquared = Sqr((horizontal + HorizontalPosition)) + Sqr((vertical - VerticalPosition));
-            if (fabs(OCSquared - Sqr(ConnectingRadius)) < ROOT_TOLERANCE)
+            if (fabs(OCSquared - Sqr(ConnectingRadius)) < RootTolerance)
             {
                 if (*Depth5 < 0)
                 {
@@ -710,6 +702,11 @@ Ovus::Ovus() : ObjectBase(OVUS_OBJECT)
     TopVertical = 0.0;
     ConnectingRadius = 0.0;
     VerticalSpherePosition = 0.0;
+    RootTolerance = 1.0e-4;
+    // 1.0e-4 give noise for ovus { 3, 1.25 distance 14 radius 7000 sturm }
+    // 1.0-e3 give good result for radius 7000, yet amplify a line of illuminated interior surface 
+    // and 1.0e-10 gives grainy / transparent spindle part for ovus { 1.5, 0.5 radius 4 distance 2.5 sturm }
+    // Compromise to 1.0e-7 : no grainy nor line for ovus { 1.5, 0.5 ..., and ok with ovus { 3, 1.25 distance 14 radius 700 sturm } (yep, the difference between radius 700 and 7000 is quasi invisible for an object of size 14)
 }
 
 

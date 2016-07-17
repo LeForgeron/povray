@@ -90,6 +90,8 @@ class Ovus : public ObjectBase
         DBL ConnectingRadius;
         /// vertical position of center of top sphere (computed or provided in SDL)
         DBL VerticalSpherePosition;
+        /// precision for root solver
+        DBL RootTolerance;
 
     private:
         void CalcUV(const Vector3d& IPoint, Vector2d& Result) const;
