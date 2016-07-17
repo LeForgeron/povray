@@ -41,7 +41,7 @@
 *
 *  ovus
 *  {
-*     bottom_radius,top_radius [distance d] [radius r]
+*     bottom_radius,top_radius [distance d] [radius r] [precision p]   [sturm]
 *  }
 *
 *  The so long awaited 'Egg' forms.
@@ -82,155 +82,146 @@ namespace pov
 * Local preprocessor defines
 ******************************************************************************/
 
-// Tolerance used for order reduction during root finding.
-// TODO FIXME - can we use EPSILON or a similar more generic constant instead?
-const DBL ROOT_TOLERANCE = 1.0e-7;
-// 1.0e-4 give noise for ovus { 3, 1.25 distance 14 radius 7000 sturm }
-// 1.0-e3 give good result for radius 7000, yet amplify a line of illuminated interior surface 
-// and 1.0e-10 gives grainy / transparent spindle part for ovus { 1.5, 0.5 radius 4 distance 2.5 sturm }
-// Compromise to 1.0e-7 : no grainy nor line for ovus { 1.5, 0.5 ..., and ok with ovus { 3, 1.25 distance 14 radius 700 sturm } (yep, the difference between radius 700 and 7000 is quasi invisible for an object of size 14)
-
-
 
 void Ovus::Intersect_Ovus_Spheres(const VECTOR &P, const VECTOR &D,
                                   DBL * Depth1, DBL * Depth2, DBL * Depth3,
                                   DBL * Depth4, DBL * Depth5, DBL * Depth6,
                                   SceneThreadData *Thread) const
 {
-	DBL OCSquared, t_Closest_Approach, Half_Chord, t_Half_Chord_Squared;
-	VECTOR Padj, Ipoint;
-	VECTOR IPoint;
-	DBL R2, r2, Py2, Dy2, PDy2, k1, k2, horizontal, vertical;
-	DBL Rad1, Rad2;
-	int n;
-	int lcount=0;
-	VECTOR Second_Center;
-	DBL c[5], r[4];
+    DBL OCSquared, t_Closest_Approach, Half_Chord, t_Half_Chord_Squared;
+    VECTOR Padj, Ipoint;
+    VECTOR IPoint;
+    DBL R2, r2, Py2, Dy2, PDy2, k1, k2, horizontal, vertical;
+    DBL Rad1, Rad2;
+    int n;
+    int lcount=0;
+    VECTOR Second_Center;
+    DBL c[5], r[4];
 
-	*Depth1 = *Depth2 = *Depth3 = *Depth4 = *Depth5 = *Depth6 = -100; // TODO FIXME - magic value
-	// no hit unless...
+    *Depth1 = *Depth2 = *Depth3 = *Depth4 = *Depth5 = *Depth6 = -100; // TODO FIXME - magic value
+    // no hit unless...
 
   // compute intersection with bottom sphere
-	VScale(Padj, P, -1);
-	Rad1 = Sqr(BottomRadius);
-	Rad2 = Sqr(TopRadius);
-	VDot(OCSquared, Padj, Padj);
+    VScale(Padj, P, -1);
+    Rad1 = Sqr(BottomRadius);
+    Rad2 = Sqr(TopRadius);
+    VDot(OCSquared, Padj, Padj);
 
-	VDot(t_Closest_Approach, Padj, D);
+    VDot(t_Closest_Approach, Padj, D);
 
-	if ((OCSquared < Rad1) || (t_Closest_Approach > EPSILON))
-	{
+    if ((OCSquared < Rad1) || (t_Closest_Approach > EPSILON))
+    {
 
-		t_Half_Chord_Squared = Rad1 - OCSquared + Sqr(t_Closest_Approach);
+        t_Half_Chord_Squared = Rad1 - OCSquared + Sqr(t_Closest_Approach);
 
-		if (t_Half_Chord_Squared > EPSILON)
-		{
-			Half_Chord = sqrt(t_Half_Chord_Squared);
+        if (t_Half_Chord_Squared > EPSILON)
+        {
+            Half_Chord = sqrt(t_Half_Chord_Squared);
 
-			*Depth1 = t_Closest_Approach - Half_Chord;
-			*Depth2 = t_Closest_Approach + Half_Chord;
-			VEvaluateRay(IPoint, P, *Depth1, D);
-			if (IPoint[Y] < BottomVertical)
-			{
-				lcount++;
-			}
-			VEvaluateRay(IPoint, P, *Depth2, D);
-			if (IPoint[Y] < BottomVertical)
-			{
-				lcount++;
-			}
-		}
-	}
+            *Depth1 = t_Closest_Approach - Half_Chord;
+            *Depth2 = t_Closest_Approach + Half_Chord;
+            VEvaluateRay(IPoint, P, *Depth1, D);
+            if (IPoint[Y] < BottomVertical)
+            {
+                lcount++;
+            }
+            VEvaluateRay(IPoint, P, *Depth2, D);
+            if (IPoint[Y] < BottomVertical)
+            {
+                lcount++;
+            }
+        }
+    }
   // shape can only have a maximum of 2 intersections, if we have them already, return
-	if (lcount > 1) return;
+    if (lcount > 1) return;
   // compute intersection with top sphere
-	Make_Vector(Second_Center, 0, VerticalSpherePosition, 0);
-	VSub(Padj, Second_Center, P);
+    Make_Vector(Second_Center, 0, VerticalSpherePosition, 0);
+    VSub(Padj, Second_Center, P);
 
-	VDot(OCSquared, Padj, Padj);
+    VDot(OCSquared, Padj, Padj);
 
-	VDot(t_Closest_Approach, Padj, D);
+    VDot(t_Closest_Approach, Padj, D);
 
-	if ((OCSquared < Rad2) || (t_Closest_Approach > EPSILON))
-	{
+    if ((OCSquared < Rad2) || (t_Closest_Approach > EPSILON))
+    {
 
-		t_Half_Chord_Squared = Rad2 - OCSquared + Sqr(t_Closest_Approach);
+        t_Half_Chord_Squared = Rad2 - OCSquared + Sqr(t_Closest_Approach);
 
-		if (t_Half_Chord_Squared > EPSILON)
-		{
-			Half_Chord = sqrt(t_Half_Chord_Squared);
+        if (t_Half_Chord_Squared > EPSILON)
+        {
+            Half_Chord = sqrt(t_Half_Chord_Squared);
 
-			*Depth3 = t_Closest_Approach - Half_Chord;
-			*Depth4 = t_Closest_Approach + Half_Chord;
-			VEvaluateRay(IPoint, P, *Depth3, D);
-			if (IPoint[Y] > TopVertical)
-			{
-				lcount++;
-			}
-			VEvaluateRay(IPoint, P, *Depth4, D);
-			if (IPoint[Y] > TopVertical)
-			{
-				lcount++;
-			}
+            *Depth3 = t_Closest_Approach - Half_Chord;
+            *Depth4 = t_Closest_Approach + Half_Chord;
+            VEvaluateRay(IPoint, P, *Depth3, D);
+            if (IPoint[Y] > TopVertical)
+            {
+                lcount++;
+            }
+            VEvaluateRay(IPoint, P, *Depth4, D);
+            if (IPoint[Y] > TopVertical)
+            {
+                lcount++;
+            }
 
-		}
-	}
+        }
+    }
   // shape can only have a maximum of 2 intersections, if we have them already, return
-	if (lcount > 1) return;
+    if (lcount > 1) return;
   // need to evaluate the spindle of the torus, because intersions are not yet all found
-	Make_Vector(Second_Center, 0, VerticalPosition, 0);
-	VSub(Padj, P, Second_Center);
-	R2 = Sqr(HorizontalPosition);
-	r2 = Sqr(ConnectingRadius);
-	// Notice : ConnectingRadius > HorizontalPosition here !
+    Make_Vector(Second_Center, 0, VerticalPosition, 0);
+    VSub(Padj, P, Second_Center);
+    R2 = Sqr(HorizontalPosition);
+    r2 = Sqr(ConnectingRadius);
+    // Notice : ConnectingRadius > HorizontalPosition here !
 
-	Py2 = Padj[Y] * Padj[Y];
-	Dy2 = D[Y] * D[Y];
-	PDy2 = Padj[Y] * D[Y];
+    Py2 = Padj[Y] * Padj[Y];
+    Dy2 = D[Y] * D[Y];
+    PDy2 = Padj[Y] * D[Y];
 
-	k1 = Padj[X] * Padj[X] + Padj[Z] * Padj[Z] + Py2 - R2 - r2;
-	k2 = Padj[X] * D[X] + Padj[Z] * D[Z] + PDy2;
-	// this is just like a big torus
-	c[0] = 1.0;
+    k1 = Padj[X] * Padj[X] + Padj[Z] * Padj[Z] + Py2 - R2 - r2;
+    k2 = Padj[X] * D[X] + Padj[Z] * D[Z] + PDy2;
+    // this is just like a big torus
+    c[0] = 1.0;
 
-	c[1] = 4.0 * k2;
+    c[1] = 4.0 * k2;
 
-	c[2] = 2.0 * (k1 + 2.0 * (k2 * k2 + R2 * Dy2));
+    c[2] = 2.0 * (k1 + 2.0 * (k2 * k2 + R2 * Dy2));
 
-	c[3] = 4.0 * (k2 * k1 + 2.0 * R2 * PDy2);
+    c[3] = 4.0 * (k2 * k1 + 2.0 * R2 * PDy2);
 
-	c[4] = k1 * k1 + 4.0 * R2 * (Py2 - r2);
+    c[4] = k1 * k1 + 4.0 * R2 * (Py2 - r2);
 
-	n = Solve_Polynomial(4, c, r, Test_Flag(this, STURM_FLAG), ROOT_TOLERANCE, Thread);
-	while (n--)
-	{
-		// here we only keep the 'lemon' inside the torus
-		// and dismiss the 'apple'
-		// If you find a solution to resolve the rotation of
-		//   (x + r)^2 + y^2 = R^2 around y (so replacing x by sqrt(x^2+z^2))
-		// with something which is faster than a 4th degree polynome,
-		// please feel welcome to update and share...
+    n = Solve_Polynomial(4, c, r, Test_Flag(this, STURM_FLAG), RootTolerance, Thread);
+    while (n--)
+    {
+        // here we only keep the 'lemon' inside the torus
+        // and dismiss the 'apple'
+        // If you find a solution to resolve the rotation of
+        //   (x + r)^2 + y^2 = R^2 around y (so replacing x by sqrt(x^2+z^2))
+        // with something which is faster than a 4th degree polynome,
+        // please feel welcome to update and share...
 
-		VEvaluateRay(Ipoint, P, r[n], D);
+        VEvaluateRay(Ipoint, P, r[n], D);
 
-		vertical = Ipoint[Y];
-		if ((vertical > BottomVertical) && (vertical < TopVertical))
-		{
-			horizontal = sqrt(Sqr(Ipoint[X]) + Sqr(Ipoint[Z]));
-			OCSquared = Sqr((horizontal + HorizontalPosition)) + Sqr((vertical - VerticalPosition));
-			if (fabs(OCSquared - Sqr(ConnectingRadius)) < ROOT_TOLERANCE)
-			{
-				if (*Depth5 < 0)
-				{
-					*Depth5 = r[n];
-				}
-				else
-				{
-					*Depth6 = r[n];
-				}
-			}
-		}
-	}
+        vertical = Ipoint[Y];
+        if ((vertical > BottomVertical) && (vertical < TopVertical))
+        {
+            horizontal = sqrt(Sqr(Ipoint[X]) + Sqr(Ipoint[Z]));
+            OCSquared = Sqr((horizontal + HorizontalPosition)) + Sqr((vertical - VerticalPosition));
+            if (fabs(OCSquared - Sqr(ConnectingRadius)) < RootTolerance)
+            {
+                if (*Depth5 < 0)
+                {
+                    *Depth5 = r[n];
+                }
+                else
+                {
+                    *Depth6 = r[n];
+                }
+            }
+        }
+    }
 }
 /*****************************************************************************
 *
@@ -268,141 +259,141 @@ void Ovus::Intersect_Ovus_Spheres(const VECTOR &P, const VECTOR &D,
 
 bool Ovus::All_Intersections(const Ray& ray, IStack& Depth_Stack, SceneThreadData *Thread)
 {
-	bool Found = false;
-	VECTOR Real_Normal, Real_Pt, INormal, IPoint;
-	DBL Depth1, Depth2, Depth3, Depth4, Depth5, Depth6;
-	DBL len, horizontal;
-	VECTOR P,D;
+    bool Found = false;
+    VECTOR Real_Normal, Real_Pt, INormal, IPoint;
+    DBL Depth1, Depth2, Depth3, Depth4, Depth5, Depth6;
+    DBL len, horizontal;
+    VECTOR P,D;
 
-	Thread->Stats()[Ray_Ovus_Tests]++;
-	MInvTransPoint(P, ray.Origin, Trans);
-	MInvTransDirection(D, ray.Direction, Trans);
-	VLength(len, D);
-	VInverseScaleEq(D, len);
+    Thread->Stats()[Ray_Ovus_Tests]++;
+    MInvTransPoint(P, ray.Origin, Trans);
+    MInvTransDirection(D, ray.Direction, Trans);
+    VLength(len, D);
+    VInverseScaleEq(D, len);
 
-	Intersect_Ovus_Spheres(P, D, &Depth1, &Depth2, &Depth3,
-	                       &Depth4, &Depth5, &Depth6, Thread);
-	if (Depth1 > EPSILON)
-	{
-		VEvaluateRay(IPoint, P, Depth1, D);
-		if (IPoint[Y] < BottomVertical)
-		{
-			MTransPoint(Real_Pt, IPoint, Trans);
-			if (Clip.empty()||(Point_In_Clip(Real_Pt, Clip, Thread)))
-			{
-				Assign_Vector(INormal, IPoint);
-				VInverseScaleEq(INormal, BottomRadius);
-				MTransNormal(Real_Normal, INormal, Trans);
-				VNormalizeEq(Real_Normal);
-				Depth_Stack->push(Intersection(Depth1/len, Real_Pt, Real_Normal, this));
-				Found = true;
-			}
-		}
-	}
+    Intersect_Ovus_Spheres(P, D, &Depth1, &Depth2, &Depth3,
+                           &Depth4, &Depth5, &Depth6, Thread);
+    if (Depth1 > EPSILON)
+    {
+        VEvaluateRay(IPoint, P, Depth1, D);
+        if (IPoint[Y] < BottomVertical)
+        {
+            MTransPoint(Real_Pt, IPoint, Trans);
+            if (Clip.empty()||(Point_In_Clip(Real_Pt, Clip, Thread)))
+            {
+                Assign_Vector(INormal, IPoint);
+                VInverseScaleEq(INormal, BottomRadius);
+                MTransNormal(Real_Normal, INormal, Trans);
+                VNormalizeEq(Real_Normal);
+                Depth_Stack->push(Intersection(Depth1/len, Real_Pt, Real_Normal, this));
+                Found = true;
+            }
+        }
+    }
 
-	if (Depth2 > EPSILON)
-	{
-		VEvaluateRay(IPoint, P, Depth2, D);
+    if (Depth2 > EPSILON)
+    {
+        VEvaluateRay(IPoint, P, Depth2, D);
 
-		if (IPoint[Y] < BottomVertical)
-		{
-			MTransPoint(Real_Pt, IPoint, Trans);
-			if (Clip.empty()||(Point_In_Clip(Real_Pt, Clip, Thread)))
-			{
-				Assign_Vector(INormal, IPoint);
-				VInverseScaleEq(INormal, BottomRadius);
-				MTransNormal(Real_Normal, INormal, Trans);
-				VNormalizeEq(Real_Normal);
-				Depth_Stack->push(Intersection(Depth2/len, Real_Pt, Real_Normal, this));
-				Found = true;
-			}
-		}
-	}
+        if (IPoint[Y] < BottomVertical)
+        {
+            MTransPoint(Real_Pt, IPoint, Trans);
+            if (Clip.empty()||(Point_In_Clip(Real_Pt, Clip, Thread)))
+            {
+                Assign_Vector(INormal, IPoint);
+                VInverseScaleEq(INormal, BottomRadius);
+                MTransNormal(Real_Normal, INormal, Trans);
+                VNormalizeEq(Real_Normal);
+                Depth_Stack->push(Intersection(Depth2/len, Real_Pt, Real_Normal, this));
+                Found = true;
+            }
+        }
+    }
 
-	if (Depth3 > EPSILON)
-	{
-		VEvaluateRay(IPoint, P, Depth3, D);
+    if (Depth3 > EPSILON)
+    {
+        VEvaluateRay(IPoint, P, Depth3, D);
 
-		if (IPoint[Y] > TopVertical)
-		{
-			MTransPoint(Real_Pt, IPoint, Trans);
-			if (Clip.empty()||(Point_In_Clip(Real_Pt, Clip, Thread)))
-			{
-				Assign_Vector(INormal, IPoint);
-				INormal[Y] -= VerticalSpherePosition;
-				VInverseScaleEq(INormal, TopRadius);
-				MTransNormal(Real_Normal, INormal, Trans);
-				VNormalizeEq(Real_Normal);
-				Depth_Stack->push(Intersection(Depth3/len, Real_Pt, Real_Normal, this));
-				Found = true;
-			}
-		}
-	}
-	if (Depth4 > EPSILON)
-	{
-		VEvaluateRay(IPoint, P, Depth4, D);
+        if (IPoint[Y] > TopVertical)
+        {
+            MTransPoint(Real_Pt, IPoint, Trans);
+            if (Clip.empty()||(Point_In_Clip(Real_Pt, Clip, Thread)))
+            {
+                Assign_Vector(INormal, IPoint);
+                INormal[Y] -= VerticalSpherePosition;
+                VInverseScaleEq(INormal, TopRadius);
+                MTransNormal(Real_Normal, INormal, Trans);
+                VNormalizeEq(Real_Normal);
+                Depth_Stack->push(Intersection(Depth3/len, Real_Pt, Real_Normal, this));
+                Found = true;
+            }
+        }
+    }
+    if (Depth4 > EPSILON)
+    {
+        VEvaluateRay(IPoint, P, Depth4, D);
 
-		if (IPoint[Y] > TopVertical)
-		{
-			MTransPoint(Real_Pt, IPoint, Trans);
-			if (Clip.empty()||(Point_In_Clip(Real_Pt, Clip, Thread)))
-			{
-				Assign_Vector(INormal, IPoint);
-				INormal[Y] -= VerticalSpherePosition;
-				VInverseScaleEq(INormal, TopRadius);
-				MTransNormal(Real_Normal, INormal, Trans);
-				VNormalizeEq(Real_Normal);
-				Depth_Stack->push(Intersection(Depth4/len, Real_Pt, Real_Normal, this));
-				Found = true;
-			}
-		}
-	}
+        if (IPoint[Y] > TopVertical)
+        {
+            MTransPoint(Real_Pt, IPoint, Trans);
+            if (Clip.empty()||(Point_In_Clip(Real_Pt, Clip, Thread)))
+            {
+                Assign_Vector(INormal, IPoint);
+                INormal[Y] -= VerticalSpherePosition;
+                VInverseScaleEq(INormal, TopRadius);
+                MTransNormal(Real_Normal, INormal, Trans);
+                VNormalizeEq(Real_Normal);
+                Depth_Stack->push(Intersection(Depth4/len, Real_Pt, Real_Normal, this));
+                Found = true;
+            }
+        }
+    }
 
-	if (Depth5 > EPSILON)
-	{
-		VEvaluateRay(IPoint, P, Depth5, D);
-		MTransPoint(Real_Pt, IPoint, Trans);
+    if (Depth5 > EPSILON)
+    {
+        VEvaluateRay(IPoint, P, Depth5, D);
+        MTransPoint(Real_Pt, IPoint, Trans);
 
-		if (Clip.empty()||(Point_In_Clip(Real_Pt, Clip, Thread)))
-		{
-			Assign_Vector(INormal, IPoint);
+        if (Clip.empty()||(Point_In_Clip(Real_Pt, Clip, Thread)))
+        {
+            Assign_Vector(INormal, IPoint);
 
-			INormal[Y] -= VerticalPosition;
-			horizontal = sqrt(Sqr(INormal[X]) + Sqr(INormal[Z]));
-			INormal[X] += (INormal[X] * HorizontalPosition / horizontal);
-			INormal[Z] += (INormal[Z] * HorizontalPosition / horizontal);
-			VNormalizeEq(INormal);
-			MTransNormal(Real_Normal, INormal, Trans);
-			VNormalizeEq(Real_Normal);
-			Depth_Stack->push(Intersection(Depth5/len, Real_Pt, Real_Normal, this));
-			Found = true;
-		}
-	}
-	if (Depth6 > EPSILON)
-	{
-		VEvaluateRay(IPoint, P, Depth6, D);
-		MTransPoint(Real_Pt, IPoint, Trans);
+            INormal[Y] -= VerticalPosition;
+            horizontal = sqrt(Sqr(INormal[X]) + Sqr(INormal[Z]));
+            INormal[X] += (INormal[X] * HorizontalPosition / horizontal);
+            INormal[Z] += (INormal[Z] * HorizontalPosition / horizontal);
+            VNormalizeEq(INormal);
+            MTransNormal(Real_Normal, INormal, Trans);
+            VNormalizeEq(Real_Normal);
+            Depth_Stack->push(Intersection(Depth5/len, Real_Pt, Real_Normal, this));
+            Found = true;
+        }
+    }
+    if (Depth6 > EPSILON)
+    {
+        VEvaluateRay(IPoint, P, Depth6, D);
+        MTransPoint(Real_Pt, IPoint, Trans);
 
-		if (Clip.empty()||(Point_In_Clip(Real_Pt, Clip, Thread)))
-		{
-			Assign_Vector(INormal, IPoint);
-			INormal[Y] -= VerticalPosition;
-			horizontal = sqrt(Sqr(INormal[X]) + Sqr(INormal[Z]));
-			INormal[X] += (INormal[X] * HorizontalPosition / horizontal);
-			INormal[Z] += (INormal[Z] * HorizontalPosition / horizontal);
-			VNormalizeEq(INormal);
-			MTransNormal(Real_Normal, INormal, Trans);
-			VNormalizeEq(Real_Normal);
+        if (Clip.empty()||(Point_In_Clip(Real_Pt, Clip, Thread)))
+        {
+            Assign_Vector(INormal, IPoint);
+            INormal[Y] -= VerticalPosition;
+            horizontal = sqrt(Sqr(INormal[X]) + Sqr(INormal[Z]));
+            INormal[X] += (INormal[X] * HorizontalPosition / horizontal);
+            INormal[Z] += (INormal[Z] * HorizontalPosition / horizontal);
+            VNormalizeEq(INormal);
+            MTransNormal(Real_Normal, INormal, Trans);
+            VNormalizeEq(Real_Normal);
 
-			Depth_Stack->push(Intersection(Depth6/len, Real_Pt, Real_Normal, this));
-			Found = true;
-		}
-	}
-	if (Found)
-	{
-		Thread->Stats()[Ray_Ovus_Tests_Succeeded]++;
-	}
-	return (Found);
+            Depth_Stack->push(Intersection(Depth6/len, Real_Pt, Real_Normal, this));
+            Found = true;
+        }
+    }
+    if (Found)
+    {
+        Thread->Stats()[Ray_Ovus_Tests_Succeeded]++;
+    }
+    return (Found);
 }
 
 
@@ -438,41 +429,41 @@ bool Ovus::All_Intersections(const Ray& ray, IStack& Depth_Stack, SceneThreadDat
 
 bool Ovus::Inside(const VECTOR IPoint, TraceThreadData *Thread) const
 {
-	DBL OCSquared;
-	DBL horizontal, vertical;
-	bool INSide = false;
-	VECTOR Origin, New_Point, Other;
-	Make_Vector(Origin, 0, VerticalSpherePosition, 0);
-	MInvTransPoint(New_Point, IPoint, Trans);
-	VDot(OCSquared, New_Point, New_Point);
-	if (OCSquared < Sqr(BottomRadius))
-	{
-		INSide = true;
-	}
-	VSub(Other, New_Point, Origin);
-	VDot(OCSquared, Other, Other);
-	if (OCSquared < Sqr(TopRadius))
-	{
-		INSide = true;
-	}
-	vertical = New_Point[Y];
-	if ((vertical > BottomVertical) && (vertical < TopVertical))
-	{
-		horizontal = sqrt(Sqr(New_Point[X]) + Sqr(New_Point[Z]));
-		OCSquared = Sqr(horizontal + HorizontalPosition) + Sqr((vertical - VerticalPosition));
-		if (OCSquared < Sqr(ConnectingRadius))
-		{
-			INSide = true;
-		}
-	}
-	if (Test_Flag(this, INVERTED_FLAG))
-	{
-		return !INSide;
-	}
-	else
-	{
-		return INSide;
-	}
+    DBL OCSquared;
+    DBL horizontal, vertical;
+    bool INSide = false;
+    VECTOR Origin, New_Point, Other;
+    Make_Vector(Origin, 0, VerticalSpherePosition, 0);
+    MInvTransPoint(New_Point, IPoint, Trans);
+    VDot(OCSquared, New_Point, New_Point);
+    if (OCSquared < Sqr(BottomRadius))
+    {
+        INSide = true;
+    }
+    VSub(Other, New_Point, Origin);
+    VDot(OCSquared, Other, Other);
+    if (OCSquared < Sqr(TopRadius))
+    {
+        INSide = true;
+    }
+    vertical = New_Point[Y];
+    if ((vertical > BottomVertical) && (vertical < TopVertical))
+    {
+        horizontal = sqrt(Sqr(New_Point[X]) + Sqr(New_Point[Z]));
+        OCSquared = Sqr(horizontal + HorizontalPosition) + Sqr((vertical - VerticalPosition));
+        if (OCSquared < Sqr(ConnectingRadius))
+        {
+            INSide = true;
+        }
+    }
+    if (Test_Flag(this, INVERTED_FLAG))
+    {
+        return !INSide;
+    }
+    else
+    {
+        return INSide;
+    }
 }
 
 
@@ -509,7 +500,7 @@ bool Ovus::Inside(const VECTOR IPoint, TraceThreadData *Thread) const
 
 void Ovus::Normal(VECTOR Result, Intersection *Inter, TraceThreadData *Thread) const
 {
-	Assign_Vector(Result, Inter->INormal);
+    Assign_Vector(Result, Inter->INormal);
 }
 
 
@@ -546,7 +537,7 @@ void Ovus::Normal(VECTOR Result, Intersection *Inter, TraceThreadData *Thread) c
 
 void Ovus::Translate(const VECTOR, const TRANSFORM *tr)
 {
-	Transform(tr);
+    Transform(tr);
 }
 
 
@@ -583,7 +574,7 @@ void Ovus::Translate(const VECTOR, const TRANSFORM *tr)
 
 void Ovus::Rotate(const VECTOR, const TRANSFORM *tr)
 {
-	Transform(tr);
+    Transform(tr);
 }
 
 
@@ -620,7 +611,7 @@ void Ovus::Rotate(const VECTOR, const TRANSFORM *tr)
 
 void Ovus::Scale(const VECTOR, const TRANSFORM *tr)
 {
-	Transform(tr);
+    Transform(tr);
 }
 
 
@@ -657,12 +648,12 @@ void Ovus::Scale(const VECTOR, const TRANSFORM *tr)
 
 void Ovus::Transform(const TRANSFORM *tr)
 {
-	if(Trans == NULL)
-		Trans = Create_Transform();
+    if(Trans == NULL)
+        Trans = Create_Transform();
 
-	Compose_Transforms(Trans, tr);
+    Compose_Transforms(Trans, tr);
 
-	Compute_BBox();
+    Compute_BBox();
 }
 
 
@@ -698,7 +689,7 @@ void Ovus::Transform(const TRANSFORM *tr)
 
 void Ovus::Invert()
 {
-	Invert_Flag(this, INVERTED_FLAG);
+    Invert_Flag(this, INVERTED_FLAG);
 }
 
 
@@ -732,226 +723,232 @@ void Ovus::Invert()
 
 Ovus::Ovus() : ObjectBase(OVUS_OBJECT)
 {
-	Trans = Create_Transform();
+    Trans = Create_Transform();
 
-	TopRadius = 0.0;
-	BottomRadius = 0.0;
-	HorizontalPosition = 0.0;
-	VerticalPosition = 0.0;
-	BottomVertical = 0.0;
-	TopVertical = 0.0;
-	ConnectingRadius = 0.0;
-  VerticalSpherePosition = 0.0;
+    TopRadius = 0.0;
+    BottomRadius = 0.0;
+    HorizontalPosition = 0.0;
+    VerticalPosition = 0.0;
+    BottomVertical = 0.0;
+    TopVertical = 0.0;
+    ConnectingRadius = 0.0;
+    VerticalSpherePosition = 0.0;
+    RootTolerance = 1.0e-4;
+    // 1.0e-4 give noise for ovus { 3, 1.25 distance 14 radius 7000 sturm }
+    // 1.0-e3 give good result for radius 7000, yet amplify a line of illuminated interior surface 
+    // and 1.0e-10 gives grainy / transparent spindle part for ovus { 1.5, 0.5 radius 4 distance 2.5 sturm }
+    // Compromise to 1.0e-7 : no grainy nor line for ovus { 1.5, 0.5 ..., and ok with ovus { 3, 1.25 distance 14 radius 700 sturm } (yep, the difference between radius 700 and 7000 is quasi invisible for an object of size 14)
+
 }
 
 
 
 /*****************************************************************************
-*
-* FUNCTION
-*
-*   Copy_Ovus
-*
-* INPUT
-*
-*   Object - Object
-*
-* OUTPUT
-*
-* RETURNS
-*
-*   void * - New ovus
-*
-* AUTHOR
-*
-*   Jerome Grimbert
-*
-* DESCRIPTION
-*
-*   Copy an ovus.
-*
-* CHANGES
-*
-*
-******************************************************************************/
+ *
+ * FUNCTION
+ *
+ *   Copy_Ovus
+ *
+ * INPUT
+ *
+ *   Object - Object
+ *
+ * OUTPUT
+ *
+ * RETURNS
+ *
+ *   void * - New ovus
+ *
+ * AUTHOR
+ *
+ *   Jerome Grimbert
+ *
+ * DESCRIPTION
+ *
+ *   Copy an ovus.
+ *
+ * CHANGES
+ *
+ *
+ ******************************************************************************/
 
 ObjectPtr Ovus::Copy()
 {
-	Ovus *New = new Ovus();
+    Ovus *New = new Ovus();
 
-	Destroy_Transform(New->Trans);
-	*New = *this;
-	New->Trans = Copy_Transform(Trans);
+    Destroy_Transform(New->Trans);
+    *New = *this;
+    New->Trans = Copy_Transform(Trans);
 
-	return (New);
+    return (New);
 }
 
 
 
 /*****************************************************************************
-*
-* FUNCTION
-*
-*   Destroy_Ovus
-*
-* INPUT
-*
-*   Object - Object
-*
-* OUTPUT
-*
-*   Object
-*
-* RETURNS
-*
-* AUTHOR
-*
-*   Jerome Grimbert
-*
-* DESCRIPTION
-*
-*   Destroy a ovus.
-*
-* CHANGES
-*
-*
-******************************************************************************/
+ *
+ * FUNCTION
+ *
+ *   Destroy_Ovus
+ *
+ * INPUT
+ *
+ *   Object - Object
+ *
+ * OUTPUT
+ *
+ *   Object
+ *
+ * RETURNS
+ *
+ * AUTHOR
+ *
+ *   Jerome Grimbert
+ *
+ * DESCRIPTION
+ *
+ *   Destroy a ovus.
+ *
+ * CHANGES
+ *
+ *
+ ******************************************************************************/
 
 Ovus::~Ovus()
 {
-	Destroy_Transform(Trans);
+    Destroy_Transform(Trans);
 }
 
 
 
 /*****************************************************************************
-*
-* FUNCTION
-*
-*   Compute_Ovus_BBox
-*
-* INPUT
-*
-*   Ovus - Ovus
-*
-* OUTPUT
-*
-*   Ovus
-*
-* RETURNS
-*
-* AUTHOR
-*
-*   Jerome Grimbert
-*
-* DESCRIPTION
-*
-*   Calculate the bounding box of an ovus.
-*
-* CHANGES
-*
-*
-******************************************************************************/
+ *
+ * FUNCTION
+ *
+ *   Compute_Ovus_BBox
+ *
+ * INPUT
+ *
+ *   Ovus - Ovus
+ *
+ * OUTPUT
+ *
+ *   Ovus
+ *
+ * RETURNS
+ *
+ * AUTHOR
+ *
+ *   Jerome Grimbert
+ *
+ * DESCRIPTION
+ *
+ *   Calculate the bounding box of an ovus.
+ *
+ * CHANGES
+ *
+ *
+ ******************************************************************************/
 
 void Ovus::Compute_BBox()
 {
-	// Compute the biggest vertical cylinder radius
-	DBL biggest;
-  DBL bottom;
-  DBL length;
-	biggest = ConnectingRadius - HorizontalPosition;
-  bottom = -BottomRadius;
-  length = BottomRadius + VerticalSpherePosition + TopRadius;
-	if (biggest < BottomRadius)
-	{
-		biggest = BottomRadius;
-	}
-	if (biggest < TopRadius)
-	{
-		biggest = TopRadius;
-	}
-  // handle degenerated ovus in sphere
-  if (!BottomRadius)
-  {
-    bottom = VerticalSpherePosition-TopRadius;
-    length = 2*TopRadius;
-  }
+    // Compute the biggest vertical cylinder radius
+    DBL biggest;
+    DBL bottom;
+    DBL length;
+    biggest = ConnectingRadius - HorizontalPosition;
+    bottom = -BottomRadius;
+    length = BottomRadius + VerticalSpherePosition + TopRadius;
+    if (biggest < BottomRadius)
+    {
+        biggest = BottomRadius;
+    }
+    if (biggest < TopRadius)
+    {
+        biggest = TopRadius;
+    }
+    // handle degenerated ovus in sphere
+    if (!BottomRadius)
+    {
+        bottom = VerticalSpherePosition-TopRadius;
+        length = 2*TopRadius;
+    }
 
-	Make_BBox(BBox, -biggest, bottom, -biggest,
-	          2.0 * biggest, length, 2.0 * biggest);
+    Make_BBox(BBox, -biggest, bottom, -biggest,
+            2.0 * biggest, length, 2.0 * biggest);
 
-	Recompute_BBox(&BBox, Trans);
+    Recompute_BBox(&BBox, Trans);
 }
 
 
 
 /*****************************************************************************
-*
-* FUNCTION
-*
-*   Ovus_UVCoord
-*
-* INPUT
-*
-* OUTPUT
-*
-* RETURNS
-*
-* AUTHOR
-*
-*   Jerome Grimbert
-*
-* DESCRIPTION
-*
-*   -
-*
-* CHANGES
-*
-*   -
-*
-******************************************************************************/
+ *
+ * FUNCTION
+ *
+ *   Ovus_UVCoord
+ *
+ * INPUT
+ *
+ * OUTPUT
+ *
+ * RETURNS
+ *
+ * AUTHOR
+ *
+ *   Jerome Grimbert
+ *
+ * DESCRIPTION
+ *
+ *   -
+ *
+ * CHANGES
+ *
+ *   -
+ *
+ ******************************************************************************/
 
 void Ovus::UVCoord(UV_VECT Result, const Intersection *Inter, TraceThreadData *Thread) const
 {
-	CalcUV(Inter->IPoint, Result);
+    CalcUV(Inter->IPoint, Result);
 }
 
 
 /*****************************************************************************
-*
-* FUNCTION
-*
-*   CalcUV
-*
-* INPUT
-*
-* OUTPUT
-*
-* RETURNS
-*
-* AUTHOR
-*
-*   Jerome Grimbert
-*
-* DESCRIPTION
-*
-*   Calculate the u/v coordinate of a point on an ovus
-*
-* CHANGES
-*
-* due to the addition of distance, the mapping is changed to something similar
-* to lemon, cone & cylinder
-*
-******************************************************************************/
+ *
+ * FUNCTION
+ *
+ *   CalcUV
+ *
+ * INPUT
+ *
+ * OUTPUT
+ *
+ * RETURNS
+ *
+ * AUTHOR
+ *
+ *   Jerome Grimbert
+ *
+ * DESCRIPTION
+ *
+ *   Calculate the u/v coordinate of a point on an ovus
+ *
+ * CHANGES
+ *
+ * due to the addition of distance, the mapping is changed to something similar
+ * to lemon, cone & cylinder
+ *
+ ******************************************************************************/
 
 void Ovus::CalcUV(const VECTOR IPoint, UV_VECT Result) const
 {
-	DBL len, x, z, t;
-	DBL phi, theta;
-	VECTOR P;
+    DBL len, x, z, t;
+    DBL phi, theta;
+    VECTOR P;
 
-	// Transform the point back into the ovus space.
-	MInvTransPoint(P, IPoint, Trans);
+    // Transform the point back into the ovus space.
+    MInvTransPoint(P, IPoint, Trans);
     // the center of UV coordinate is the <0,0> point
     x = P[X];
     z = P[Z];
@@ -961,34 +958,34 @@ void Ovus::CalcUV(const VECTOR IPoint, UV_VECT Result) const
 
     if ((P[Y]>EPSILON)&&(P[Y]<(VerticalSpherePosition-EPSILON)))
     {
-    // when not on a face, the range 0.25 to 0.75 is used (just plain magic 25% for face, no other reason, but it makes C-Lipka happy)
+        // when not on a face, the range 0.25 to 0.75 is used (just plain magic 25% for face, no other reason, but it makes C-Lipka happy)
         phi = 0.75-0.5*(P[Y])/(VerticalSpherePosition);
     }
     else if (P[Y]>EPSILON)
     {
-    // aka P[Y] is above VerticalSpherePositon, use TopRadius, from 0% to 25%
-       phi = 0.0;
-       if (TopRadius)
-       {
-			t = ((P[Y]-VerticalSpherePosition)/(TopRadius));
-			phi = (sin(sqrt(1-t)*M_PI_2)/(4.0));
-       }
+        // aka P[Y] is above VerticalSpherePositon, use TopRadius, from 0% to 25%
+        phi = 0.0;
+        if (TopRadius)
+        {
+            t = ((P[Y]-VerticalSpherePosition)/(TopRadius));
+            phi = (sin(sqrt(1-t)*M_PI_2)/(4.0));
+        }
     }
     else
     {
-    // aka P[Y] is below origin (<0), use BottomRadius, from 75% to 100%
-       phi = 1.0;
-       if (BottomRadius)
-       {
-          t = ((BottomRadius+P[Y])/(BottomRadius));
-          phi = 1.0-sin(sqrt(t)*M_PI_2)/(4.0);
-       }
-       else if (TopRadius)
-       {
-        // degenerate ovus in sphere
-          t = ((TopRadius-VerticalSpherePosition+P[Y])/(TopRadius));
-          phi = 1.0-sin(sqrt(t)*M_PI_2)/(4.0);
-       }
+        // aka P[Y] is below origin (<0), use BottomRadius, from 75% to 100%
+        phi = 1.0;
+        if (BottomRadius)
+        {
+            t = ((BottomRadius+P[Y])/(BottomRadius));
+            phi = 1.0-sin(sqrt(t)*M_PI_2)/(4.0);
+        }
+        else if (TopRadius)
+        {
+            // degenerate ovus in sphere
+            t = ((TopRadius-VerticalSpherePosition+P[Y])/(TopRadius));
+            phi = 1.0-sin(sqrt(t)*M_PI_2)/(4.0);
+        }
     }
 
 
@@ -1015,8 +1012,8 @@ void Ovus::CalcUV(const VECTOR IPoint, UV_VECT Result) const
         // This point is at one of the poles. Any value of xcoord will be ok...
         theta = 0;
 
-	Result[U] = theta;
-	Result[V] = phi;
+    Result[U] = theta;
+    Result[V] = phi;
 
 }
 

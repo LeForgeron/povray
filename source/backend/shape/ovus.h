@@ -50,50 +50,52 @@ namespace pov
 
 class Ovus : public ObjectBase
 {
-	public:
+    public:
 
-		Ovus();
-		virtual ~Ovus();
+        Ovus();
+        virtual ~Ovus();
 
-		virtual ObjectPtr Copy();
+        virtual ObjectPtr Copy();
 
-		virtual bool All_Intersections(const Ray&, IStack&, TraceThreadData *);
-		virtual bool Inside(const VECTOR, TraceThreadData *) const;
-		virtual void Normal(VECTOR, Intersection *, TraceThreadData *) const;
-		virtual void UVCoord(UV_VECT, const Intersection *, TraceThreadData *) const;
-		virtual void Translate(const VECTOR, const TRANSFORM *);
-		virtual void Rotate(const VECTOR, const TRANSFORM *);
-		virtual void Scale(const VECTOR, const TRANSFORM *);
-		virtual void Transform(const TRANSFORM *);
-		virtual void Invert();
-		virtual void Compute_BBox();
+        virtual bool All_Intersections(const Ray&, IStack&, TraceThreadData *);
+        virtual bool Inside(const VECTOR, TraceThreadData *) const;
+        virtual void Normal(VECTOR, Intersection *, TraceThreadData *) const;
+        virtual void UVCoord(UV_VECT, const Intersection *, TraceThreadData *) const;
+        virtual void Translate(const VECTOR, const TRANSFORM *);
+        virtual void Rotate(const VECTOR, const TRANSFORM *);
+        virtual void Scale(const VECTOR, const TRANSFORM *);
+        virtual void Transform(const TRANSFORM *);
+        virtual void Invert();
+        virtual void Compute_BBox();
 
-		/// radius of bottom sphere (provided in SDL)
-		DBL BottomRadius;
-		/// radius of top sphere (provided in SDL)
-		DBL TopRadius;
+        /// radius of bottom sphere (provided in SDL)
+        DBL BottomRadius;
+        /// radius of top sphere (provided in SDL)
+        DBL TopRadius;
 
-		/// horizontal position of center of connecting surface (computed)
-		DBL HorizontalPosition;
-		/// vertical position of center of connecting surface (computed)
-		DBL VerticalPosition;
-		/// lowest vertical for the connecting surface (computed)
-		DBL BottomVertical;
-		/// highest vertical for the connecting surface (computed)
-		DBL TopVertical;
-		/// Radius of the connecting surface (computed, or provided in SDL)
-		DBL ConnectingRadius;
-    /// vertical position of center of top sphere (computed or provided in SDL)
-    DBL VerticalSpherePosition;
+        /// horizontal position of center of connecting surface (computed)
+        DBL HorizontalPosition;
+        /// vertical position of center of connecting surface (computed)
+        DBL VerticalPosition;
+        /// lowest vertical for the connecting surface (computed)
+        DBL BottomVertical;
+        /// highest vertical for the connecting surface (computed)
+        DBL TopVertical;
+        /// Radius of the connecting surface (computed, or provided in SDL)
+        DBL ConnectingRadius;
+        /// vertical position of center of top sphere (computed or provided in SDL)
+        DBL VerticalSpherePosition;
+        /// precision for root solver
+        DBL RootTolerance;
 
-	private:
-		void CalcUV(const VECTOR IPoint, UV_VECT Result) const;
-		void Intersect_Ovus_Spheres(const VECTOR&, const VECTOR&,
-		                            DBL * Depth1,DBL *Depth2, DBL * Depth3,
-		                            DBL * Depth4, DBL * Depth5, DBL * Depth6,
-		                            SceneThreadData *Thread) const;
+    private:
+        void CalcUV(const VECTOR IPoint, UV_VECT Result) const;
+        void Intersect_Ovus_Spheres(const VECTOR&, const VECTOR&,
+                DBL * Depth1,DBL *Depth2, DBL * Depth3,
+                DBL * Depth4, DBL * Depth5, DBL * Depth6,
+                SceneThreadData *Thread) const;
 
-};
+    };
 
 }
 

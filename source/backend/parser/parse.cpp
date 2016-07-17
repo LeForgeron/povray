@@ -5433,6 +5433,9 @@ ObjectPtr Parser::Parse_Ovus()
     CASE(DISTANCE_TOKEN)
        Object->VerticalSpherePosition = Parse_Float();
     END_CASE
+    CASE(PRECISION_TOKEN)
+       Object->RootTolerance = Parse_Float();
+    END_CASE
 		OTHERWISE
 			UNGET
 			EXIT
