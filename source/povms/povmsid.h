@@ -695,6 +695,7 @@ enum
     kPOVList_Stat_VistaBufferTest,
     kPOVList_Stat_RBezierTest,
     kPOVList_Stat_OvusTest,
+    kPOVList_Stat_NurbsTest,
     kPOVList_Stat_Last
 };
 

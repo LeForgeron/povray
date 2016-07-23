@@ -376,6 +376,7 @@ const RESERVED_WORD Reserved_Words[LAST_TOKEN] = {
     {NUMBER_OF_SIDES_TOKEN, "number_of_sides"},
     {NUMBER_OF_TILES_TOKEN, "number_of_tiles"},
     {NUMBER_OF_WAVES_TOKEN, "number_of_waves"},
+    {NURBS_TOKEN, "nurbs"},
     {OBJECT_ID_TOKEN, "object identifier"},
     {OBJECT_TOKEN, "object"},
     {OCTAVES_TOKEN, "octaves"},

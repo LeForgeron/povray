@@ -103,6 +103,8 @@ typedef enum INTSTATS
     Lathe_Bound_Tests_Succeeded,
     Ray_Mesh_Tests,
     Ray_Mesh_Tests_Succeeded,
+    Ray_Nurbs_Tests,
+    Ray_Nurbs_Tests_Succeeded,
     Ray_Ovus_Tests,
     Ray_Ovus_Tests_Succeeded,
     Ray_Plane_Tests,
