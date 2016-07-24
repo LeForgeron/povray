@@ -629,6 +629,38 @@ void Nurbs::Grid::deCasteljauX( Grid& first, Grid& second, const DBL w, const DB
         deCasteljauBackward( input, second.content[c], w, dw );
     }
 }
+void Nurbs::Grid::deCasteljauXF( Grid& first, const DBL w, const DBL dw )const
+{
+    first = Grid( xsize, ysize );
+    std::vector<DBL> input;
+    input.resize( xsize );
+
+    for( size_t c = 0; c < ysize; ++c )
+    {
+        for( size_t i = 0; i < xsize; ++i )
+        {
+            input[i] = content[c][i];
+        }
+
+        deCasteljauForward( input, first.content[c], w, dw );
+    }
+}
+void Nurbs::Grid::deCasteljauXB( Grid& second, const DBL w, const DBL dw )const
+{
+    second = Grid( xsize, ysize );
+    std::vector<DBL> input;
+    input.resize( xsize );
+
+    for( size_t c = 0; c < ysize; ++c )
+    {
+        for( size_t i = 0; i < xsize; ++i )
+        {
+            input[i] = content[c][i];
+        }
+
+        deCasteljauBackward( input, second.content[c], w, dw );
+    }
+}
 
 void Nurbs::Grid::deCasteljauY( Grid& first, Grid& second, const DBL w, const DBL dw )const
 {
@@ -654,6 +686,52 @@ void Nurbs::Grid::deCasteljauY( Grid& first, Grid& second, const DBL w, const DB
         for( size_t i = 0; i < ysize; ++i )
         {
             first.content[i][c] = output1[i];
+            second.content[i][c] = output2[i];
+        }
+    }
+}
+void Nurbs::Grid::deCasteljauYF( Grid& first, const DBL w, const DBL dw )const
+{
+    first = Grid( xsize, ysize );
+    std::vector<DBL> input;
+    std::vector<DBL> output1;
+    input.resize( ysize );
+    output1.resize( ysize );
+
+    for( size_t c = 0; c < xsize; ++c )
+    {
+        for( size_t i = 0; i < ysize; ++i )
+        {
+            input[i] = content[i][c];
+        }
+
+        deCasteljauForward( input, output1, w, dw );
+
+        for( size_t i = 0; i < ysize; ++i )
+        {
+            first.content[i][c] = output1[i];
+        }
+    }
+}
+void Nurbs::Grid::deCasteljauYB( Grid& second, const DBL w, const DBL dw )const
+{
+    second = Grid( xsize, ysize );
+    std::vector<DBL> input;
+    std::vector<DBL> output2;
+    input.resize( ysize );
+    output2.resize( ysize );
+
+    for( size_t c = 0; c < xsize; ++c )
+    {
+        for( size_t i = 0; i < ysize; ++i )
+        {
+            input[i] = content[i][c];
+        }
+
+        deCasteljauBackward( input, output2, w, dw );
+
+        for( size_t i = 0; i < ysize; ++i )
+        {
             second.content[i][c] = output2[i];
         }
     }
@@ -830,13 +908,13 @@ void Nurbs::set( const size_t x, const size_t y, const VECTOR_4D& v )
 
 void Nurbs::Grid::point( const DBL u, const DBL v, bool vFirst, DBL& p0, DBL& p10, DBL& p11 )const
 {
-    Grid d1, d2, d3, d4;
+    Grid d2, d3, d4;
     // relation is p0 = a.p10 + b.p11 (with b = 1.0 - a)
     // p10 and p11 are needed for tangent/normal computation
 
     if( vFirst )
     {
-        deCasteljauY( d1, d2, v, 1.0 - v );
+        deCasteljauYB( d2, v, 1.0 - v );
         d2.reduceY();
         d2.deCasteljauX( d3, d4, u, 1.0 - u );
         p0 = d4.get( 0, 0 );// the final de Casteljau value
@@ -845,7 +923,7 @@ void Nurbs::Grid::point( const DBL u, const DBL v, bool vFirst, DBL& p0, DBL& p1
     }
     else
     {
-        deCasteljauX( d1, d2, u, 1.0 - u );
+        deCasteljauXB( d2, u, 1.0 - u );
         d2.reduceX();
         d2.deCasteljauY( d3, d4, v, 1.0 - v );
         p0 = d4.get( 0, 0 );// the final de Casteljau value
@@ -1104,34 +1182,34 @@ bool Nurbs::findSolution( Grid& a, Grid& b, Vector2d i0, Vector2d i1, Vector2d b
                 {
                     if( 0 == iii )
                     {
-                        a.deCasteljauX( ptmp10 , ptmp20, min, 1.0 - min );
-                        b.deCasteljauX( ptmp11 , ptmp21, min, 1.0 - min );
-                        ptmp20.deCasteljauX( a, ptmp10, ( max - min ) / ( 1.0 - min ), ( 1.0 - max ) / ( 1.0 - min ) );
-                        ptmp21.deCasteljauX( b, ptmp11, ( max - min ) / ( 1.0 - min ), ( 1.0 - max ) / ( 1.0 - min ) );
+                        a.deCasteljauXB( ptmp20, min, 1.0 - min );
+                        b.deCasteljauXB( ptmp21, min, 1.0 - min );
+                        ptmp20.deCasteljauXF( a, ( max - min ) / ( 1.0 - min ), ( 1.0 - max ) / ( 1.0 - min ) );
+                        ptmp21.deCasteljauXF( b, ( max - min ) / ( 1.0 - min ), ( 1.0 - max ) / ( 1.0 - min ) );
                     }
                     else
                     {
-                        a.deCasteljauY( ptmp10, ptmp20, min, 1.0 - min );
-                        b.deCasteljauY( ptmp11, ptmp21, min, 1.0 - min );
-                        ptmp20.deCasteljauY( a, ptmp10, ( max - min ) / ( 1.0 - min ), ( 1.0 - max ) / ( 1.0 - min ) );
-                        ptmp21.deCasteljauY( b, ptmp11, ( max - min ) / ( 1.0 - min ), ( 1.0 - max ) / ( 1.0 - min ) );
+                        a.deCasteljauYB( ptmp20, min, 1.0 - min );
+                        b.deCasteljauYB( ptmp21, min, 1.0 - min );
+                        ptmp20.deCasteljauYF( a, ( max - min ) / ( 1.0 - min ), ( 1.0 - max ) / ( 1.0 - min ) );
+                        ptmp21.deCasteljauYF( b, ( max - min ) / ( 1.0 - min ), ( 1.0 - max ) / ( 1.0 - min ) );
                     }
                 }
                 else
                 {
                     if( 0 == iii )
                     {
-                        a.deCasteljauX( ptmp10, ptmp20, max, 1.0 - max );
-                        b.deCasteljauX( ptmp11, ptmp21, max, 1.0 - max );
-                        ptmp10.deCasteljauX( ptmp20, a, min / max, 1.0 - min / max );
-                        ptmp11.deCasteljauX( ptmp21, b, min / max, 1.0 - min / max );
+                        a.deCasteljauXF( ptmp10, max, 1.0 - max );
+                        b.deCasteljauXF( ptmp11, max, 1.0 - max );
+                        ptmp10.deCasteljauXB( a, min / max, 1.0 - min / max );
+                        ptmp11.deCasteljauXB( b, min / max, 1.0 - min / max );
                     }
                     else
                     {
-                        a.deCasteljauY( ptmp10, ptmp20, max, 1.0 - max );
-                        b.deCasteljauY( ptmp11, ptmp21, max, 1.0 - max );
-                        ptmp10.deCasteljauY( ptmp20, a, min / max, 1.0 - min / max );
-                        ptmp11.deCasteljauY( ptmp21, b, min / max, 1.0 - min / max );
+                        a.deCasteljauYF( ptmp10, max, 1.0 - max );
+                        b.deCasteljauYF( ptmp11, max, 1.0 - max );
+                        ptmp10.deCasteljauYB( a, min / max, 1.0 - min / max );
+                        ptmp11.deCasteljauYB( b, min / max, 1.0 - min / max );
                     }
                 }
             }

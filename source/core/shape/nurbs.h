@@ -66,6 +66,10 @@ private:
         ~Grid();
         void deCasteljauX( Grid& first, Grid& second, const DBL w, const DBL dw )const;
         void deCasteljauY( Grid& first, Grid& second, const DBL w, const DBL dw )const;
+        void deCasteljauXF( Grid& first, const DBL w, const DBL dw )const;
+        void deCasteljauYF( Grid& first, const DBL w, const DBL dw )const;
+        void deCasteljauXB( Grid& second, const DBL w, const DBL dw )const;
+        void deCasteljauYB( Grid& second, const DBL w, const DBL dw )const;
         bool getMinMaxX( DBL& min, DBL& max )const;
         bool getMinMaxY( DBL& min, DBL& max )const;
         DBL get( const size_t x, const size_t y )const;
