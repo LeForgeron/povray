@@ -113,6 +113,8 @@ public:
     Nurbs( const size_t x, const size_t y );
     void set( const size_t x, const size_t y, const VECTOR_4D& v );
     void setAccuracy( const DBL a ) {accuracy = a;}
+    Vector3d evalVertex( const DBL u, const DBL v )const;
+    Vector3d evalNormal( const DBL u, const DBL v )const;
     virtual ~Nurbs();
 
     virtual ObjectPtr Copy();

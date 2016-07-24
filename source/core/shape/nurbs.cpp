@@ -997,6 +997,43 @@ bool Nurbs::Grid::bounds( Vector2d& l )const
     ret |= ( min > EPSILON ) || ( max < -EPSILON );
     return ret;
 }
+Vector3d Nurbs::evalNormal( const DBL u, const DBL v )const
+{
+    DBL cx2, cx3, cy2, cy3, cz2, cz3, w2, w3, notused;
+    Vector3d Normal_Vector, Real_Normal;
+    bool vFirst = weight.dimX() > weight.dimY();
+    weight.point( u, v, vFirst, notused, w2, w3 );
+    wc[X].point( u, v, vFirst, notused, cx2, cx3 );
+    wc[Y].point( u, v, vFirst, notused, cy2, cy3 );
+    wc[Z].point( u, v, vFirst, notused, cz2, cz3 );
+    Vector3d v1( cx2 / w2 - cx3 / w3, cy2 / w2 - cy3 / w3, cz2 / w2 - cz3 / w3 );
+    vFirst = !vFirst;
+    wc[X].point( u, v, vFirst, notused, cx2, cx3 );
+    wc[Y].point( u, v, vFirst, notused, cy2, cy3 );
+    wc[Z].point( u, v, vFirst, notused, cz2, cz3 );
+    Vector3d v2( cx2 / w2 - cx3 / w3, cy2 / w2 - cy3 / w3, cz2 / w2 - cz3 / w3 );
+    Normal_Vector = cross( v1, v2 );
+    Normal_Vector.normalize();
+    MTransNormal( Real_Normal, Normal_Vector, Trans );
+    Real_Normal.normalize();
+    return Real_Normal;
+}
+Vector3d Nurbs::evalVertex( const DBL u, const DBL v )const
+{
+    DBL cx, cy, cz, w1, notused;
+    bool vFirst = weight.dimX() > weight.dimY();
+    weight.point( u, v, vFirst, w1, notused, notused );
+    wc[X].point( u, v, vFirst, cx, notused, notused );
+    wc[Y].point( u, v, vFirst, cy, notused, notused );
+    wc[Z].point( u, v, vFirst, cz, notused, notused );
+    cx /= w1;
+    cy /= w1;
+    cz /= w1;
+    Vector3d IPoint( cx, cy, cz ), Real_Pt;
+    MTransPoint( Real_Pt, IPoint, Trans );
+    return Real_Pt;
+}
+
 bool Nurbs::addSolution( const DBL u, const DBL v,  const BasicRay& ray, IStack& depthStack, SceneThreadData* Thread )
 {
     DBL c1, c2, c3, w1, w2, w3, n1, n2, n3;

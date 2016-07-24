@@ -143,6 +143,8 @@ enum TOKEN_IDS
     TRACE_TOKEN,
     MIN_EXTENT_TOKEN,
     MAX_EXTENT_TOKEN,
+    NURBS_VERTEX_TOKEN,
+    NURBS_NORMAL_TOKEN,
     VECTOR_FUNCT_TOKEN, /*WARNING: All new functions returning a vector value must be placed before VECTOR_FUNCT_TOKEN or the parser won't work right. */
 
     ALPHA_TOKEN,

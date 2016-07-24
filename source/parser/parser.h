@@ -712,6 +712,8 @@ class Parser : public SceneTask
         void Parse_Vector_Param (Vector3d& Vector);
         void Parse_Vector_Param2 (Vector3d& Vect1, Vector3d& Vect2);
         void Parse_Trace(Vector3d& Res);
+        void Parse_Nurbs_Vertex(Vector3d& Res);
+        void Parse_Nurbs_Normal(Vector3d& Res);
         int Parse_Inside();
         bool Parse_Call();
         DBL Parse_Function_Call();

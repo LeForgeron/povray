@@ -51,6 +51,7 @@
 #include "core/material/warp.h"
 #include "core/render/ray.h"
 #include "core/shape/heightfield.h"
+#include "core/shape/nurbs.h"
 
 #include "backend/colour/colour_old.h"
 #include "backend/math/mathutil.h"
@@ -209,6 +210,110 @@ void Parser::Parse_Vector_Param2(Vector3d& Val1, Vector3d& Val2)
     Parse_Comma();
     Parse_Vector(Val2);
     GET (RIGHT_PAREN_TOKEN);
+}
+
+
+/*****************************************************************************
+*
+* FUNCTION
+*
+* INPUT
+*
+* OUTPUT
+*
+* RETURNS
+*
+* AUTHOR
+*
+* DESCRIPTION
+*
+* CHANGES
+*
+******************************************************************************/
+
+void Parser::Parse_Nurbs_Vertex(Vector3d& Res)
+{
+    Nurbs * nurbs = NULL;
+    DBL u,v;
+
+    GET (LEFT_PAREN_TOKEN);
+
+    EXPECT
+        CASE (OBJECT_ID_TOKEN)
+            nurbs = dynamic_cast<Nurbs*>(reinterpret_cast<ObjectPtr>(Token.Data));
+            EXIT
+        END_CASE
+
+        OTHERWISE
+            UNGET
+            EXIT
+        END_CASE
+    END_EXPECT
+
+    if (nurbs == NULL)
+        Error ("nurbs identifier expected.");
+
+    Parse_Comma();
+
+    u = Parse_Float();
+    Parse_Comma();
+    v = Parse_Float();
+    GET (RIGHT_PAREN_TOKEN);
+    if (( u< 0.0)||(v<0.0)||(u>1.0)||(v>1.0))
+      Error("u, v must be in range 0.0 to 1.0");
+
+    Res = nurbs->evalVertex(u,v);
+}
+/*****************************************************************************
+*
+* FUNCTION
+*
+* INPUT
+*
+* OUTPUT
+*
+* RETURNS
+*
+* AUTHOR
+*
+* DESCRIPTION
+*
+* CHANGES
+*
+******************************************************************************/
+
+void Parser::Parse_Nurbs_Normal(Vector3d& Res)
+{
+    Nurbs * nurbs = NULL;
+    DBL u,v;
+
+    GET (LEFT_PAREN_TOKEN);
+
+    EXPECT
+        CASE (OBJECT_ID_TOKEN)
+            nurbs = dynamic_cast<Nurbs*>(reinterpret_cast<ObjectPtr>(Token.Data));
+            EXIT
+        END_CASE
+
+        OTHERWISE
+            UNGET
+            EXIT
+        END_CASE
+    END_EXPECT
+
+    if (nurbs == NULL)
+        Error ("nurbs identifier expected.");
+
+    Parse_Comma();
+
+    u = Parse_Float();
+    Parse_Comma();
+    v = Parse_Float();
+    GET (RIGHT_PAREN_TOKEN);
+    if (( u< 0.0)||(v<0.0)||(u>1.0)||(v>1.0))
+      Error("u, v must be in range 0.0 to 1.0");
+
+    Res = nurbs->evalNormal(u,v);
 }
 
 /*****************************************************************************
@@ -1168,6 +1273,14 @@ void Parser::Parse_Num_Factor (EXPRESS& Express,int *Terms)
 
                 case TRACE_TOKEN:
                     Parse_Trace( Vect );
+                    break;
+
+                case NURBS_VERTEX_TOKEN:
+                    Parse_Nurbs_Vertex( Vect );
+                    break;
+
+                case NURBS_NORMAL_TOKEN:
+                    Parse_Nurbs_Normal( Vect );
                     break;
 
                 case MIN_EXTENT_TOKEN:
