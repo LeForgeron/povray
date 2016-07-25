@@ -128,6 +128,8 @@ const INTERSECTION_STATS_INFO intersection_stats[kPOVList_Stat_Last] =
 	  "Lemon" },
 	{ kPOVList_Stat_MeshTest,           Ray_Mesh_Tests, Ray_Mesh_Tests_Succeeded,
 	  "Mesh" },
+	{ kPOVList_Stat_NurbsTest,          Ray_Nurbs_Tests, Ray_Nurbs_Tests_Succeeded,
+	  "Nurbs" },
 	{ kPOVList_Stat_OvusTest,           Ray_Ovus_Tests, Ray_Ovus_Tests_Succeeded,
 	  "Ovus" },
 	{ kPOVList_Stat_PlaneTest,          Ray_Plane_Tests, Ray_Plane_Tests_Succeeded,

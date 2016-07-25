@@ -663,6 +663,7 @@ class Parser : public Task
 		ObjectPtr Parse_Lathe(void);
 		ObjectPtr Parse_Light_Source();
 		ObjectPtr Parse_Object_Id();
+		ObjectPtr Parse_Nurbs();
 		ObjectPtr Parse_Ovus();
 		ObjectPtr Parse_Lemon();
 		ObjectPtr Parse_Plane();
@@ -779,6 +780,8 @@ class Parser : public Task
 		void Parse_Vector_Param (VECTOR Vector);
 		void Parse_Vector_Param2 (VECTOR Vect1, VECTOR Vect2);
 		void Parse_Trace(VECTOR Res);
+		void Parse_Nurbs_Vertex(VECTOR Res);
+		void Parse_Nurbs_Normal(VECTOR Res);
 		int Parse_Inside();
 		bool Parse_Call();
 		DBL Parse_Function_Call();

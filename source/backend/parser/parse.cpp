@@ -70,6 +70,7 @@
 #include "backend/shape/lemon.h"
 #include "backend/shape/ovus.h"
 #include "backend/shape/mesh.h"
+#include "backend/shape/nurbs.h"
 #include "backend/shape/planes.h"
 #include "backend/shape/polygon.h"
 #include "backend/shape/poly.h"
@@ -5374,6 +5375,89 @@ TEXTURE *Parser::Parse_Mesh_Texture (TEXTURE **t2, TEXTURE **t3)
 	return(Texture);
 }
 
+/*****************************************************************************
+*
+* FUNCTION
+*
+*   Parse_Nurbs
+*
+* INPUT
+*   
+* OUTPUT
+*   
+* RETURNS
+*
+*   OBJECT
+*
+* AUTHOR
+*
+*   Jerome Grimbert
+*   
+* DESCRIPTION
+*
+*   -
+*
+* CHANGES
+*
+*   Jul 2016 : Creation.
+*
+*
+******************************************************************************/
+
+ObjectPtr Parser::Parse_Nurbs()
+{
+    Nurbs *Object;
+    size_t xdim, ydim;
+    VECTOR_4D vector4d;
+
+    Parse_Begin();
+
+    if ((Object = reinterpret_cast<Nurbs *>(Parse_Object_Id())) != NULL)
+    {
+        return(reinterpret_cast<ObjectPtr>(Object));
+    }
+
+    xdim = Parse_Float();
+    Parse_Comma();
+    ydim = Parse_Float();
+
+    if( ( xdim < 2 ) || ( ydim < 2 ) )
+    {
+        Error( "Minimal size of nurbs is 2 , 2" );
+    }
+
+    Object = new Nurbs(xdim, ydim);
+    EXPECT
+        CASE(ACCURACY_TOKEN)
+            Object->setAccuracy ( Parse_Float() );
+        END_CASE
+        OTHERWISE
+            UNGET
+            EXIT
+        END_CASE
+    END_EXPECT
+    // get the xdim * ydim points
+    for( size_t i = 0; i < ydim; ++i )
+    {
+        for( size_t j = 0; j < xdim; ++j )
+        {
+            Parse_Vector4D( vector4d );
+
+            if( vector4d[3] < 0.0 )
+            {
+                Error( "Negative weight in nurbs is not allowed" );
+            }
+
+            Object->set( j, i, vector4d );
+        }
+    }
+
+    Object->Compute_BBox();
+    Parse_Object_Mods (reinterpret_cast<ObjectPtr>(Object));
+    return (reinterpret_cast<ObjectPtr>(Object));
+}
+
+
 
 /*****************************************************************************
 *
@@ -7319,6 +7403,11 @@ ObjectPtr Parser::Parse_Object ()
 
 		CASE (POLYNOM_TOKEN)
 			Object = Parse_Polynom();
+			EXIT
+		END_CASE
+
+		CASE (NURBS_TOKEN)
+			Object = Parse_Nurbs();
 			EXIT
 		END_CASE
 
