@@ -2,7 +2,7 @@
 ///
 /// @file core/shape/nurbs.cpp
 ///
-/// This module implements the nurbs primitive.
+/// This module implements the nurbs and rational_bezier_patch primitive.
 ///
 /// @author Jerome Grimbert
 ///
@@ -43,7 +43,7 @@
 *
 *  Syntax:
 *
-*  nurbs
+*  rational_bezier_patch
 *  {
 *     Xsize, Ysize [accuracy Avalue] 4DVector{Xsize*YSize}
 *  }
@@ -87,7 +87,7 @@ const DBL MAGICAL_CONSTANT  = ( 1.0 - 0.2 );
 *
 * FUNCTION
 *
-*   All_Nurbs_Intersections
+*   All_Intersections
 *
 * INPUT
 *
@@ -117,9 +117,9 @@ const DBL MAGICAL_CONSTANT  = ( 1.0 - 0.2 );
 *
 ******************************************************************************/
 
-bool Nurbs::All_Intersections( const Ray& ray, IStack& Depth_Stack, SceneThreadData* Thread )
+bool RationalBezierPatch::All_Intersections( const Ray& ray, IStack& Depth_Stack, SceneThreadData* Thread )
 {
-    Thread->Stats()[Ray_Nurbs_Tests]++;
+    Thread->Stats()[Ray_Rational_Bezier_Patch_Tests]++;
     bool Found = false;
     BasicRay New_Ray;
     Vector2d interval[2];
@@ -145,7 +145,7 @@ bool Nurbs::All_Intersections( const Ray& ray, IStack& Depth_Stack, SceneThreadD
 
     if( weight.dimX() > weight.dimY() )
     {
-        /* small trick to ensure that we first split nurbs in smaller order */
+        /* small trick to ensure that we first split rational_bezier_patch in smaller order */
         interval[0][1] = 1.0 + YAEP;
         interval[1][1] = 1.0;
     }
@@ -161,7 +161,7 @@ bool Nurbs::All_Intersections( const Ray& ray, IStack& Depth_Stack, SceneThreadD
 
     if( Found )
     {
-        Thread->Stats()[Ray_Nurbs_Tests_Succeeded]++;
+        Thread->Stats()[Ray_Rational_Bezier_Patch_Tests_Succeeded]++;
     }
 
     return ( Found );
@@ -173,7 +173,7 @@ bool Nurbs::All_Intersections( const Ray& ray, IStack& Depth_Stack, SceneThreadD
 *
 * FUNCTION
 *
-*   Inside_Nurbs
+*   Inside
 *
 * INPUT
 *
@@ -191,14 +191,14 @@ bool Nurbs::All_Intersections( const Ray& ray, IStack& Depth_Stack, SceneThreadD
 *
 * DESCRIPTION
 *
-*   A nurbs is not a solid, so an inside test doesn't make sense.
+*   A rational_bezier_patch is not a solid, so an inside test doesn't make sense.
 *
 * CHANGES
 *
 *
 ******************************************************************************/
 
-bool Nurbs::Inside( const VECTOR IPoint, TraceThreadData* Thread ) const
+bool RationalBezierPatch::Inside( const VECTOR IPoint, TraceThreadData* Thread ) const
 {
     return false;
 }
@@ -209,7 +209,7 @@ bool Nurbs::Inside( const VECTOR IPoint, TraceThreadData* Thread ) const
 *
 * FUNCTION
 *
-*   Nurbs_Normal
+*   Normal
 *
 * INPUT
 *
@@ -229,13 +229,13 @@ bool Nurbs::Inside( const VECTOR IPoint, TraceThreadData* Thread ) const
 *
 * DESCRIPTION
 *
-*   Calculate the normal of the nurbs for a given point.
+*   Calculate the normal of the rational_bezier_patch for a given point.
 *
 * CHANGES
 *
 ******************************************************************************/
 
-void Nurbs::Normal( VECTOR Result, Intersection* Inter, TraceThreadData* Thread ) const
+void RationalBezierPatch::Normal( VECTOR Result, Intersection* Inter, TraceThreadData* Thread ) const
 {
     /* Use preocmputed normal. */
     Assign_Vector( Result, Inter->INormal);
@@ -247,7 +247,7 @@ void Nurbs::Normal( VECTOR Result, Intersection* Inter, TraceThreadData* Thread 
 *
 * FUNCTION
 *
-*   Translate_Nurbs
+*   Translate
 *
 * INPUT
 *
@@ -266,14 +266,14 @@ void Nurbs::Normal( VECTOR Result, Intersection* Inter, TraceThreadData* Thread 
 *
 * DESCRIPTION
 *
-*   Translate an ovus.
+*   Translate a rational bezier patch.
 *
 * CHANGES
 *
 *
 ******************************************************************************/
 
-void Nurbs::Translate( const VECTOR, const TRANSFORM* tr )
+void RationalBezierPatch::Translate( const VECTOR, const TRANSFORM* tr )
 {
     Transform( tr );
 }
@@ -284,7 +284,7 @@ void Nurbs::Translate( const VECTOR, const TRANSFORM* tr )
 *
 * FUNCTION
 *
-*   Rotate_Nurbs
+*   Rotate
 *
 * INPUT
 *
@@ -303,14 +303,14 @@ void Nurbs::Translate( const VECTOR, const TRANSFORM* tr )
 *
 * DESCRIPTION
 *
-*   Rotate an ovus.
+*   Rotate a rational bezier patch.
 *
 * CHANGES
 *
 *
 ******************************************************************************/
 
-void Nurbs::Rotate( const VECTOR, const TRANSFORM* tr )
+void RationalBezierPatch::Rotate( const VECTOR, const TRANSFORM* tr )
 {
     Transform( tr );
 }
@@ -321,7 +321,7 @@ void Nurbs::Rotate( const VECTOR, const TRANSFORM* tr )
 *
 * FUNCTION
 *
-*   Scale_Nurbs
+*   Scale
 *
 * INPUT
 *
@@ -340,14 +340,14 @@ void Nurbs::Rotate( const VECTOR, const TRANSFORM* tr )
 *
 * DESCRIPTION
 *
-*   Scale an ovus.
+*   Scale a rational bezier patch.
 *
 * CHANGES
 *
 *
 ******************************************************************************/
 
-void Nurbs::Scale( const VECTOR, const TRANSFORM* tr )
+void RationalBezierPatch::Scale( const VECTOR, const TRANSFORM* tr )
 {
     Transform( tr );
 }
@@ -358,7 +358,7 @@ void Nurbs::Scale( const VECTOR, const TRANSFORM* tr )
 *
 * FUNCTION
 *
-*   Transform_Nurbs
+*   Transform
 *
 * INPUT
 *
@@ -377,14 +377,14 @@ void Nurbs::Scale( const VECTOR, const TRANSFORM* tr )
 *
 * DESCRIPTION
 *
-*   Transform an ovus and recalculate its bounding box.
+*   Transform a rational bezier patch and recalculate its bounding box.
 *
 * CHANGES
 *
 *
 ******************************************************************************/
 
-void Nurbs::Transform( const TRANSFORM* tr )
+void RationalBezierPatch::Transform( const TRANSFORM* tr )
 {
     if( Trans == NULL )
     { Trans = Create_Transform(); }
@@ -399,7 +399,7 @@ void Nurbs::Transform( const TRANSFORM* tr )
 *
 * FUNCTION
 *
-*   Create_Nurbs
+*   Create
 *
 * INPUT
 *
@@ -407,7 +407,7 @@ void Nurbs::Transform( const TRANSFORM* tr )
 *
 * RETURNS
 *
-*   Nurbs * - new nurbs
+*   RationalBezierPatch * - new rational_bezier_patch
 *
 * AUTHOR
 *
@@ -415,14 +415,14 @@ void Nurbs::Transform( const TRANSFORM* tr )
 *
 * DESCRIPTION
 *
-*   Create a new nurbs.
+*   Create a new rational_bezier_patch.
 *
 * CHANGES
 *
 *
 ******************************************************************************/
 
-Nurbs::Nurbs( const size_t x, const size_t y ): ObjectBase( NURBS_OBJECT ), weight( x, y ), accuracy( 0.01 )
+RationalBezierPatch::RationalBezierPatch( const size_t x, const size_t y ): ObjectBase( RATIONAL_BEZIER_PATCH_OBJECT ), weight( x, y ), accuracy( 0.01 )
 {
     Trans = Create_Transform();
     wc[X] = Grid( x, y );
@@ -438,7 +438,7 @@ Nurbs::Nurbs( const size_t x, const size_t y ): ObjectBase( NURBS_OBJECT ), weig
 *
 * FUNCTION
 *
-*   Copy_Nurbs
+*   Copy
 *
 * INPUT
 *
@@ -448,7 +448,7 @@ Nurbs::Nurbs( const size_t x, const size_t y ): ObjectBase( NURBS_OBJECT ), weig
 *
 * RETURNS
 *
-*   void * - New nurbs
+*   void * - New rational_bezier_patch
 *
 * AUTHOR
 *
@@ -456,16 +456,16 @@ Nurbs::Nurbs( const size_t x, const size_t y ): ObjectBase( NURBS_OBJECT ), weig
 *
 * DESCRIPTION
 *
-*   Copy a nurbs.
+*   Copy a rational_bezier_patch.
 *
 * CHANGES
 *
 *
 ******************************************************************************/
 
-ObjectPtr Nurbs::Copy()
+ObjectPtr RationalBezierPatch::Copy()
 {
-    Nurbs* New = new Nurbs();
+    RationalBezierPatch* New = new RationalBezierPatch();
     Destroy_Transform( New->Trans );
     *New = *this;
     New->Trans = Copy_Transform( Trans );
@@ -478,7 +478,7 @@ ObjectPtr Nurbs::Copy()
 *
 * FUNCTION
 *
-*   Destroy_Nurbs
+*   Destroy
 *
 * INPUT
 *
@@ -496,14 +496,14 @@ ObjectPtr Nurbs::Copy()
 *
 * DESCRIPTION
 *
-*   Destroy a ovus.
+*   Destroy a rational bezier patch.
 *
 * CHANGES
 *
 *
 ******************************************************************************/
 
-Nurbs::~Nurbs()
+RationalBezierPatch::~RationalBezierPatch()
 {
     Destroy_Transform( Trans );
 }
@@ -514,15 +514,15 @@ Nurbs::~Nurbs()
 *
 * FUNCTION
 *
-*   Compute_Nurbs_BBox
+*   Compute_BBox
 *
 * INPUT
 *
-*   Nurbs - nurbs
+*   RationalBezierPatch - rational_bezier_patch
 *
 * OUTPUT
 *
-*   Nurbs
+*   RationalBezierPatch
 *
 * RETURNS
 *
@@ -532,14 +532,14 @@ Nurbs::~Nurbs()
 *
 * DESCRIPTION
 *
-*   Calculate the bounding box of a nurbs.
+*   Calculate the bounding box of a rational_bezier_patch.
 *
 * CHANGES
 *
 *
 ******************************************************************************/
 
-void Nurbs::Compute_BBox()
+void RationalBezierPatch::Compute_BBox()
 {
     Make_BBox_from_min_max( BBox, minbox, maxbox );
     Recompute_BBox( &BBox, Trans );
@@ -551,7 +551,7 @@ void Nurbs::Compute_BBox()
 *
 * FUNCTION
 *
-*   Nurbs_UVCoord
+*   UVCoord
 *
 * INPUT
 *
@@ -573,7 +573,7 @@ void Nurbs::Compute_BBox()
 *
 ******************************************************************************/
 
-void Nurbs::UVCoord( UV_VECT Result, const Intersection* Inter, TraceThreadData* Thread ) const
+void RationalBezierPatch::UVCoord( UV_VECT Result, const Intersection* Inter, TraceThreadData* Thread ) const
 {
     /* Use preocmputed uv coordinates. */
     Result[U] = Inter->Iuv[U];
@@ -582,7 +582,7 @@ void Nurbs::UVCoord( UV_VECT Result, const Intersection* Inter, TraceThreadData*
 
 /************************** The hard stuff starts here *********************/
 
-Nurbs::Grid::Grid( const size_t x, const size_t y ): xsize( x ), ysize( y )
+RationalBezierPatch::Grid::Grid( const size_t x, const size_t y ): xsize( x ), ysize( y )
 {
     content.resize( y );
 
@@ -592,26 +592,26 @@ Nurbs::Grid::Grid( const size_t x, const size_t y ): xsize( x ), ysize( y )
     }
 }
 
-Nurbs::Grid::~Grid()
+RationalBezierPatch::Grid::~Grid()
 {
 }
 
-Nurbs::Grid::Grid(): xsize( 0 ), ysize( 0 )
+RationalBezierPatch::Grid::Grid(): xsize( 0 ), ysize( 0 )
 {
 }
 
-DBL Nurbs::Grid::get( const size_t x, const size_t y )const
+DBL RationalBezierPatch::Grid::get( const size_t x, const size_t y )const
 {
     return content.at( y ).at( x );
 }
 
-DBL Nurbs::Grid::set( const size_t x, const size_t y, const DBL& v )
+DBL RationalBezierPatch::Grid::set( const size_t x, const size_t y, const DBL& v )
 {
     content.at( y ).at( x ) = v;
     return v;
 }
 
-void Nurbs::Grid::deCasteljauX( Grid& first, Grid& second, const DBL w, const DBL dw )const
+void RationalBezierPatch::Grid::deCasteljauX( Grid& first, Grid& second, const DBL w, const DBL dw )const
 {
     first = Grid( xsize, ysize );
     second = Grid( xsize, ysize );
@@ -629,7 +629,7 @@ void Nurbs::Grid::deCasteljauX( Grid& first, Grid& second, const DBL w, const DB
         deCasteljauBackward( input, second.content[c], w, dw );
     }
 }
-void Nurbs::Grid::deCasteljauXF( Grid& first, const DBL w, const DBL dw )const
+void RationalBezierPatch::Grid::deCasteljauXF( Grid& first, const DBL w, const DBL dw )const
 {
     first = Grid( xsize, ysize );
     std::vector<DBL> input;
@@ -645,7 +645,7 @@ void Nurbs::Grid::deCasteljauXF( Grid& first, const DBL w, const DBL dw )const
         deCasteljauForward( input, first.content[c], w, dw );
     }
 }
-void Nurbs::Grid::deCasteljauXB( Grid& second, const DBL w, const DBL dw )const
+void RationalBezierPatch::Grid::deCasteljauXB( Grid& second, const DBL w, const DBL dw )const
 {
     second = Grid( xsize, ysize );
     std::vector<DBL> input;
@@ -662,7 +662,7 @@ void Nurbs::Grid::deCasteljauXB( Grid& second, const DBL w, const DBL dw )const
     }
 }
 
-void Nurbs::Grid::deCasteljauY( Grid& first, Grid& second, const DBL w, const DBL dw )const
+void RationalBezierPatch::Grid::deCasteljauY( Grid& first, Grid& second, const DBL w, const DBL dw )const
 {
     first = Grid( xsize, ysize );
     second = Grid( xsize, ysize );
@@ -690,7 +690,7 @@ void Nurbs::Grid::deCasteljauY( Grid& first, Grid& second, const DBL w, const DB
         }
     }
 }
-void Nurbs::Grid::deCasteljauYF( Grid& first, const DBL w, const DBL dw )const
+void RationalBezierPatch::Grid::deCasteljauYF( Grid& first, const DBL w, const DBL dw )const
 {
     first = Grid( xsize, ysize );
     std::vector<DBL> input;
@@ -713,7 +713,7 @@ void Nurbs::Grid::deCasteljauYF( Grid& first, const DBL w, const DBL dw )const
         }
     }
 }
-void Nurbs::Grid::deCasteljauYB( Grid& second, const DBL w, const DBL dw )const
+void RationalBezierPatch::Grid::deCasteljauYB( Grid& second, const DBL w, const DBL dw )const
 {
     second = Grid( xsize, ysize );
     std::vector<DBL> input;
@@ -737,7 +737,7 @@ void Nurbs::Grid::deCasteljauYB( Grid& second, const DBL w, const DBL dw )const
     }
 }
 
-void Nurbs::Grid::deCasteljauForward( const std::vector<DBL>& in, std::vector<DBL>& out, const DBL w, const DBL dw )const
+void RationalBezierPatch::Grid::deCasteljauForward( const std::vector<DBL>& in, std::vector<DBL>& out, const DBL w, const DBL dw )const
 {
     out = in;
     std::vector<DBL> work;
@@ -753,7 +753,7 @@ void Nurbs::Grid::deCasteljauForward( const std::vector<DBL>& in, std::vector<DB
     }
 }
 
-void Nurbs::Grid::deCasteljauBackward( const std::vector<DBL>& in, std::vector<DBL>& out, const DBL w, const DBL dw )const
+void RationalBezierPatch::Grid::deCasteljauBackward( const std::vector<DBL>& in, std::vector<DBL>& out, const DBL w, const DBL dw )const
 {
     std::vector<DBL> work = in;
     std::reverse( work.begin(), work.end() );
@@ -761,7 +761,7 @@ void Nurbs::Grid::deCasteljauBackward( const std::vector<DBL>& in, std::vector<D
     std::reverse( out.begin(), out.end() );
 }
 
-void Nurbs::Grid::checkIntersection( const DBL p, const DBL n, const DBL pw, const DBL nw, DBL& min, DBL& max )const
+void RationalBezierPatch::Grid::checkIntersection( const DBL p, const DBL n, const DBL pw, const DBL nw, DBL& min, DBL& max )const
 {
     if( ( p <= 0 ) ^ ( n <= 0 ) )
     {
@@ -771,7 +771,7 @@ void Nurbs::Grid::checkIntersection( const DBL p, const DBL n, const DBL pw, con
     }
 }
 
-bool Nurbs::Grid::getMinMaxX( DBL& min, DBL& max )const
+bool RationalBezierPatch::Grid::getMinMaxX( DBL& min, DBL& max )const
 {
     min = 2.0;
     max = -2.0;
@@ -812,7 +812,7 @@ bool Nurbs::Grid::getMinMaxX( DBL& min, DBL& max )const
 
     return ( min <= max );
 }
-bool Nurbs::Grid::getMinMaxY( DBL& min, DBL& max )const
+bool RationalBezierPatch::Grid::getMinMaxY( DBL& min, DBL& max )const
 {
     min = 2.0;
     max = -2.0;
@@ -854,7 +854,7 @@ bool Nurbs::Grid::getMinMaxY( DBL& min, DBL& max )const
     return ( min <= max );
 }
 
-bool Nurbs::Grid::planePointsDistances( const Vector3d& normal, const DBL d, const Grid& x, const Grid& y, const Grid& z, const Grid& w )
+bool RationalBezierPatch::Grid::planePointsDistances( const Vector3d& normal, const DBL d, const Grid& x, const Grid& y, const Grid& z, const Grid& w )
 {
     *this = Grid( w.xsize, w.ysize );
     DBL min, max, v;
@@ -880,7 +880,7 @@ bool Nurbs::Grid::planePointsDistances( const Vector3d& normal, const DBL d, con
         return true;
     }
 }
-void Nurbs::Grid::linePointsDistances( const Vector2d& line, const Grid& a, const Grid& b )
+void RationalBezierPatch::Grid::linePointsDistances( const Vector2d& line, const Grid& a, const Grid& b )
 {
     *this = Grid( a.xsize, a.ysize );
 
@@ -892,7 +892,7 @@ void Nurbs::Grid::linePointsDistances( const Vector2d& line, const Grid& a, cons
         }
     }
 }
-void Nurbs::set( const size_t x, const size_t y, const VECTOR_4D& v )
+void RationalBezierPatch::set( const size_t x, const size_t y, const VECTOR_4D& v )
 {
     weight.set( x, y, v[W] );
     wc[X].set( x, y, v[W]*v[X] );
@@ -906,7 +906,7 @@ void Nurbs::set( const size_t x, const size_t y, const VECTOR_4D& v )
     maxbox[Z] = std::max( maxbox[Z], v[Z] );
 }
 
-void Nurbs::Grid::point( const DBL u, const DBL v, bool vFirst, DBL& p0, DBL& p10, DBL& p11 )const
+void RationalBezierPatch::Grid::point( const DBL u, const DBL v, bool vFirst, DBL& p0, DBL& p10, DBL& p11 )const
 {
     Grid d2, d3, d4;
     // relation is p0 = a.p10 + b.p11 (with b = 1.0 - a)
@@ -932,7 +932,7 @@ void Nurbs::Grid::point( const DBL u, const DBL v, bool vFirst, DBL& p0, DBL& p1
     }
 }
 
-bool Nurbs::lineU( const Grid& a, const Grid& b, Vector2d& l )const
+bool RationalBezierPatch::lineU( const Grid& a, const Grid& b, Vector2d& l )const
 {
     DBL tmp;
     l[0] =    b.getBottomLeft() - b.getTopLeft() + b.getBottomRight() - b.getTopRight();
@@ -950,7 +950,7 @@ bool Nurbs::lineU( const Grid& a, const Grid& b, Vector2d& l )const
     return true;
 }
 
-bool Nurbs::lineV( const Grid& a, const Grid& b, Vector2d& l )const
+bool RationalBezierPatch::lineV( const Grid& a, const Grid& b, Vector2d& l )const
 {
     DBL tmp;
     l[0] =    b.getTopRight() - b.getTopLeft() + b.getBottomRight() - b.getBottomLeft();
@@ -968,7 +968,7 @@ bool Nurbs::lineV( const Grid& a, const Grid& b, Vector2d& l )const
     return true;
 }
 
-bool Nurbs::bounds( const Grid& a, const Grid& b, Vector2d  la, Vector2d  lb )const
+bool RationalBezierPatch::bounds( const Grid& a, const Grid& b, Vector2d  la, Vector2d  lb )const
 {
     bool ret = false;
     ret |= a.bounds( la );
@@ -976,7 +976,7 @@ bool Nurbs::bounds( const Grid& a, const Grid& b, Vector2d  la, Vector2d  lb )co
     return !ret;
 }
 
-bool Nurbs::Grid::bounds( Vector2d  l )const
+bool RationalBezierPatch::Grid::bounds( Vector2d  l )const
 {
     bool ret = false;
     DBL& min = l[0];
@@ -997,7 +997,7 @@ bool Nurbs::Grid::bounds( Vector2d  l )const
     ret |= ( min > EPSILON ) || ( max < -EPSILON );
     return ret;
 }
-void Nurbs::evalNormal( Vector3d Real_Normal, const DBL u, const DBL v )const
+void RationalBezierPatch::evalNormal( Vector3d Real_Normal, const DBL u, const DBL v )const
 {
     DBL cx2, cx3, cy2, cy3, cz2, cz3, w2, w3, notused;
     Vector3d Normal_Vector;
@@ -1018,7 +1018,7 @@ void Nurbs::evalNormal( Vector3d Real_Normal, const DBL u, const DBL v )const
     MTransNormal( Real_Normal, Normal_Vector, Trans );
     VNormalizeEq(Real_Normal);
 }
-void Nurbs::evalVertex( Vector3d Real_Pt, const DBL u, const DBL v )const
+void RationalBezierPatch::evalVertex( Vector3d Real_Pt, const DBL u, const DBL v )const
 {
     DBL cx, cy, cz, w1, notused;
     bool vFirst = weight.dimX() > weight.dimY();
@@ -1034,7 +1034,7 @@ void Nurbs::evalVertex( Vector3d Real_Pt, const DBL u, const DBL v )const
     MTransPoint( Real_Pt, IPoint, Trans );
 }
 
-bool Nurbs::addSolution( const DBL u, const DBL v,  const BasicRay& ray, IStack& depthStack, SceneThreadData* Thread )
+bool RationalBezierPatch::addSolution( const DBL u, const DBL v,  const BasicRay& ray, IStack& depthStack, SceneThreadData* Thread )
 {
     DBL c1, c2, c3, w1, w2, w3, n1, n2, n3;
     DBL d;
@@ -1115,7 +1115,7 @@ bool Nurbs::addSolution( const DBL u, const DBL v,  const BasicRay& ray, IStack&
     return ret;
 }
 
-void Nurbs::findPlanes( const BasicRay& ray, Vector3d& n1, DBL& d1, Vector3d& n2, DBL& d2 )const
+void RationalBezierPatch::findPlanes( const BasicRay& ray, Vector3d& n1, DBL& d1, Vector3d& n2, DBL& d2 )const
 {
     // precondition: ray.Direction is normalized
     //
@@ -1140,7 +1140,7 @@ void Nurbs::findPlanes( const BasicRay& ray, Vector3d& n1, DBL& d1, Vector3d& n2
     d2 = -d2;
 }
 
-bool Nurbs::findSolution( Grid& a, Grid& b, Vector2d i0, Vector2d i1, Vector2d b0, Vector2d b1, const BasicRay& ray, IStack& Depth_Stack, SceneThreadData* Thread )
+bool RationalBezierPatch::findSolution( Grid& a, Grid& b, Vector2d i0, Vector2d i1, Vector2d b0, Vector2d b1, const BasicRay& ray, IStack& Depth_Stack, SceneThreadData* Thread )
 {
     int iii;
     Vector2d  Line;

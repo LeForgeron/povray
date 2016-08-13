@@ -224,16 +224,16 @@ void Parser::Parse_Vector_Param2(VECTOR Val1,VECTOR Val2)
 *
 ******************************************************************************/
 
-void Parser::Parse_Nurbs_Vertex(VECTOR Res)
+void Parser::Parse_UV_Vertex(VECTOR Res)
 {
-    Nurbs * nurbs = NULL;
+    RationalBezierPatch * rbp = NULL;
     DBL u,v;
 
     GET (LEFT_PAREN_TOKEN);
 
     EXPECT
         CASE (OBJECT_ID_TOKEN)
-            nurbs = dynamic_cast<Nurbs*>(reinterpret_cast<ObjectPtr>(Token.Data));
+            rbp = dynamic_cast<RationalBezierPatch*>(reinterpret_cast<ObjectPtr>(Token.Data));
             EXIT
         END_CASE
 
@@ -243,8 +243,8 @@ void Parser::Parse_Nurbs_Vertex(VECTOR Res)
         END_CASE
     END_EXPECT
 
-    if (nurbs == NULL)
-        Error ("nurbs identifier expected.");
+    if (rbp == NULL)
+        Error ("rational_bezier_patch identifier expected.");
 
     Parse_Comma();
 
@@ -255,7 +255,7 @@ void Parser::Parse_Nurbs_Vertex(VECTOR Res)
     if (( u< 0.0)||(v<0.0)||(u>1.0)||(v>1.0))
       Error("u, v must be in range 0.0 to 1.0");
 
-    nurbs->evalVertex(Res, u,v);
+    rbp->evalVertex(Res, u,v);
 }
 /*****************************************************************************
 *
@@ -275,16 +275,16 @@ void Parser::Parse_Nurbs_Vertex(VECTOR Res)
 *
 ******************************************************************************/
 
-void Parser::Parse_Nurbs_Normal(VECTOR Res)
+void Parser::Parse_UV_Normal(VECTOR Res)
 {
-    Nurbs * nurbs = NULL;
+    RationalBezierPatch * rbp = NULL;
     DBL u,v;
 
     GET (LEFT_PAREN_TOKEN);
 
     EXPECT
         CASE (OBJECT_ID_TOKEN)
-            nurbs = dynamic_cast<Nurbs*>(reinterpret_cast<ObjectPtr>(Token.Data));
+            rbp = dynamic_cast<RationalBezierPatch*>(reinterpret_cast<ObjectPtr>(Token.Data));
             EXIT
         END_CASE
 
@@ -294,8 +294,8 @@ void Parser::Parse_Nurbs_Normal(VECTOR Res)
         END_CASE
     END_EXPECT
 
-    if (nurbs == NULL)
-        Error ("nurbs identifier expected.");
+    if (rbp == NULL)
+        Error ("rational_bezier_patch identifier expected.");
 
     Parse_Comma();
 
@@ -306,7 +306,7 @@ void Parser::Parse_Nurbs_Normal(VECTOR Res)
     if (( u< 0.0)||(v<0.0)||(u>1.0)||(v>1.0))
       Error("u, v must be in range 0.0 to 1.0");
 
-    nurbs->evalNormal( Res, u,v);
+    rbp->evalNormal( Res, u,v);
 }
 
 
@@ -1566,12 +1566,12 @@ void Parser::Parse_Num_Factor (EXPRESS Express,int *Terms)
 					Parse_Trace( Vect );
 					break;
 
-                case NURBS_VERTEX_TOKEN:
-                    Parse_Nurbs_Vertex( Vect );
+                case UV_VERTEX_TOKEN:
+                    Parse_UV_Vertex( Vect );
                     break;
 
-                case NURBS_NORMAL_TOKEN:
-                    Parse_Nurbs_Normal( Vect );
+                case UV_NORMAL_TOKEN:
+                    Parse_UV_Normal( Vect );
                     break;
 
 

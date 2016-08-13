@@ -5379,7 +5379,7 @@ TEXTURE *Parser::Parse_Mesh_Texture (TEXTURE **t2, TEXTURE **t3)
 *
 * FUNCTION
 *
-*   Parse_Nurbs
+*   Parse_Rational_Bezier_Patch
 *
 * INPUT
 *   
@@ -5404,15 +5404,15 @@ TEXTURE *Parser::Parse_Mesh_Texture (TEXTURE **t2, TEXTURE **t3)
 *
 ******************************************************************************/
 
-ObjectPtr Parser::Parse_Nurbs()
+ObjectPtr Parser::Parse_Rational_Bezier_Patch()
 {
-    Nurbs *Object;
+    RationalBezierPatch *Object;
     size_t xdim, ydim;
     VECTOR_4D vector4d;
 
     Parse_Begin();
 
-    if ((Object = reinterpret_cast<Nurbs *>(Parse_Object_Id())) != NULL)
+    if ((Object = reinterpret_cast<RationalBezierPatch *>(Parse_Object_Id())) != NULL)
     {
         return(reinterpret_cast<ObjectPtr>(Object));
     }
@@ -5426,7 +5426,7 @@ ObjectPtr Parser::Parse_Nurbs()
         Error( "Minimal size of nurbs is 2 , 2" );
     }
 
-    Object = new Nurbs(xdim, ydim);
+    Object = new RationalBezierPatch(xdim, ydim);
     EXPECT
         CASE(ACCURACY_TOKEN)
             Object->setAccuracy ( Parse_Float() );
@@ -7406,8 +7406,8 @@ ObjectPtr Parser::Parse_Object ()
 			EXIT
 		END_CASE
 
-		CASE (NURBS_TOKEN)
-			Object = Parse_Nurbs();
+		CASE (RATIONAL_BEZIER_PATCH_TOKEN)
+			Object = Parse_Rational_Bezier_Patch();
 			EXIT
 		END_CASE
 
