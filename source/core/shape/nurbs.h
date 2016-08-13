@@ -2,7 +2,7 @@
 ///
 /// @file core/shape/nurbs.h
 ///
-/// This module implements the header for the nurbs primitive.
+/// This module implements the header for nurbs and rational_bezier_patch primitive.
 ///
 /// @author Jerome Grimbert
 ///
@@ -48,14 +48,14 @@ namespace pov
  * Global preprocessor defines
  ******************************************************************************/
 
-#define NURBS_OBJECT (PATCH_OBJECT)
+#define RATIONAL_BEZIER_PATCH_OBJECT (PATCH_OBJECT)
 
 
 /*****************************************************************************
  * Global typedefs
  ******************************************************************************/
 
-class Nurbs : public NonsolidObject
+class RationalBezierPatch : public NonsolidObject
 {
 private:
     class Grid
@@ -102,7 +102,7 @@ private:
     Vector3d minbox;
     Vector3d maxbox;
     /** for copy */
-    Nurbs(): NonsolidObject( NURBS_OBJECT ) {}
+    RationalBezierPatch(): NonsolidObject( RATIONAL_BEZIER_PATCH_OBJECT ) {}
     bool lineU(const Grid& a, const Grid& b, Vector2d& l)const;
     bool lineV(const Grid& a, const Grid& b, Vector2d& l)const;
     bool bounds(const Grid& a, const Grid&b, Vector2d& la, Vector2d&lb)const;
@@ -110,12 +110,12 @@ private:
     bool findSolution( Grid& a, Grid& b, Vector2d i0, Vector2d i1, Vector2d b0, Vector2d b1, const BasicRay& ray, IStack& Depth_Stack, SceneThreadData* Thread);
     void findPlanes( const BasicRay& ray, Vector3d& n0, DBL& d0, Vector3d& n1, DBL& d1)const;
 public:
-    Nurbs( const size_t x, const size_t y );
+    RationalBezierPatch( const size_t x, const size_t y );
     void set( const size_t x, const size_t y, const VECTOR_4D& v );
     void setAccuracy( const DBL a ) {accuracy = a;}
     Vector3d evalVertex( const DBL u, const DBL v )const;
     Vector3d evalNormal( const DBL u, const DBL v )const;
-    virtual ~Nurbs();
+    virtual ~RationalBezierPatch();
 
     virtual ObjectPtr Copy();
 

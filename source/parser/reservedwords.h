@@ -143,8 +143,10 @@ enum TOKEN_IDS
     TRACE_TOKEN,
     MIN_EXTENT_TOKEN,
     MAX_EXTENT_TOKEN,
-    NURBS_VERTEX_TOKEN,
-    NURBS_NORMAL_TOKEN,
+    UV_VERTEX_TOKEN,
+    UV_NORMAL_TOKEN,
+    UV_MIN_EXTENT_TOKEN,
+    UV_MAX_EXTENT_TOKEN,
     VECTOR_FUNCT_TOKEN, /*WARNING: All new functions returning a vector value must be placed before VECTOR_FUNCT_TOKEN or the parser won't work right. */
 
     ALPHA_TOKEN,
@@ -658,7 +660,9 @@ enum TOKEN_IDS
     PAVEMENT_TOKEN,
     TILING_TOKEN,
     XYZ_TOKEN,
+    RATIONAL_BEZIER_PATCH_TOKEN,
     NURBS_TOKEN,
+    NURBS_ID_TOKEN,
     LAST_TOKEN
 };
 
