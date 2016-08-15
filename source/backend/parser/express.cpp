@@ -224,16 +224,16 @@ void Parser::Parse_Vector_Param2(VECTOR Val1,VECTOR Val2)
 *
 ******************************************************************************/
 
-void Parser::Parse_UV_Vertex(VECTOR Res)
+void Parser::Parse_UV_Min(VECTOR Res)
 {
-    RationalBezierPatch * rbp = NULL;
-    DBL u,v;
+    UVMeshable * uvm = NULL;
+    UV_VECT value;
 
     GET (LEFT_PAREN_TOKEN);
 
     EXPECT
         CASE (OBJECT_ID_TOKEN)
-            rbp = dynamic_cast<RationalBezierPatch*>(reinterpret_cast<ObjectPtr>(Token.Data));
+            uvm = dynamic_cast<UVMeshable*>(reinterpret_cast<ObjectPtr>(Token.Data));
             EXIT
         END_CASE
 
@@ -243,8 +243,103 @@ void Parser::Parse_UV_Vertex(VECTOR Res)
         END_CASE
     END_EXPECT
 
-    if (rbp == NULL)
-        Error ("rational_bezier_patch identifier expected.");
+    if (uvm == NULL)
+        Error ("UV meshable object identifier expected.");
+
+    GET (RIGHT_PAREN_TOKEN);
+
+    uvm->minUV(value);
+    Res[X] = value[U];
+    Res[Y] = value[V];
+    Res[Z] = 0.0;
+}
+/*****************************************************************************
+*
+* FUNCTION
+*
+* INPUT
+*
+* OUTPUT
+*
+* RETURNS
+*
+* AUTHOR
+*
+* DESCRIPTION
+*
+* CHANGES
+*
+******************************************************************************/
+
+void Parser::Parse_UV_Max(VECTOR Res)
+{
+    UVMeshable * uvm = NULL;
+    UV_VECT value;
+
+    GET (LEFT_PAREN_TOKEN);
+
+    EXPECT
+        CASE (OBJECT_ID_TOKEN)
+            uvm = dynamic_cast<UVMeshable*>(reinterpret_cast<ObjectPtr>(Token.Data));
+            EXIT
+        END_CASE
+
+        OTHERWISE
+            UNGET
+            EXIT
+        END_CASE
+    END_EXPECT
+
+    if (uvm == NULL)
+        Error ("UV meshable object identifier expected.");
+
+    GET (RIGHT_PAREN_TOKEN);
+
+    uvm->maxUV(value);
+    Res[X] = value[U];
+    Res[Y] = value[V];
+    Res[Z] = 0.0;
+}
+
+/*****************************************************************************
+*
+* FUNCTION
+*
+* INPUT
+*
+* OUTPUT
+*
+* RETURNS
+*
+* AUTHOR
+*
+* DESCRIPTION
+*
+* CHANGES
+*
+******************************************************************************/
+
+void Parser::Parse_UV_Vertex(VECTOR Res)
+{
+    UVMeshable * uvm = NULL;
+    DBL u,v;
+
+    GET (LEFT_PAREN_TOKEN);
+
+    EXPECT
+        CASE (OBJECT_ID_TOKEN)
+            uvm = dynamic_cast<UVMeshable*>(reinterpret_cast<ObjectPtr>(Token.Data));
+            EXIT
+        END_CASE
+
+        OTHERWISE
+            UNGET
+            EXIT
+        END_CASE
+    END_EXPECT
+
+    if (uvm == NULL)
+        Error ("UV meshable object identifier expected.");
 
     Parse_Comma();
 
@@ -255,7 +350,7 @@ void Parser::Parse_UV_Vertex(VECTOR Res)
     if (( u< 0.0)||(v<0.0)||(u>1.0)||(v>1.0))
       Error("u, v must be in range 0.0 to 1.0");
 
-    rbp->evalVertex(Res, u,v);
+    uvm->evalVertex(Res, u,v);
 }
 /*****************************************************************************
 *
@@ -1565,6 +1660,14 @@ void Parser::Parse_Num_Factor (EXPRESS Express,int *Terms)
 				case TRACE_TOKEN:
 					Parse_Trace( Vect );
 					break;
+
+                case UV_MIN_EXTENT_TOKEN:
+                    Parse_UV_Min( Vect );
+                    break;
+
+                case UV_MAX_EXTENT_TOKEN:
+                    Parse_UV_Max( Vect );
+                    break;
 
                 case UV_VERTEX_TOKEN:
                     Parse_UV_Vertex( Vect );

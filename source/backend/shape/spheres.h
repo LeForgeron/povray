@@ -48,7 +48,7 @@ namespace pov
 * Global typedefs
 ******************************************************************************/
 
-class Sphere : public ObjectBase
+class Sphere : public ObjectBase, public UVMeshable
 {
 	public:
 		VECTOR Center;
@@ -72,6 +72,11 @@ class Sphere : public ObjectBase
 		virtual bool Intersect_BBox(BBoxDirection, const BBOX_VECT&, const BBOX_VECT&, BBOX_VAL) const;
 
 		static bool Intersect(const Ray& ray, const VECTOR Center, DBL Radius2, DBL *Depth1, DBL  *Depth2);
+        virtual void evalVertex( VECTOR r, const DBL u, const DBL v )const;
+        virtual void evalNormal( VECTOR r, const DBL u, const DBL v )const;
+        virtual void minUV( UV_VECT r )const;
+        virtual void maxUV( UV_VECT r )const;
+
 	private:
 		bool Do_Ellipsoid; // TODO - parser needs to take care of this
 };

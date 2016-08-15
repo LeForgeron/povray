@@ -1748,6 +1748,17 @@ class CompoundObject : public ObjectBase
 		vector<ObjectPtr> children;
 };
 
+/* Interface for uv_* functions */
+class UVMeshable
+{
+public:
+  virtual void evalVertex( VECTOR r, const DBL u, const DBL v )const=0;
+  virtual void evalNormal( VECTOR r, const DBL u, const DBL v )const=0;
+  virtual void minUV( UV_VECT r )const=0;
+  virtual void maxUV( UV_VECT r )const=0;
+  
+};
+
 typedef struct BBox_Tree_Struct BBOX_TREE;
 
 struct BBox_Tree_Struct

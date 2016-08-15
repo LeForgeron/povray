@@ -1033,6 +1033,16 @@ void RationalBezierPatch::evalVertex( Vector3d Real_Pt, const DBL u, const DBL v
     Make_Vector( IPoint, cx, cy, cz );
     MTransPoint( Real_Pt, IPoint, Trans );
 }
+void RationalBezierPatch::minUV( UV_VECT r )const
+{
+ r[U] = 0.0;
+ r[V] = 0.0;
+}
+void RationalBezierPatch::maxUV( UV_VECT r )const
+{
+ r[U] = 1.0;
+ r[V] = 1.0;
+}
 
 bool RationalBezierPatch::addSolution( const DBL u, const DBL v,  const BasicRay& ray, IStack& depthStack, SceneThreadData* Thread )
 {

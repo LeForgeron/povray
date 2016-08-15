@@ -57,7 +57,7 @@ namespace pov
  * Global typedefs
  ******************************************************************************/
 
-class RationalBezierPatch : public ObjectBase
+class RationalBezierPatch : public ObjectBase, public UVMeshable
 {
 private:
     typedef VECTOR Vector3d;
@@ -131,8 +131,10 @@ public:
     RationalBezierPatch( const size_t x, const size_t y );
     void set( const size_t x, const size_t y, const VECTOR_4D& v );
     void setAccuracy( const DBL a ) {accuracy = a;}
-    void evalVertex( VECTOR r, const DBL u, const DBL v )const;
-    void evalNormal( VECTOR r, const DBL u, const DBL v )const;
+    virtual void evalVertex( VECTOR r, const DBL u, const DBL v )const;
+    virtual void evalNormal( VECTOR r, const DBL u, const DBL v )const;
+    virtual void minUV( UV_VECT r )const;
+    virtual void maxUV( UV_VECT r )const;
     virtual ~RationalBezierPatch();
 
     virtual ObjectPtr Copy();

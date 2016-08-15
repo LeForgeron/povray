@@ -811,7 +811,48 @@ void Sphere::UVCoord(UV_VECT Result, const Intersection *Inter, TraceThreadData 
 	Result[U] = theta;
 	Result[V] = phi;
 }
+void Sphere::minUV( UV_VECT r )const
+{
+ r[U] = 0.0;
+ r[V] = 0.0;
+}
+void Sphere::maxUV( UV_VECT r )const
+{
+ r[U] = 1.0;
+ r[V] = 1.0;
+}
+void Sphere::evalVertex( VECTOR Real_Pt, const DBL u, const DBL v )const
+{
+    VECTOR Point;
+    DBL lat = -M_PI*(0.5-v);
+    Make_Vector( Point, Radius * cos( lat )*cos( u * TWO_M_PI ), Radius * sin( lat ) , Radius * cos( lat )*sin( u * TWO_M_PI ) );
+    VAddEq( Point, Center );
 
+    if( Trans )
+    {
+        MTransPoint( Real_Pt, Point, Trans );
+    }
+    else
+    {
+        Assign_Vector( Real_Pt, Point );
+    }
+
+}
+void Sphere::evalNormal( VECTOR Real_Normal, const DBL u, const DBL v )const
+{
+    VECTOR Point;
+    Make_Vector( Point, cos( v * M_PI )*cos( u * TWO_M_PI ), sin( v * M_PI ) , cos( v * M_PI )*sin( u * TWO_M_PI ) );
+
+    if( Trans )
+    {
+        MTransNormal( Real_Normal, Point, Trans );
+        VNormalizeEq( Real_Normal );
+    }
+    else
+    {
+        Assign_Vector( Real_Normal, Point );
+    }
+}
 bool Sphere::Intersect_BBox(BBoxDirection, const BBOX_VECT&, const BBOX_VECT&, BBOX_VAL) const
 {
 	return true;
