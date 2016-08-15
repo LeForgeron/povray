@@ -51,6 +51,7 @@ namespace pov
  ******************************************************************************/
 
 #define RATIONAL_BEZIER_PATCH_OBJECT (PATCH_OBJECT)
+#define NURBS_OBJECT (PATCH_OBJECT)
 
 
 /*****************************************************************************
@@ -151,6 +152,60 @@ public:
     virtual void Compute_BBox();
 };
 
+class Nurbs: public ObjectBase, public UVMeshable
+{
+private:
+    class Point4D
+    {
+    private:
+      DBL coordinate[4];
+    public:
+      Point4D(); 
+      Point4D( const VECTOR_4D& v ); 
+      Point4D operator=(const Point4D pt);
+      Point4D operator+(const Point4D pt)const;
+      Point4D operator*(const DBL m)const;
+      Point4D operator/(const DBL m)const;
+      void asVector(VECTOR res)const;
+    };
+    std::vector< std::vector< Point4D > > cp;
+    std::vector< DBL > uknots;
+    std::vector< DBL > vknots;
+    size_t usize;
+    size_t vsize;
+    size_t uorder;
+    size_t vorder;
+    Point4D deBoor(int k, int order, int i, double x, const std::vector< DBL > & knots, const std::vector< Point4D > & ctrlPoints )const;
+    int whichInterval( DBL x, size_t order, const std::vector< DBL > & knots)const;
+public:
+    virtual void evalVertex( VECTOR r, const DBL u, const DBL v )const;
+    virtual void evalNormal( VECTOR r, const DBL u, const DBL v )const;
+    virtual void minUV( UV_VECT r )const;
+    virtual void maxUV( UV_VECT r )const;
+    virtual ~Nurbs();
+    Nurbs( const size_t x, const size_t y, const size_t uo, const size_t vo );
+    void setControlPoint( const size_t x, const size_t y, const VECTOR_4D& v );
+    void setUKnot( const size_t i, const DBL v );
+    void setVKnot( const size_t i, const DBL v );
+    /** for copy */
+    Nurbs(): ObjectBase( NURBS_OBJECT ) {}
+
+
+    virtual ObjectPtr Copy();
+
+    virtual bool All_Intersections( const Ray&, IStack&, TraceThreadData* );
+    virtual bool Inside( const VECTOR, TraceThreadData* ) const;
+    virtual void Normal( VECTOR, Intersection*, TraceThreadData* ) const;
+    virtual void UVCoord( UV_VECT, const Intersection*, TraceThreadData* ) const;
+    virtual void Translate( const VECTOR, const TRANSFORM* );
+    virtual void Rotate( const VECTOR, const TRANSFORM* );
+    virtual void Scale( const VECTOR, const TRANSFORM* );
+    virtual void Transform( const TRANSFORM* );
+    virtual void Invert( ){}
+    virtual void Compute_BBox();
+
+
+};
 }
 
 #endif

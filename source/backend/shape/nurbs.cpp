@@ -1326,4 +1326,202 @@ bool RationalBezierPatch::findSolution( Grid& a, Grid& b, Vector2d i0, Vector2d 
     }
 }
 
+Nurbs::Point4D::Point4D()
+{
+  coordinate[X]=0;
+  coordinate[Y]=0;
+  coordinate[Z]=0;
+  coordinate[W]=0;
+}
+Nurbs::Point4D::Point4D( const VECTOR_4D& v)
+{
+  coordinate[X]=v[X];
+  coordinate[Y]=v[Y];
+  coordinate[Z]=v[Z];
+  coordinate[W]=v[W];
+}
+Nurbs::Point4D Nurbs::Point4D::operator=(const Nurbs::Point4D v )
+{
+  coordinate[X]=v.coordinate[X];
+  coordinate[Y]=v.coordinate[Y];
+  coordinate[Z]=v.coordinate[Z];
+  coordinate[W]=v.coordinate[W];
+  return *this;
+}
+Nurbs::Point4D Nurbs::Point4D::operator+(const Nurbs::Point4D v )const
+{
+  Point4D temp;
+  temp.coordinate[X] = coordinate[X] + v.coordinate[X];
+  temp.coordinate[Y] = coordinate[Y] + v.coordinate[Y];
+  temp.coordinate[Z] = coordinate[Z] + v.coordinate[Z];
+  temp.coordinate[W] = coordinate[W] + v.coordinate[W];
+  return temp;
+}
+Nurbs::Point4D Nurbs::Point4D::operator*(const DBL m )const
+{
+  Point4D temp;
+  temp.coordinate[X] = m*coordinate[X];
+  temp.coordinate[Y] = m*coordinate[Y];
+  temp.coordinate[Z] = m*coordinate[Z];
+  temp.coordinate[W] = m*coordinate[W];
+  return temp;
+}
+  
+Nurbs::Point4D Nurbs::Point4D::operator/(const DBL m )const
+{
+  Point4D temp;
+  temp.coordinate[X] = coordinate[X]/m;
+  temp.coordinate[Y] = coordinate[Y]/m;
+  temp.coordinate[Z] = coordinate[Z]/m;
+  temp.coordinate[W] = coordinate[W]/m;
+  return temp;
+}
+
+void Nurbs::Point4D::asVector( VECTOR res) const
+{
+  res[X] = coordinate[X]/coordinate[W];
+  res[Y] = coordinate[Y]/coordinate[W];
+  res[Z] = coordinate[Z]/coordinate[W];
+}
+Nurbs::Point4D Nurbs::deBoor( int k, int order, int i, DBL x, const std::vector< DBL > & knots, const std::vector< Point4D > & ctrlPoints )const
+
+{
+    if( k == 0 )
+    {
+        return ctrlPoints[i];
+    }
+    else
+    {
+       DBL alpha = (x-knots.at(i))/(knots.at(i+order-k)-knots.at(i));
+       return (deBoor(k-1, order, i-1, x, knots, ctrlPoints)*(1-alpha)+deBoor(k-1, order, i, x, knots, ctrlPoints )*alpha);
+    }
+}
+Nurbs::Nurbs( const size_t x, const size_t y, const size_t uo, const size_t vo  ): ObjectBase(NURBS_OBJECT),usize(x),vsize(y),uorder(uo),vorder(vo)
+{
+  Trans = Create_Transform();
+  cp.resize(y);
+  for(size_t i = 0; i < y; ++i)
+  {
+    cp.at(i).resize(x);
+  }
+  uknots.resize(x+uo);
+  vknots.resize(y+vo);
+}
+
+void Nurbs::minUV( UV_VECT r) const
+{
+  r[U] = uknots[uorder-1];
+  r[V] = vknots[vorder-1];
+}
+void Nurbs::maxUV( UV_VECT r) const
+{
+  r[U] = uknots[uknots.size()-uorder];
+  r[V] = vknots[vknots.size()-vorder];
+}
+void Nurbs::evalNormal( VECTOR r, const DBL u, const DBL v )const
+{
+// TODO compute the normal : cross product of the 2 first derivatives
+}
+void Nurbs::evalVertex( VECTOR Real_Pt, const DBL u, const DBL v )const
+{
+// TODO optimise to not compute all the points of temp
+    VECTOR Point;
+    std::vector< Point4D > temp;
+    temp.resize( vsize );
+    int interval = whichInterval( u, uorder, uknots );
+
+    for( size_t i = 0; i < vsize; ++i )
+    {
+        temp[i] = deBoor( uorder - 1, uorder, interval, u , uknots, cp[i] );
+    }
+
+    interval = whichInterval( v, vorder, vknots );
+    Point4D value = deBoor( vorder - 1, vorder, interval, v , vknots, temp );
+    value.asVector( Point );
+    MTransPoint( Real_Pt, Point, Trans );
+}
+int Nurbs::whichInterval( DBL x,size_t order,  const std::vector< DBL > & knots )const
+{
+// we could detect when x is not in the minUV;maxUV range, but useless
+  for(int i = order; i < (knots.size()-order); ++i)
+  {
+    if (x < knots[i])
+    {
+      return i-1;
+    }
+  }
+  return knots.size()-order-1;
+}
+void Nurbs::setControlPoint(const size_t x, const size_t y, const VECTOR_4D& v)
+{
+  VECTOR_4D tmp;
+  tmp[X] = v[X]*v[W];
+  tmp[Y] = v[Y]*v[W];
+  tmp[Z] = v[Z]*v[W];
+  tmp[W] = v[W];
+  cp[y][x]=tmp;
+}
+void Nurbs::setUKnot(const size_t i, const DBL v )
+{
+  uknots[i] = v;
+}
+void Nurbs::setVKnot(const size_t i, const DBL v )
+{
+  vknots[i] = v;
+}
+
+Nurbs::~Nurbs()
+{
+    Destroy_Transform( Trans );
+}
+
+ObjectPtr Nurbs::Copy()
+{
+    Nurbs* New = new Nurbs();
+    Destroy_Transform( New->Trans );
+    * New = *this;
+    New->Trans = Copy_Transform( Trans );
+    return ( New );
+}
+
+bool Nurbs::All_Intersections( const Ray&, IStack&, TraceThreadData* )
+{
+    return false;
+}
+bool Nurbs::Inside( const VECTOR, TraceThreadData* ) const
+{
+    return false;
+}
+void Nurbs::Normal( VECTOR, Intersection*, TraceThreadData* ) const
+{
+}
+void Nurbs::UVCoord( UV_VECT, const Intersection*, TraceThreadData* ) const
+{
+}
+void Nurbs::Translate( const VECTOR, const TRANSFORM* tr )
+{
+  Transform( tr );
+}
+void Nurbs::Rotate( const VECTOR, const TRANSFORM* tr )
+{
+  Transform( tr );
+}
+void Nurbs::Scale( const VECTOR, const TRANSFORM* tr )
+{
+  Transform( tr );
+}
+void Nurbs::Transform( const TRANSFORM* tr )
+{
+    if( Trans == NULL )
+    { Trans = Create_Transform(); }
+
+    Compose_Transforms( Trans, tr );
+    Compute_BBox();
+}
+void Nurbs::Compute_BBox()
+{
+  Make_BBox(BBox, 0, 0,0 , 0, 0,0);
+}
+
+
 }
