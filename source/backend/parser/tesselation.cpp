@@ -512,7 +512,7 @@ namespace pov
 			 Error("Error opening GTS file.\n");
 			 return;
 		 }
-		 fprintf(filep,"%u %u %u\n",number_of_point,edge.size(),number_of_face);
+		 fprintf(filep,"%u %u %u\n",number_of_point,static_cast<unsigned int>(edge.size()),number_of_face);
 		 for(cursor =0; cursor < number_of_point; cursor++)
 		 {
 			 fprintf(filep,"%.10g %.10g %.10g\n",
@@ -774,6 +774,44 @@ namespace pov
 		}
 	}
 
+bool Find_TesselIntersection(Intersection *isect, DBL len, ObjectPtr object, const Ray& ray, TraceThreadData *threadData)
+{
+    DBL closest = len*1.11;//caller moved back the origin by 10%, and let's tolerate additional 1% for the end
+    if( object->Bound.empty() == false )
+    {
+        if( Ray_In_Bound( ray, object->Bound, threadData ) == false )
+        { return false; }
+    }
+
+    IStack depthstack( threadData->stackPool );
+    assert( depthstack->empty() ); // verify that the IStack pulled from the pool is in a cleaned-up condition
+
+    if( object->All_Intersections( ray, depthstack, threadData ) )
+    {
+        bool found = false;
+        double tmpDepth = 0;
+
+        while( depthstack->size() > 0 )
+        {
+            tmpDepth = depthstack->top().Depth;
+
+            if( ( tmpDepth < closest ) && ( tmpDepth > 0 ) )
+            {
+                *isect = depthstack->top();
+                closest = tmpDepth;
+                found = true;
+            }
+
+            depthstack->pop();
+        }
+
+        return ( found == true );
+    }
+
+    assert( depthstack->empty() ); // verify that the IStack is in a cleaned-up condition (again)
+    return false;
+}
+
 	static Intersection tess_intersect;
 	static Ray tess_Ray;
 
@@ -789,15 +827,18 @@ namespace pov
 				info->Coord[ins][X] - info->Coord[outs][X],
 				info->Coord[ins][Y] - info->Coord[outs][Y],
 				info->Coord[ins][Z] - info->Coord[outs][Z] };
-			VECTOR SP = { info->Coord[outs][X] - Dir[X]*.0001,
-				info->Coord[outs][Y] - Dir[Y]*.0001,
-				info->Coord[outs][Z] - Dir[Z]*.0001 };
+            DBL len ;
+            VLength( len, Dir );
+            // Move back by 10% of the direction
+			VECTOR SP = { info->Coord[outs][X] - Dir[X]*len*.1,
+				info->Coord[outs][Y] - Dir[Y]*len*.1,
+				info->Coord[outs][Z] - Dir[Z]*len*.1 };
 
 			info->Texture[outs][ins] = NULL;
 			Assign_Vector(tess_Ray.Origin, SP);
 			Assign_Vector(tess_Ray.Direction, Dir);
 			VNormalizeEq(tess_Ray.Direction);
-			if (Find_Intersection(&tess_intersect, (ObjectPtr)info->Object,tess_Ray, GetParserDataPtr()))
+			if (Find_TesselIntersection(&tess_intersect, len, (ObjectPtr)info->Object,tess_Ray, GetParserDataPtr()))
 			{
 				Assign_Vector(info->Intersection[outs][ins][0], tess_intersect.IPoint);
 				if(Smooth)
