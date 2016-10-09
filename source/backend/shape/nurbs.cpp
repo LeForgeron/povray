@@ -1418,9 +1418,86 @@ void Nurbs::maxUV( UV_VECT r) const
   r[U] = uknots[uknots.size()-uorder];
   r[V] = vknots[vknots.size()-vorder];
 }
+void Nurbs::computeCurveNormalizedDerivative( VECTOR r, const int order, const DBL u, const std::vector< DBL > &knots, const std::vector< Point4D> & points )const
+{
+    /*
+     * R'(u) = n * ((w_I,n-1(u)* w_I+1,n-1(u))/((w_I+1,n(u))^2)) * (( P_I+1,n-1(u)-P_I,n-1(u))/(u_I+1-u_I))
+     *
+     * n is irrelevant, we normalize the normal
+     * the computation of weight is also irrelevant, because... we normalize the normal
+     *
+     * Remain R'(u) = (P_I+1,n-1(u) - P_I,n-1(u))/(u_I+1-u_I)
+     *
+     * But, as we normalize the normal, and u_I+1 >= u_I (with special treatment of nurb: 1/0 = 1)
+     * we can also drop the knot part (u_X) 
+     *
+     * Remain R'(u) = (P_I+1,n-1(u) - P_I,n-1(u))
+     */
+  int interval = whichInterval( u, order, knots);
+  Point4D pnext = deBoor( order-2, order , interval, u, knots, points);
+  Point4D pbase = deBoor( order -2, order, interval-1, u, knots, points);
+  VECTOR next,base;
+  pnext.asVector( next );
+  pbase.asVector( base );
+  VSub(r, next, base);
+  VNormalizeEq(r);
+}
 void Nurbs::evalNormal( VECTOR r, const DBL u, const DBL v )const
 {
-// TODO compute the normal : cross product of the 2 first derivatives
+// compute the normal : cross product of the 2 first derivatives
+    VECTOR n1, n2, value;
+    /**
+     * for each coordinates axis (u,v), compute the nurb curve along the axis
+     * then compute the derivative
+     *
+     * R'(u) = n * ((w_I,n-1(u)* w_I+1,n-1(u))/((w_I+1,n(u))^2)) * (( P_I+1,n-1(u)-P_I,n-1(u))/(u_I+1-u_I))
+     *
+     * ( From Michael S. Floater, Evaluation and Properties of the Derivative of a NURBS Curve
+     *  in 
+     *  Mathematical Methods in CAGD and Image Processing, Tom Lyche and L. L. Schumaler (eds)
+     *  Copyright 1992 by Academic Press, Boston
+     * 
+     *  Read it, it's worth the time)
+     *
+     * R(u) = P_I+1,n
+     */
+    /* first axis, easy */
+    std::vector< Point4D > temp;
+    temp.resize( vsize );
+    int interval = whichInterval( u, uorder, uknots );
+
+    for( size_t i = 0; i < vsize; ++i )
+    {
+        temp[i] = deBoor( uorder - 1, uorder, interval, u , uknots, cp[i] );
+    }
+
+    computeCurveNormalizedDerivative( n1, vorder, v, vknots, temp );
+    /* second axis, need to transpose cp as tcp */
+    temp.resize( usize );
+    std::vector< std::vector< Point4D > > tcp;
+    size_t y = cp[0].size();
+    size_t x = cp.size();
+    tcp.resize( y );
+
+    for( size_t i = 0; i < y; ++i )
+    {
+        tcp.at( i ).resize( x );
+
+        for( size_t j = 0; j < x; ++j )
+        {
+            tcp.at( i ).at( j ) = cp.at( j ).at( i );
+        }
+    }
+    interval = whichInterval( v, vorder, vknots );
+    for( size_t i = 0; i < vsize; ++i )
+    {
+        temp[i] = deBoor( vorder - 1, vorder, interval, v , vknots, tcp[i] );
+    }
+
+    computeCurveNormalizedDerivative( n2, uorder, u, uknots, temp );
+    /* time for cross product, of normalized vectors, so no need to normalize again */
+    VCross( value, n1, n2 );
+    MTransNormal( r, value, Trans );
 }
 void Nurbs::evalVertex( VECTOR Real_Pt, const DBL u, const DBL v )const
 {

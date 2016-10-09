@@ -372,14 +372,14 @@ void Parser::Parse_UV_Vertex(VECTOR Res)
 
 void Parser::Parse_UV_Normal(VECTOR Res)
 {
-    RationalBezierPatch * rbp = NULL;
+    UVMeshable * uvm = NULL;
     DBL u,v;
 
     GET (LEFT_PAREN_TOKEN);
 
     EXPECT
         CASE (OBJECT_ID_TOKEN)
-            rbp = dynamic_cast<RationalBezierPatch*>(reinterpret_cast<ObjectPtr>(Token.Data));
+            uvm = dynamic_cast<UVMeshable*>(reinterpret_cast<ObjectPtr>(Token.Data));
             EXIT
         END_CASE
 
@@ -389,8 +389,8 @@ void Parser::Parse_UV_Normal(VECTOR Res)
         END_CASE
     END_EXPECT
 
-    if (rbp == NULL)
-        Error ("rational_bezier_patch identifier expected.");
+    if (uvm == NULL)
+        Error ("UV meshable object identifier expected.");
 
     Parse_Comma();
 
@@ -401,7 +401,7 @@ void Parser::Parse_UV_Normal(VECTOR Res)
     if (( u< 0.0)||(v<0.0)||(u>1.0)||(v>1.0))
       Error("u, v must be in range 0.0 to 1.0");
 
-    rbp->evalNormal( Res, u,v);
+    uvm->evalNormal( Res, u,v);
 }
 
 

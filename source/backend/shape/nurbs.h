@@ -177,6 +177,7 @@ private:
     size_t vorder;
     Point4D deBoor(int k, int order, int i, double x, const std::vector< DBL > & knots, const std::vector< Point4D > & ctrlPoints )const;
     int whichInterval( DBL x, size_t order, const std::vector< DBL > & knots)const;
+    void computeCurveNormalizedDerivative( VECTOR r, const int order, const DBL u, const std::vector< DBL > &knot, const std::vector< Point4D> & points )const;
 public:
     virtual void evalVertex( VECTOR r, const DBL u, const DBL v )const;
     virtual void evalNormal( VECTOR r, const DBL u, const DBL v )const;
