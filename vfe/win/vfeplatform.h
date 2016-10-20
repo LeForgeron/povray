@@ -44,7 +44,7 @@ namespace vfePlatform
   {
   public:
     WinShelloutProcessing(POVMS_Object& opts, const string& scene, unsigned int width, unsigned int height);
-    ~WinShelloutProcessing();
+    virtual ~WinShelloutProcessing();
 
     virtual int ProcessID(void);
     virtual bool ShelloutsSupported(void) { return true; }

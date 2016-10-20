@@ -102,7 +102,7 @@ public:
 	ShelloutProcessing(POVMS_Object& opts, const string& scene, unsigned int width, unsigned int height);
 
 	// you should reap any processes here as needed, and forcefully terminate ones still running.
-	~ShelloutProcessing();
+	virtual ~ShelloutProcessing();
 
 	// true if a shellout command was specified for the given phase
 	bool IsSet(shelloutEvent which) const { return shellouts[which]->IsSet(); }

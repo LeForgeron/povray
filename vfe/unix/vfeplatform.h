@@ -48,7 +48,7 @@ namespace vfePlatform
 	{
 		public:
 			UnixShelloutProcessing(POVMS_Object& opts, const string& scene, unsigned int width, unsigned int height);
-			~UnixShelloutProcessing();
+			virtual ~UnixShelloutProcessing();
 
 			virtual int ProcessID(void);
 			virtual bool ShelloutsSupported(void) { return true; }
