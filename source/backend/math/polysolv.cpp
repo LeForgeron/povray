@@ -1702,6 +1702,7 @@ int Solve_Polynomial(int n, const DBL *c0, DBL *r, int sturm, DBL epsilon, Trace
 					Thread->Stats()[Roots_Eliminated]++;
 
 					roots = polysolve(n-1, c, r);
+                    break;
 				}
 			}
 
