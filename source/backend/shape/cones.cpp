@@ -1077,7 +1077,7 @@ void Cone::CalcUV(const VECTOR IPoint, UV_VECT Result) const
         theta = 0;
 
     Result[U] = theta;
-    Result[V] = phi;
+    Result[V] = 1.0-phi;
 
 }
 
