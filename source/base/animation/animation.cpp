@@ -350,6 +350,8 @@ POV_LONG Animation::WriteFrame(OStream *file, const Image *image)
 		case MOV:
 			Moov::PostWriteFrame(file, bytes, writeOptions, warnings, state);
 			break;
+        case MPEG:
+            break;
 	}
 
 	return bytes;
