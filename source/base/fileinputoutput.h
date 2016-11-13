@@ -119,6 +119,7 @@ class IOBase
 
 		inline operator const void *() const { return(fail ? 0 :reinterpret_cast<const void *>(this)); }
 		inline bool operator!() const { return(fail); }
+		inline bool operator() const { return(!fail); }
 	protected:
 		bool fail;
 		FILE *f;
