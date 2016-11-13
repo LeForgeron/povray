@@ -86,6 +86,7 @@ using std::weak_ptr;
 #else
 using std::tr1::shared_ptr;
 using std::tr1::weak_ptr;
+using std::tr1::dynamic_pointer_cast;
 #endif
 
 #endif // STD_POV_TYPES_DECLARED
