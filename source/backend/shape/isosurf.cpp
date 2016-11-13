@@ -775,7 +775,7 @@ void IsoSurface::DispatchShutdownMessages(MessageFactory& messageFactory)
 
 	if (mginfo->print_done == false)
 	{
-        mginfo->print_done == true;
+        mginfo->print_done = true;
 		FunctionCode *fn = vm->GetFunction(*(Function));
 
 		if (fn != NULL)

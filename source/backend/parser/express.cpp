@@ -1438,7 +1438,7 @@ void Parser::Parse_Num_Factor (EXPRESS Express,int *Terms)
 					GET(LEFT_PAREN_TOKEN)
 					GET(OBJECT_ID_TOKEN)
 					Object = (ObjectPtr)Token.Data;
-					if (localmesh=dynamic_cast<Mesh*>(Object))
+					if ((localmesh=dynamic_cast<Mesh*>(Object)))
 					{
              Val = localmesh->Data->Number_Of_Triangles;
 					}
@@ -1453,7 +1453,7 @@ void Parser::Parse_Num_Factor (EXPRESS Express,int *Terms)
 					GET(LEFT_PAREN_TOKEN)
 					GET(OBJECT_ID_TOKEN)
 					Object = (ObjectPtr)Token.Data;
-					if (localmesh=dynamic_cast<Mesh*>(Object))
+					if ((localmesh=dynamic_cast<Mesh*>(Object)))
 					{
              Val = localmesh->Data->Number_Of_Vertices;
 					}
@@ -1486,7 +1486,7 @@ void Parser::Parse_Num_Factor (EXPRESS Express,int *Terms)
 					GET(LEFT_PAREN_TOKEN)
 					GET(OBJECT_ID_TOKEN)
 					Object = (ObjectPtr)Token.Data;
-					if (localmesh=dynamic_cast<Mesh*>(Object))
+					if ((localmesh=dynamic_cast<Mesh*>(Object)))
 					{
              Val = localmesh->Data->Number_Of_Normals;
 					}
@@ -1501,7 +1501,7 @@ void Parser::Parse_Num_Factor (EXPRESS Express,int *Terms)
 					GET(LEFT_PAREN_TOKEN)
 					GET(OBJECT_ID_TOKEN)
 					Object = (ObjectPtr)Token.Data;
-					if (localmesh=dynamic_cast<Mesh*>(Object))
+					if ((localmesh=dynamic_cast<Mesh*>(Object)))
 					{
              Val = localmesh->Data->Number_Of_UVCoords;
 					}

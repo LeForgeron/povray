@@ -516,11 +516,11 @@ void Destroy_TPat_Fields(TPATTERN *Tpat)
 		delete Tpat->Vals.Object_vect;
 	}
 
-  if ((Tpat->Type == VORONOI_PATTERN))
+  if (Tpat->Type == VORONOI_PATTERN)
   {
 		delete Tpat->Vals.Point_vect;
   }
-  if ((Tpat->Type == MASONRY_PATTERN))
+  if (Tpat->Type == MASONRY_PATTERN)
   {
 		delete Tpat->Vals.Masonry.Cell_vect;
 		delete Tpat->Vals.Masonry.Cell_value;
@@ -5759,7 +5759,7 @@ static DBL density_pattern(const VECTOR EPoint, const TPATTERN *TPat)
 					y = (size_t)(Ey * (DBL)Data->Sy);
 					z = (size_t)(Ez * (DBL)Data->Sz);
 
-					if ((x < 0) || (x >= Data->Sx) || (y < 0) || (y >= Data->Sy) || (z < 0) || (z >= Data->Sz))
+					if ( (x >= Data->Sx) ||  (y >= Data->Sy) ||  (z >= Data->Sz))
 						density = 0.0;
 					else
 					{

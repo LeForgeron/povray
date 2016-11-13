@@ -248,6 +248,8 @@ Image *Animation::ReadFrame(IStream *file)
 		case MOV:
 			Moov::PreReadFrame(file, currentFrame, bytes, codec, readOptions, warnings, state);
 			break;
+        case MPEG:
+            break;
 	}
 
 	POV_LONG prepos = file->tellg();
@@ -267,6 +269,9 @@ Image *Animation::ReadFrame(IStream *file)
 		case MPEG2Codec:
 		//	image = Mpeg::ReadFrame(file, currentFrame, codec, readOptions, warnings, state);
 			break;
+        case LosslessCodec:
+        case LossyCodec:
+			break;
 	}
 
 	if(file->tellg() < (prepos + bytes))
@@ -284,6 +289,8 @@ Image *Animation::ReadFrame(IStream *file)
 		case MOV:
 			Moov::PostReadFrame(file, currentFrame, bytes, codec, readOptions, warnings, state);
 			break;
+        case MPEG:
+            break;
 	}
 
 	return image;
@@ -307,6 +314,8 @@ POV_LONG Animation::WriteFrame(OStream *file, const Image *image)
 		case MOV:
 			Moov::PreWriteFrame(file, writeOptions, warnings, state);
 			break;
+        case MPEG:
+            break;
 	}
 
 	POV_LONG bytes = file->tellg();
@@ -325,6 +334,9 @@ POV_LONG Animation::WriteFrame(OStream *file, const Image *image)
 		case MPEG1Codec:
 		case MPEG2Codec:
 		//	Mpeg::WriteFrame(file, image, codec, writeOptions, warnings, state);
+			break;
+        case LosslessCodec:
+        case LossyCodec:
 			break;
 	}
 
