@@ -328,6 +328,18 @@ namespace pov
 					das->number_of_textures*sizeof(TEXTURE *),
 					"tesselation triangle mesh data (textures)");
 
+	if( (fabs(das->Inside_Vect[X]) < EPSILON) &&  (fabs(das->Inside_Vect[Y]) < EPSILON) &&  (fabs(das->Inside_Vect[Z]) < EPSILON))
+	{
+		das->tesselationMesh->has_inside_vector=false;
+		das->tesselationMesh->Type |= PATCH_OBJECT;
+	}
+	else
+	{
+		VNormalize(das->tesselationMesh->Data->Inside_Vect, das->Inside_Vect);
+		das->tesselationMesh->has_inside_vector=true;
+		das->tesselationMesh->Type &= ~PATCH_OBJECT;
+	}
+
 		das->tesselationMesh->Compute_BBox();
 		Parse_Object_Mods((ObjectPtr)das->tesselationMesh);
 		das->tesselationMesh->Build_Mesh_BBox_Tree();
@@ -1998,6 +2010,7 @@ bool Find_TesselIntersection(Intersection *isect, DBL len, ObjectPtr object, con
 		UNDERCONSTRUCTION das;
 		das.albinos = 0;
 		das.Default_Texture = NULL;
+        Make_Vector(das.Inside_Vect, 0, 0, 0);
 		Parse_Begin();
 
 		info.reverse=false;
@@ -2005,6 +2018,9 @@ bool Find_TesselIntersection(Intersection *isect, DBL len, ObjectPtr object, con
 		EXPECT
 			CASE(RIGHT_TOKEN)
 			info.reverse=true;
+        END_CASE
+            CASE( INSIDE_VECTOR_TOKEN )
+			Parse_Vector(das.Inside_Vect);
 		END_CASE 
 			OTHERWISE
 			UNGET
@@ -2027,6 +2043,7 @@ bool Find_TesselIntersection(Intersection *isect, DBL len, ObjectPtr object, con
 		UNDERCONSTRUCTION das;
 		das.albinos = 0;
 		das.Default_Texture = NULL;
+        Make_Vector(das.Inside_Vect, 0, 0, 0);
 		Parse_Begin();
 
 		info.reverse=false;
@@ -2065,6 +2082,7 @@ bool Find_TesselIntersection(Intersection *isect, DBL len, ObjectPtr object, con
 		UNDERCONSTRUCTION das;
 		das.albinos = 0;
 		das.Default_Texture = NULL;
+        Make_Vector(das.Inside_Vect, 0, 0, 0);
 		Parse_Begin();
 
 		info.reverse=false;
@@ -2072,6 +2090,9 @@ bool Find_TesselIntersection(Intersection *isect, DBL len, ObjectPtr object, con
 		EXPECT
 			CASE(RIGHT_TOKEN)
 			info.reverse=true;
+        END_CASE
+            CASE( INSIDE_VECTOR_TOKEN )
+			Parse_Vector(das.Inside_Vect);
 		END_CASE 
 			OTHERWISE
 			UNGET
@@ -2105,6 +2126,7 @@ bool Find_TesselIntersection(Intersection *isect, DBL len, ObjectPtr object, con
 		Parse_Begin();
 		das.albinos = 0;
 		das.Default_Texture = NULL;
+        Make_Vector(das.Inside_Vect, 0, 0, 0);
 
 		EXPECT
 			CASE(ORIGINAL_TOKEN)
@@ -2125,6 +2147,9 @@ bool Find_TesselIntersection(Intersection *isect, DBL len, ObjectPtr object, con
 
 			CASE(OFFSET_TOKEN)
 			BBoxOffs = Parse_Float();
+        END_CASE
+            CASE( INSIDE_VECTOR_TOKEN )
+			Parse_Vector(das.Inside_Vect);
 		END_CASE
 
 			OTHERWISE
@@ -2159,11 +2184,15 @@ bool Find_TesselIntersection(Intersection *isect, DBL len, ObjectPtr object, con
 		Parse_Begin();
 		das.albinos = 0;
 		das.Default_Texture = NULL;
+        Make_Vector(das.Inside_Vect, 0, 0, 0);
 
 
 		EXPECT
 			CASE(ORIGINAL_TOKEN)
 			Object = Parse_Object();
+        END_CASE
+            CASE( INSIDE_VECTOR_TOKEN )
+			Parse_Vector(das.Inside_Vect);
 		END_CASE
 			CASE(ACCURACY_TOKEN)
 			Parse_Vector(Accuracy);
@@ -2220,12 +2249,16 @@ bool Find_TesselIntersection(Intersection *isect, DBL len, ObjectPtr object, con
 		Parse_Begin();
 		das.albinos = 0;
 		das.Default_Texture = NULL;
+        Make_Vector(das.Inside_Vect, 0, 0, 0);
 
 
 		EXPECT
 			CASE(ORIGINAL_TOKEN)
 			Object = Parse_Object();
 		  das.Default_Texture = Object->Texture; /* will be copied when needed */
+        END_CASE
+            CASE( INSIDE_VECTOR_TOKEN )
+			Parse_Vector(das.Inside_Vect);
 		END_CASE
 			CASE(ACCURACY_TOKEN)
 			Parse_Vector(Accuracy);
@@ -2280,11 +2313,15 @@ bool Find_TesselIntersection(Intersection *isect, DBL len, ObjectPtr object, con
 		Parse_Begin();
 		das.albinos = 0;
 		das.Default_Texture = NULL;
+        Make_Vector(das.Inside_Vect, 0, 0, 0);
 
 		EXPECT
 			CASE(ORIGINAL_TOKEN)
 			Object = Parse_Object();
 		  das.Default_Texture = Object->Texture; /* will be copied when needed */
+        END_CASE
+            CASE( INSIDE_VECTOR_TOKEN )
+			Parse_Vector(das.Inside_Vect);
 		END_CASE
 			CASE(ACCURACY_TOKEN)
 			Parse_Vector(Accuracy);
@@ -2687,6 +2724,9 @@ bool Find_TesselIntersection(Intersection *isect, DBL len, ObjectPtr object, con
 		EXPECT
 			CASE(ORIGINAL_TOKEN)
 			Object = Parse_Object();
+        END_CASE
+            CASE( INSIDE_VECTOR_TOKEN )
+			Parse_Vector(das.Inside_Vect);
 		END_CASE 
 			CASE(ACCURACY_TOKEN)
 			Parse_Vector(Accuracy);
@@ -3068,6 +3108,9 @@ bool Find_TesselIntersection(Intersection *isect, DBL len, ObjectPtr object, con
 		EXPECT
 			CASE(ORIGINAL_TOKEN)
 			Object = Parse_Object();
+        END_CASE
+            CASE( INSIDE_VECTOR_TOKEN )
+			Parse_Vector(das.Inside_Vect);
 		END_CASE 
 			CASE(ACCURACY_TOKEN)
 			Parse_Vector(Accuracy);
@@ -4431,11 +4474,15 @@ bool Find_TesselIntersection(Intersection *isect, DBL len, ObjectPtr object, con
 		info.have_max = 0;
 		das.albinos = 0;
 		das.Default_Texture = NULL;
+        Make_Vector(das.Inside_Vect, 0, 0, 0);
 		Make_Vector(info.origin,0,0,0);
 		Make_Vector(info.angle,0,0,0);
 		EXPECT
 			CASE (ORIGINAL_TOKEN)
 			Object = Parse_Object();
+        END_CASE
+            CASE( INSIDE_VECTOR_TOKEN )
+			Parse_Vector(das.Inside_Vect);
 		END_CASE
 			CASE (ORIGIN_TOKEN)
 			Parse_Vector(info.origin);
@@ -4501,11 +4548,15 @@ bool Find_TesselIntersection(Intersection *isect, DBL len, ObjectPtr object, con
 		info.have_max = 0;
 		das.albinos = 0;
 		das.Default_Texture = NULL;
+        Make_Vector(das.Inside_Vect, 0, 0, 0);
 		Make_Vector(info.origin,0,0,0);
 		Make_Vector(info.angle,0,0,0);
 		EXPECT
 			CASE (ORIGINAL_TOKEN)
 			Object = Parse_Object();
+        END_CASE
+            CASE( INSIDE_VECTOR_TOKEN )
+			Parse_Vector(das.Inside_Vect);
 		END_CASE
 			CASE (ORIGIN_TOKEN)
 			Parse_Vector(info.origin);
@@ -4564,6 +4615,7 @@ bool Find_TesselIntersection(Intersection *isect, DBL len, ObjectPtr object, con
 		Parse_Begin();
 		das.albinos = 0;
 		das.Default_Texture = NULL;
+        Make_Vector(das.Inside_Vect, 0, 0, 0);
 		info.NPat=NULL;
 		info.amount = 0;
 		info.have_min = 0;
@@ -4574,6 +4626,9 @@ bool Find_TesselIntersection(Intersection *isect, DBL len, ObjectPtr object, con
 		EXPECT
 			CASE (ORIGINAL_TOKEN)
 			Object = Parse_Object();
+        END_CASE
+            CASE( INSIDE_VECTOR_TOKEN )
+			Parse_Vector(das.Inside_Vect);
 		END_CASE
 			CASE (ORIGIN_TOKEN)
 			Parse_Vector(info.origin);
@@ -4639,10 +4694,14 @@ bool Find_TesselIntersection(Intersection *isect, DBL len, ObjectPtr object, con
 		info.method=0;
 		das.albinos = 0;
 		das.Default_Texture = NULL;
+        Make_Vector(das.Inside_Vect, 0, 0, 0);
 		info.amount=1.0;
 		EXPECT
 			CASE(ORIGINAL_TOKEN)
 			Object = Parse_Object();
+        END_CASE
+            CASE( INSIDE_VECTOR_TOKEN )
+			Parse_Vector(das.Inside_Vect);
 		END_CASE 
 			CASE(METHOD_TOKEN)
 			info.method=(int)Allow_Float(0.0);
@@ -4681,6 +4740,7 @@ bool Find_TesselIntersection(Intersection *isect, DBL len, ObjectPtr object, con
 
 		das.albinos = 0;
 		das.Default_Texture = NULL;
+        Make_Vector(das.Inside_Vect, 0, 0, 0);
 		info.bound= NULL;
 		info.outside = 0;
 		info.bin = 0;
@@ -4689,6 +4749,9 @@ bool Find_TesselIntersection(Intersection *isect, DBL len, ObjectPtr object, con
 		EXPECT
 			CASE (ORIGINAL_TOKEN)
 			Object = Parse_Object();
+        END_CASE
+            CASE( INSIDE_VECTOR_TOKEN )
+			Parse_Vector(das.Inside_Vect);
 		END_CASE
 			CASE (WITH_TOKEN)
 			info.bound = Parse_Object();
@@ -4920,6 +4983,7 @@ bool Find_TesselIntersection(Intersection *isect, DBL len, ObjectPtr object, con
 
 		das.albinos = 0;
 		das.Default_Texture = NULL;
+        Make_Vector(das.Inside_Vect, 0, 0, 0);
 		info.NPat = NULL;
 		info.amount=1.0;
 		info.offset=0.5;
@@ -4927,6 +4991,9 @@ bool Find_TesselIntersection(Intersection *isect, DBL len, ObjectPtr object, con
 		EXPECT
 			CASE(ORIGINAL_TOKEN)
 			Object = Parse_Object();
+        END_CASE
+            CASE( INSIDE_VECTOR_TOKEN )
+			Parse_Vector(das.Inside_Vect);
 		END_CASE 
 			CASE(MODULATION_TOKEN)
 			Parse_Begin();
@@ -4983,9 +5050,13 @@ bool Find_TesselIntersection(Intersection *isect, DBL len, ObjectPtr object, con
 		MIdentity(info.transform.matrix);
 		das.albinos = 0;
 		das.Default_Texture = NULL;
+        Make_Vector(das.Inside_Vect, 0, 0, 0);
 		EXPECT
 			CASE(ORIGINAL_TOKEN)
 			Object = Parse_Object();
+        END_CASE
+            CASE( INSIDE_VECTOR_TOKEN )
+			Parse_Vector(das.Inside_Vect);
 		END_CASE
 			CASE(MODULATION_TOKEN)
 			Parse_Begin();
@@ -5039,9 +5110,13 @@ bool Find_TesselIntersection(Intersection *isect, DBL len, ObjectPtr object, con
 		MIdentity(info.transform.matrix);
 		das.albinos = 0;
 		das.Default_Texture = NULL;
+        Make_Vector(das.Inside_Vect, 0, 0, 0);
 		EXPECT
 			CASE(ORIGINAL_TOKEN)
 			Object = Parse_Object();
+        END_CASE
+            CASE( INSIDE_VECTOR_TOKEN )
+			Parse_Vector(das.Inside_Vect);
 		END_CASE
 			CASE(MODULATION_TOKEN)
 			Parse_Begin();
@@ -5416,6 +5491,9 @@ bool Find_TesselIntersection(Intersection *isect, DBL len, ObjectPtr object, con
 		EXPECT
 			CASE(ORIGINAL_TOKEN)
 			Object = Parse_Object();
+        END_CASE
+            CASE( INSIDE_VECTOR_TOKEN )
+			Parse_Vector(das.Inside_Vect);
 		END_CASE 
 			CASE(JITTER_TOKEN)
 			info.jitter=Allow_Float(0.0);
@@ -5516,9 +5594,10 @@ bool Find_TesselIntersection(Intersection *isect, DBL len, ObjectPtr object, con
 			das.Vertices = *verts;
 			das.Normals = *norms;
 
-			Parse_Begin();
 			das.albinos = 0;
 			das.Default_Texture = NULL;
+            Assign_Vector( das.Inside_Vect , m->Data->Inside_Vect);
+			Parse_Begin();
 
 
 			EXPECT
@@ -5604,6 +5683,7 @@ bool Find_TesselIntersection(Intersection *isect, DBL len, ObjectPtr object, con
 			das.Normals = *norms;
 			das.albinos = 0;
 			das.Default_Texture = NULL;
+            Assign_Vector( das.Inside_Vect , m->Data->Inside_Vect);
 
 			Parse_Begin();
 			info.warp = NULL;
@@ -5692,6 +5772,7 @@ bool Find_TesselIntersection(Intersection *isect, DBL len, ObjectPtr object, con
 			das.Normals = *norms;
 			das.albinos = 0;
 			das.Default_Texture = NULL;
+            Assign_Vector( das.Inside_Vect , m->Data->Inside_Vect);
 
 			Parse_Begin();
 			MIdentity(info.transform.matrix);
@@ -5761,6 +5842,7 @@ bool Find_TesselIntersection(Intersection *isect, DBL len, ObjectPtr object, con
 
 			das.albinos = 0;
 			das.Default_Texture = NULL;
+            Assign_Vector( das.Inside_Vect , m->Data->Inside_Vect);
 			das.tesselationMesh = m;
 			das.number_of_triangles = *n_tri;
 			das.number_of_vertices = *n_vert;
@@ -5868,9 +5950,10 @@ bool Find_TesselIntersection(Intersection *isect, DBL len, ObjectPtr object, con
 			das.Vertices = *verts;
 			das.Normals = *norms;
 
-			Parse_Begin();
 			das.albinos = 0;
 			das.Default_Texture = NULL;
+            Assign_Vector( das.Inside_Vect , m->Data->Inside_Vect);
+			Parse_Begin();
 
 			EXPECT
 				CASE(ORIGINAL_TOKEN)
@@ -5957,9 +6040,10 @@ bool Find_TesselIntersection(Intersection *isect, DBL len, ObjectPtr object, con
 			das.Vertices = *verts;
 			das.Normals = *norms;
 
-			Parse_Begin();
 			das.albinos = 0;
 			das.Default_Texture = NULL;
+            Assign_Vector( das.Inside_Vect , m->Data->Inside_Vect);
+			Parse_Begin();
 
 			EXPECT
 				CASE(ORIGINAL_TOKEN)
@@ -6049,9 +6133,10 @@ bool Find_TesselIntersection(Intersection *isect, DBL len, ObjectPtr object, con
 			das.Vertices = *verts;
 			das.Normals = *norms;
 
-			Parse_Begin();
 			das.albinos = 0;
 			das.Default_Texture = NULL;
+            Assign_Vector( das.Inside_Vect , m->Data->Inside_Vect);
+			Parse_Begin();
 
 			EXPECT
 				CASE(ORIGINAL_TOKEN)
@@ -6139,9 +6224,10 @@ bool Find_TesselIntersection(Intersection *isect, DBL len, ObjectPtr object, con
 			das.Vertices = *verts;
 			das.Normals = *norms;
 
-			Parse_Begin();
 			das.albinos = 0;
 			das.Default_Texture = NULL;
+            Assign_Vector( das.Inside_Vect , m->Data->Inside_Vect);
+			Parse_Begin();
 
 			EXPECT
 				CASE(ORIGINAL_TOKEN)
@@ -6215,9 +6301,10 @@ bool Find_TesselIntersection(Intersection *isect, DBL len, ObjectPtr object, con
 			das.Vertices = *verts;
 			das.Normals = *norms;
 
-			Parse_Begin();
 			das.albinos = 0;
 			das.Default_Texture = NULL;
+            Assign_Vector( das.Inside_Vect , m->Data->Inside_Vect);
+			Parse_Begin();
 
 			EXPECT
 				CASE(ORIGINAL_TOKEN)
@@ -6292,6 +6379,7 @@ bool Find_TesselIntersection(Intersection *isect, DBL len, ObjectPtr object, con
 			das.Normals = *norms;
 			das.albinos = 0;
 			das.Default_Texture = NULL;
+            Assign_Vector( das.Inside_Vect , m->Data->Inside_Vect);
 
 			Parse_Begin();
 
@@ -6396,6 +6484,7 @@ bool Find_TesselIntersection(Intersection *isect, DBL len, ObjectPtr object, con
 			das.Normals = *norms;
 			das.albinos = 0;
 			das.Default_Texture = NULL;
+            Assign_Vector( das.Inside_Vect , m->Data->Inside_Vect);
 
 			Parse_Begin();
 
@@ -6483,6 +6572,7 @@ bool Find_TesselIntersection(Intersection *isect, DBL len, ObjectPtr object, con
 
 			das.albinos = 0;
 			das.Default_Texture = NULL;
+            Assign_Vector( das.Inside_Vect , m->Data->Inside_Vect);
 			das.tesselationMesh = m;
 			das.number_of_triangles = *n_tri;
 			das.number_of_vertices = *n_vert;
@@ -6603,6 +6693,7 @@ bool Find_TesselIntersection(Intersection *isect, DBL len, ObjectPtr object, con
 			das.Normals = *norms;
 			das.albinos = 0;
 			das.Default_Texture = NULL;
+            Assign_Vector( das.Inside_Vect , m->Data->Inside_Vect);
 
 			Parse_Begin();
 
@@ -6682,6 +6773,7 @@ bool Find_TesselIntersection(Intersection *isect, DBL len, ObjectPtr object, con
 			das.Normals = *norms;
 			das.albinos = 0;
 			das.Default_Texture = NULL;
+            Assign_Vector( das.Inside_Vect , m->Data->Inside_Vect);
 			Parse_Begin();
 
 			info.bound= NULL;
@@ -6777,6 +6869,7 @@ bool Find_TesselIntersection(Intersection *isect, DBL len, ObjectPtr object, con
 			das.Normals = *norms;
 			das.albinos = 0;
 			das.Default_Texture = NULL;
+            Assign_Vector( das.Inside_Vect , m->Data->Inside_Vect);
 			Parse_Begin();
 
 			info.reverse=false;

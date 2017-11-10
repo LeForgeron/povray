@@ -849,6 +849,7 @@ class Parser : public Task
 			TEXTURE **Textures;
 			TEXTURE *Default_Texture;
 			int albinos;
+            VECTOR Inside_Vect;
 		} UNDERCONSTRUCTION;
 
 		typedef struct 
