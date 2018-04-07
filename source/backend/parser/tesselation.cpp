@@ -2719,6 +2719,7 @@ bool Find_TesselIntersection(Intersection *isect, DBL len, ObjectPtr object, con
 		Parse_Begin();
 		das.albinos = 0;
 		das.Default_Texture = NULL;
+        Make_Vector(das.Inside_Vect, 0, 0, 0);
 
 
 		EXPECT
@@ -3104,6 +3105,7 @@ bool Find_TesselIntersection(Intersection *isect, DBL len, ObjectPtr object, con
 		Parse_Begin();
 		das.albinos = 0;
 		das.Default_Texture = NULL;
+        Make_Vector(das.Inside_Vect, 0, 0, 0);
 
 		EXPECT
 			CASE(ORIGINAL_TOKEN)
@@ -4480,6 +4482,14 @@ bool Find_TesselIntersection(Intersection *isect, DBL len, ObjectPtr object, con
 		EXPECT
 			CASE (ORIGINAL_TOKEN)
 			Object = Parse_Object();
+            {
+            Mesh * ThisMeshPtr = dynamic_cast<Mesh*>(Object);
+            if (!ThisMeshPtr)
+            {
+			  Error("Mesh expected.\n");
+            }
+            Assign_Vector( das.Inside_Vect , ThisMeshPtr->Data->Inside_Vect);
+            }
         END_CASE
             CASE( INSIDE_VECTOR_TOKEN )
 			Parse_Vector(das.Inside_Vect);
@@ -4554,6 +4564,14 @@ bool Find_TesselIntersection(Intersection *isect, DBL len, ObjectPtr object, con
 		EXPECT
 			CASE (ORIGINAL_TOKEN)
 			Object = Parse_Object();
+            {
+            Mesh * ThisMeshPtr = dynamic_cast<Mesh*>(Object);
+            if (!ThisMeshPtr)
+            {
+			  Error("Mesh expected.\n");
+            }
+            Assign_Vector( das.Inside_Vect , ThisMeshPtr->Data->Inside_Vect);
+            }
         END_CASE
             CASE( INSIDE_VECTOR_TOKEN )
 			Parse_Vector(das.Inside_Vect);
@@ -4626,6 +4644,14 @@ bool Find_TesselIntersection(Intersection *isect, DBL len, ObjectPtr object, con
 		EXPECT
 			CASE (ORIGINAL_TOKEN)
 			Object = Parse_Object();
+            {
+            Mesh * ThisMeshPtr = dynamic_cast<Mesh*>(Object);
+            if (!ThisMeshPtr)
+            {
+			  Error("Mesh expected.\n");
+            }
+            Assign_Vector( das.Inside_Vect , ThisMeshPtr->Data->Inside_Vect);
+            }
         END_CASE
             CASE( INSIDE_VECTOR_TOKEN )
 			Parse_Vector(das.Inside_Vect);
@@ -4699,6 +4725,14 @@ bool Find_TesselIntersection(Intersection *isect, DBL len, ObjectPtr object, con
 		EXPECT
 			CASE(ORIGINAL_TOKEN)
 			Object = Parse_Object();
+            {
+            Mesh * ThisMeshPtr = dynamic_cast<Mesh*>(Object);
+            if (!ThisMeshPtr)
+            {
+			  Error("Mesh expected.\n");
+            }
+            Assign_Vector( das.Inside_Vect , ThisMeshPtr->Data->Inside_Vect);
+            }
         END_CASE
             CASE( INSIDE_VECTOR_TOKEN )
 			Parse_Vector(das.Inside_Vect);
@@ -4991,6 +5025,14 @@ bool Find_TesselIntersection(Intersection *isect, DBL len, ObjectPtr object, con
 		EXPECT
 			CASE(ORIGINAL_TOKEN)
 			Object = Parse_Object();
+            {
+            Mesh * ThisMeshPtr = dynamic_cast<Mesh*>(Object);
+            if (!ThisMeshPtr)
+            {
+			  Error("Mesh expected.\n");
+            }
+            Assign_Vector( das.Inside_Vect , ThisMeshPtr->Data->Inside_Vect);
+            }
         END_CASE
             CASE( INSIDE_VECTOR_TOKEN )
 			Parse_Vector(das.Inside_Vect);
@@ -5054,6 +5096,14 @@ bool Find_TesselIntersection(Intersection *isect, DBL len, ObjectPtr object, con
 		EXPECT
 			CASE(ORIGINAL_TOKEN)
 			Object = Parse_Object();
+            {
+            Mesh * ThisMeshPtr = dynamic_cast<Mesh*>(Object);
+            if (!ThisMeshPtr)
+            {
+			  Error("Mesh expected.\n");
+            }
+            Assign_Vector( das.Inside_Vect , ThisMeshPtr->Data->Inside_Vect);
+            }
         END_CASE
             CASE( INSIDE_VECTOR_TOKEN )
 			Parse_Vector(das.Inside_Vect);
@@ -5114,6 +5164,14 @@ bool Find_TesselIntersection(Intersection *isect, DBL len, ObjectPtr object, con
 		EXPECT
 			CASE(ORIGINAL_TOKEN)
 			Object = Parse_Object();
+            {
+            Mesh * ThisMeshPtr = dynamic_cast<Mesh*>(Object);
+            if (!ThisMeshPtr)
+            {
+			  Error("Mesh expected.\n");
+            }
+            Assign_Vector( das.Inside_Vect , ThisMeshPtr->Data->Inside_Vect);
+            }
         END_CASE
             CASE( INSIDE_VECTOR_TOKEN )
 			Parse_Vector(das.Inside_Vect);
@@ -5491,6 +5549,14 @@ bool Find_TesselIntersection(Intersection *isect, DBL len, ObjectPtr object, con
 		EXPECT
 			CASE(ORIGINAL_TOKEN)
 			Object = Parse_Object();
+            {
+            Mesh * ThisMeshPtr = dynamic_cast<Mesh*>(Object);
+            if (!ThisMeshPtr)
+            {
+			  Error("Mesh expected.\n");
+            }
+            Assign_Vector( das.Inside_Vect , ThisMeshPtr->Data->Inside_Vect);
+            }
         END_CASE
             CASE( INSIDE_VECTOR_TOKEN )
 			Parse_Vector(das.Inside_Vect);
@@ -6392,6 +6458,13 @@ bool Find_TesselIntersection(Intersection *isect, DBL len, ObjectPtr object, con
 			EXPECT
 				CASE (ORIGINAL_TOKEN)
 				Object = Parse_Object();
+            {
+            Mesh * ThisMeshPtr = dynamic_cast<Mesh*>(Object);
+            if (!ThisMeshPtr)
+            {
+			  Error("Mesh expected.\n");
+            }
+            }
 			END_CASE
 				CASE (ORIGIN_TOKEN)
 				Parse_Vector(info.origin);
@@ -6496,6 +6569,13 @@ bool Find_TesselIntersection(Intersection *isect, DBL len, ObjectPtr object, con
 			EXPECT
 				CASE (ORIGINAL_TOKEN)
 				Object = Parse_Object();
+            {
+            Mesh * ThisMeshPtr = dynamic_cast<Mesh*>(Object);
+            if (!ThisMeshPtr)
+            {
+			  Error("Mesh expected.\n");
+            }
+            }
 			END_CASE
 				CASE (ORIGIN_TOKEN)
 				Parse_Vector(info.origin);
@@ -6598,6 +6678,13 @@ bool Find_TesselIntersection(Intersection *isect, DBL len, ObjectPtr object, con
 			EXPECT
 				CASE (ORIGINAL_TOKEN)
 				Object = Parse_Object();
+            {
+            Mesh * ThisMeshPtr = dynamic_cast<Mesh*>(Object);
+            if (!ThisMeshPtr)
+            {
+			  Error("Mesh expected.\n");
+            }
+            }
 			END_CASE
 				CASE (ORIGIN_TOKEN)
 				Parse_Vector(info.origin);
@@ -6702,6 +6789,13 @@ bool Find_TesselIntersection(Intersection *isect, DBL len, ObjectPtr object, con
 			EXPECT
 				CASE(ORIGINAL_TOKEN)
 				Object = Parse_Object();
+            {
+            Mesh * ThisMeshPtr = dynamic_cast<Mesh*>(Object);
+            if (!ThisMeshPtr)
+            {
+			  Error("Mesh expected.\n");
+            }
+            }
 			END_CASE 
 				CASE(METHOD_TOKEN)
 				info.method=(int)Allow_Float(0.0);
@@ -6784,6 +6878,13 @@ bool Find_TesselIntersection(Intersection *isect, DBL len, ObjectPtr object, con
 			EXPECT
 				CASE (ORIGINAL_TOKEN)
 				Object = Parse_Object();
+            {
+            Mesh * ThisMeshPtr = dynamic_cast<Mesh*>(Object);
+            if (!ThisMeshPtr)
+            {
+			  Error("Mesh expected.\n");
+            }
+            }
 			END_CASE
 				CASE (WITH_TOKEN)
 				info.bound = Parse_Object();
