@@ -1662,7 +1662,7 @@ GlyphIndex ProcessCharMap(TrueTypeFont *ffile, UCS4 search_char)
 
     initial_table_offset = ffile->file->tellg (); /* Save the initial position */
 
-    for(j = 0; j <= ffile->info->cmapSelector.size(); ++j)
+    for(j = 0; j < ffile->info->cmapSelector.size(); ++j)
     {
         ffile->file->seekg(initial_table_offset); /* Always start new search at the initial position */
 
