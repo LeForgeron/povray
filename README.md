@@ -3,8 +3,9 @@
 
 [![Quick Tests](https://github.com/POV-Ray/povray/actions/workflows/test_build_quick.yml/badge.svg)](https://github.com/POV-Ray/povray/actions/workflows/test_build_quick.yml)
 [![Code Analysis](https://github.com/POV-Ray/povray/actions/workflows/codeql-analysis.yml/badge.svg)](https://github.com/POV-Ray/povray/actions/workflows/codeql-analysis.yml)
-[![Maintenance Status](https://img.shields.io/maintenance/yes/2021.svg)](README.md "Last edited 2021-06-26")
+[![Maintenance Status](https://img.shields.io/maintenance/yes/2024.svg)](README.md "Last edited 2024-11-03")
 
+- [Development Status (November 2024)](#development-status-november-2024)
 - [License](#license)
 - [Forums](#forums)
 - [Bug Reports](#bug-reports)
@@ -14,6 +15,22 @@
 - [3D Modeller](#3d-modeller)
 - [Documentation](#documentation)
 - [Contacting Us](#contacting-us)
+
+Development Status (November 2024)
+--------------------------------------
+After a long break in releases of 3.8 beta test candidates, development is resuming, though not at the
+pace of past releases. That said, we hope to have a new 3.8 beta ready before the end of the year and
+a final release in Q1 2025.
+
+One impediment we have yet to overcome is code signing for the Windows platform. Currently we have
+no means of doing so as our previous key has expired. The difficulty is both cost and the need for
+flexibility in verifying us as an organization. Despite the fact that we have a company registered
+in Australia (Persistence of Vision Raytracer Pty. Ltd.) and it is visible on the ASIC website, it
+is our experience that the verification process gets hung up by the fact the company doesn't sell
+anything, have a street address, or have a phone number.
+
+While we do not generally sign beta releases, it is our policy that official releases for the Windows
+platform are expected to be signed.
 
 License
 --------------------------------------
@@ -26,7 +43,7 @@ as SDL includes, macros, sample scenes and so forth are under the Creative Commo
 Forums
 --------------------------------------
 
-Discussion regarding POV-Ray is traditionally done via our forums at http://news.povray.org/.
+Discussion regarding POV-Ray is traditionally done via our forums at https://news.povray.org/.
 These are also available via NNTP at news://news.povray.org/ for those preferring that.
 
 Please note that the POV-Ray developers do not monitor all forums regularly. The ones we
@@ -47,10 +64,9 @@ Official Binaries
 
 At this point in time, the only platform for which the project distributes pre-built
 'official' (i.e. supported) binaries is Microsoft Windows. These may be
-obtained via http://www.povray.org/download/. We do intend to provide Mac OS X
-binaries shortly, but these will be console-mode only (based on the unix build).
+obtained via https://www.povray.org/download/..
 
-Official Windows binaries of selected development versions are made availabe at
+Official Windows binaries of selected development versions are made available at
 https://github.com/POV-Ray/povray/releases on a semi-irregular basis.
 
 Building POV-Ray
@@ -112,9 +128,9 @@ of POV-Ray come with documentation. For the Unix build, this is in the form of a
 manpage giving basic usage, and full HTML-based documentation. For the Windows
 version, there is a HtmlHelp (.CHM) file provided.
 
-The official location for the online documentation is http://www.povray.org/documentation/.
+The official location for the online documentation is https://www.povray.org/documentation/.
 Further information, as well as online documentation for the current development
-version, can be found at http://wiki.povray.org.
+version, can be found at https://wiki.povray.org.
 
 Contacting Us
 --------------------------------------
@@ -122,5 +138,5 @@ Contacting Us
 We prefer that you contact us via the forums mentioned at the head of this document.
 If the matter is one that requires direct email contact (and this generally will NOT
 include tech support requests, though exceptions are made for package maintainers)
-you may use the address listed at the bottom of http://www.povray.org/povlegal.html.
+you may use the address listed at the bottom of https://www.povray.org/povlegal.html.
 
